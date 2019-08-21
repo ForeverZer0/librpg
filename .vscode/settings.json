@@ -1,0 +1,7 @@
+{
+    "files.associations": {
+        "string": "c",
+        "*.r": "c"
+    },
+    "clang-format.style": "file"
+}
