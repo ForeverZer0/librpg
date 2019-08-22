@@ -1,5 +1,9 @@
-#include "graphics.r"
+#include "rpg.h"
+#include "glad.h"
+#include "GLFW/glfw3.h"
 #include <string.h>
+
+#include "graphics.h" // TODO:
 
 int errorCode;
 
@@ -109,7 +113,7 @@ RPG_RESULT RPG_Graphics_Create(const char *title, RPGint width, RPGint height, R
 
 RPG_RESULT RPG_Graphics_Main(RPG_GRAPHICS *gfx) {
 
-    glClearColor(0.4f, 0.5f, 0.6f, 1.0f);
+    glClearColor(0.4f, 0.5f, 0.55f, 1.0f);
     while (!glfwWindowShouldClose(gfx->window)) {
         glfwSwapBuffers(gfx->window);
         glClear(GL_COLOR_BUFFER_BIT);
