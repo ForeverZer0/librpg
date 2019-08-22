@@ -3,27 +3,19 @@
 //
 
 #include "rpg.h"
-#include "audio.h"
+#include "graphics.h"
 
 void RPG_Initialize(void) {
     RPG_Audio_Initialize();
-    glfwInit();
-
-    glfwDefaultWindowHints();
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-    glfwWindowHint(GLFW_DOUBLEBUFFER, GLFW_TRUE);
-
+    RPG_Graphics_Initialize();
 }
 
 void RPG_Terminate(void) {
     RPG_Audio_Terminate();
-    glfwTerminate();
+    RPG_Graphics_Terminate();
 }
 
-const char *RPG_ErrorString(RPG_RESULT result)
-{
+const char *RPG_ErrorString(RPG_RESULT result) {
     switch (result) {
         case RPG_NO_ERROR: return "No error.";
         case RPG_ERR_AUDIO_DEVICE: return "Failed to open audio device.";
