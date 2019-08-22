@@ -2,7 +2,10 @@
     "files.associations": {
         "string": "c",
         "*.r": "c",
-        "graphics.h": "c"
+        "graphics.h": "c",
+        "internal.h": "c",
+        "rpg.h": "c",
+        "efx-presets.h": "c"
     },
     "clang-format.style": "file"
 }

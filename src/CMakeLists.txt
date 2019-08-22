@@ -3,14 +3,15 @@
 add_library(rpg SHARED
         ${PROJECT_SOURCE_DIR}/include/RPG/rpg.h
         include/platform.h
-
         include/internal.h
-        include/graphics.h
 
-        graphics/glad.c
+        glad.c
         audio.c
-        rpg.c
-        graphics/graphics.c )
+        audiofx.c
+        game.c
+        stb_image.h 
+        stb_image_write.h 
+        image.c)
 
 set_target_properties(rpg PROPERTIES VERSION ${PROJECT_VERSION})
 set_target_properties(rpg PROPERTIES SOVERSION 1)
