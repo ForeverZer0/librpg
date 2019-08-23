@@ -1,6 +1,10 @@
 #ifndef OPEN_RGP_AUDIO_H
 #define OPEN_RGP_AUDIO_H 1
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "rpg.h"
 
 #if !defined(RPG_NO_AUDIO)
@@ -118,6 +122,8 @@ RPG_RESULT RPG_Audio_Pause(RPGint channel);
 RPG_RESULT RPG_Audio_Seek(RPGint channel, RPGint64 position, RPG_AUDIO_SEEK seek);
 
 #if !defined(RPG_AUDIO_NO_EFFECTS)
+
+typedef struct RPGaudiofx RPGaudiofx;
 
 typedef enum {
     RPG_AUDIOFX_TYPE_NULL              = 0x0000,
@@ -307,8 +313,6 @@ typedef struct {
     RPGfloat roomRolloffFactor;
     RPGint   decayHFLimit;
 } RPGreverbpreset;
-
-typedef struct RPGaudiofx RPGaudiofx;
 
 // General Effects
 RPG_RESULT RPG_Audio_IsEffectAttached(RPGint channel, RPGaudiofx *fx, RPGbool *attached);
@@ -509,4 +513,9 @@ RPG_RESULT RPG_Equalizer_SetHighCutoff(RPGaudiofx *fx, RPGfloat value);
 
 #endif /* RPG_AUDIO_NO_EFFECTS */
 #endif /* RPG_NO_AUDIO */
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif /* OPEN_RGP_AUDIO_H */

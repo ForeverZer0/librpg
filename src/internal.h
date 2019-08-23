@@ -1,13 +1,17 @@
 #ifndef OPEN_RPG_INTERNAL_H
 #define OPEN_RPG_INTERNAL_H 1
 
+#include "glad.h"
+#include "platform.h"
+#include <string.h>
+
 #define RPG_ENSURE_FILE(filename)                                                                                                          \
     if (!RPG_FILE_EXISTS(filename))                                                                                                        \
     return RPG_ERR_FILE_NOT_FOUND
 
 #define RPG_RETURN_IF_NULL(ptr)                                                                                                            \
     if (ptr == NULL)                                                                                                                       \
-    return RPG_ERR_NULL_POINTER
+    return RPG_ERR_INVALID_POINTER
 
 static inline int maxi(int i1, int i2) { return i1 > i2 ? i1 : i2; }
 
@@ -67,5 +71,13 @@ static inline int mini(int i1, int i2) { return i1 < i2 ? i1 : i2; }
 
 #define DEF_FX_CREATE(name, type)                                                                                                          \
     RPG_RESULT RPG_##name##_Create(RPGaudiofx **fx) { return RPG_Audio_CreateEffect(type, fx); }
+
+
+#define RPG_ALLOC(type) ((type *)RPG_MALLOC(sizeof(type)))
+#define RPG_ALLOC_N(type, n) ((type *)RPG_MALLOC(sizeof(type) * n))
+#define RPG_ALLOC_ZERO(var, type)                                                                                                          \
+    type *var = RPG_ALLOC(type);                                                                                                           \
+    memset(var, 0, sizeof(type))
+
 
 #endif /* OPEN_RPG_INTERNAL_H */
