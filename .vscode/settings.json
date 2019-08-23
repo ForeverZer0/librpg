@@ -5,7 +5,9 @@
         "graphics.h": "c",
         "internal.h": "c",
         "rpg.h": "c",
-        "efx-presets.h": "c"
+        "efx-presets.h": "c",
+        "array": "c",
+        "audio.h": "c"
     },
     "clang-format.style": "file"
 }

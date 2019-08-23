@@ -2,12 +2,13 @@
 
 add_library(rpg SHARED
         ${PROJECT_SOURCE_DIR}/include/RPG/rpg.h
+        ${PROJECT_SOURCE_DIR}/include/RPG/rpgaudio.h
         include/platform.h
-        include/internal.h
+        
+        internal.h
 
         glad.c
         audio.c
-        audiofx.c
         game.c
         stb_image.h 
         stb_image_write.h 

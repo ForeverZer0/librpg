@@ -1,7 +1,6 @@
 #include "rpg.h"
 #include "glad.h"
 #include "GLFW/glfw3.h"
-#include "internal.h"
 #include <string.h>
 
 int errorCode;
@@ -31,10 +30,6 @@ typedef struct RPGgame {
     struct {
         RPGfloat r, g, b, a;
     } color;
-    struct {
-        ALCcontext *context;
-        ALCdevice *device;
-    } al;
 } RPGgame;
 
 // GLFWwindow *gameWindow;
@@ -52,11 +47,6 @@ static RPG_RESULT RPG_Game_GetError(void) {
 
 RPG_RESULT RPG_Game_Destroy(RPGgame *game) {
     glfwTerminate();
-    for (int i = 0; i < RPG_AUDIO_MAX_SLOTS; i++) {
-        RPG_Audio_FreeChannel(i);
-    }
-    alcDestroyContext(game->al.context);
-    return alcCloseDevice(game->al.device) ? RPG_NO_ERROR : RPG_ERR_AUDIO_DEVICE;
 }
 
 RPG_RESULT RPG_Game_Create(RPGgame **game) {
@@ -72,42 +62,9 @@ RPG_RESULT RPG_Game_Create(RPGgame **game) {
         return RPG_Game_GetError();
     }
 
-    g->al.device = alcOpenDevice(NULL);
-    RPG_ASSERT(g->al.device);
-    if (g->al.device == NULL) {
-        return RPG_ERR_AUDIO_DEVICE;
-    }
-    g->al.context = alcCreateContext(g->al.device, NULL);
-    RPG_ASSERT(g->al.context);
-    if (g->al.context == NULL) {
-        return RPG_ERR_AUDIO_CONTEXT;
-    }
-    if (!alcMakeContextCurrent(g->al.context)) {
-        return RPG_ERR_AUDIO_CONTEXT;
-    }
 
-    AL_LOAD_PROC(alGenAuxiliaryEffectSlots, LPALGENAUXILIARYEFFECTSLOTS);
-    AL_LOAD_PROC(alDeleteAuxiliaryEffectSlots, LPALDELETEAUXILIARYEFFECTSLOTS);
-    AL_LOAD_PROC(alIsAuxiliaryEffectSlot, LPALISAUXILIARYEFFECTSLOT);
-    AL_LOAD_PROC(alAuxiliaryEffectSloti, LPALAUXILIARYEFFECTSLOTI);
-    AL_LOAD_PROC(alAuxiliaryEffectSlotiv, LPALAUXILIARYEFFECTSLOTIV);
-    AL_LOAD_PROC(alAuxiliaryEffectSlotf, LPALAUXILIARYEFFECTSLOTF);
-    AL_LOAD_PROC(alAuxiliaryEffectSlotfv, LPALAUXILIARYEFFECTSLOTFV);
-    AL_LOAD_PROC(alGetAuxiliaryEffectSloti, LPALGETAUXILIARYEFFECTSLOTI);
-    AL_LOAD_PROC(alGetAuxiliaryEffectSlotiv, LPALGETAUXILIARYEFFECTSLOTIV);
-    AL_LOAD_PROC(alGetAuxiliaryEffectSlotf, LPALGETAUXILIARYEFFECTSLOTF);
-    AL_LOAD_PROC(alGetAuxiliaryEffectSlotfv, LPALGETAUXILIARYEFFECTSLOTFV);
-    AL_LOAD_PROC(alGenEffects, LPALGENEFFECTS);
-    AL_LOAD_PROC(alDeleteEffects, LPALDELETEEFFECTS);
-    AL_LOAD_PROC(alIsEffect, LPALISEFFECT);
-    AL_LOAD_PROC(alEffecti, LPALEFFECTI);
-    AL_LOAD_PROC(alEffectiv, LPALEFFECTIV);
-    AL_LOAD_PROC(alEffectf, LPALEFFECTF);
-    AL_LOAD_PROC(alEffectfv, LPALEFFECTFV);
-    AL_LOAD_PROC(alGetEffecti, LPALGETEFFECTI);
-    AL_LOAD_PROC(alGetEffectiv, LPALGETEFFECTIV);
-    AL_LOAD_PROC(alGetEffectf, LPALGETEFFECTF);
-    AL_LOAD_PROC(alGetEffectfv, LPALGETEFFECTFV);
+
+
 
     *game = g;
     return RPG_NO_ERROR;
