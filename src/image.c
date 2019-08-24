@@ -12,6 +12,7 @@
 #define STBIW_FREE STBI_FREE
 
 #include "glad.h"
+#include "renderable.h"
 #include "internal.h"
 #include "stb_image.h"
 #include "stb_image_write.h"
@@ -28,14 +29,6 @@
     }
 
 #define RPG_IMG_ORTHO(x,y,w,h) 
-
-typedef struct RPGimage {
-    RPGint width;
-    RPGint height;
-    GLuint texture;
-    GLuint fbo;
-    void *user;
-} RPGimage;
 
 RPG_RESULT RPG_Image_Create(RPGint width, RPGint height, const void *pixels, RPG_PIXEL_FORMAT format, RPGimage **image) {
     if (width < 1 || height < 1) {
@@ -144,6 +137,13 @@ RPG_RESULT RPG_Image_SetUserPointer(RPGimage *image, void *pointer) {
     return RPG_NO_ERROR;
 }
 
-RPG_RESULT RPG_Image_FillRect(RPGimage *image, RPGcolor *color, RPGint x, RPGint y, RPGint w, RPGint h) {}
+RPG_RESULT RPG_Image_FillRect(RPGimage *image, RPGcolor *color, RPGint x, RPGint y, RPGint w, RPGint h) {
+
+
+
+
+    // TODO:
+    return RPG_NO_ERROR;
+}
 
 RPG_RESULT RPG_Image_Clear(RPGimage *image) { RPG_RETURN_IF_NULL(image); }

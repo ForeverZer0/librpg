@@ -2,24 +2,30 @@
 #include "internal.h"
 #include "renderable.h"
 
-typedef struct RPGsprite {
-    RPGrenderable base;
-    RPGimage *img;
-    GLuint vbo;
-    GLuint vao;
-} RPGsprite;
-
-void RPG_Sprite_Render(void *renderable) {
-    RPGsprite *s = renderable;
+static void RPG_Sprite_Render(void *sprite) {
+    RPGsprite *s = sprite;
     if (!s->base.visible || s->base.alpha < __FLT_EPSILON__ || s->img == NULL) {
         // No-op if sprite won't be visible
         return;
     }
     if (s->base.updated) {
-
+        GLint x = s->x + s->base.ox;
+        GLint y = s->y + s->base.oy;
+        if (s->viewport != NULL) {
+            x += s->viewport->base.ox;
+            y += s->viewport->base.oy;
+        }
+        GLfloat sx  = s->base.scale.x * s->srcRect.w;
+        GLfloat sy  = s->base.scale.y * s->srcRect.h;
+        GLfloat cos = cosf(s->base.rotation.radians);
+        GLfloat sin = sinf(s->base.rotation.radians);
+        RPG_MAT4_SET(s->base.model, sx * cos, sx * sin, 0.0f, 0.0f, sy * -sin, sy * cos, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f,
+                     (s->base.rotation.ox * (1.0f - cos) + s->base.rotation.oy * sin) + x,
+                     (s->base.rotation.oy * (1.0f - cos) - s->base.rotation.ox * sin) + y, 0.0f, 1.0f);
+        s->base.updated = RPG_FALSE;
     }
     RPG_BASE_UNIFORMS(s->base);
-
+    RPG_RENDER_TEXTURE(s->img->texture, s->vao);
 }
 
 RPG_RESULT RPG_Sprite_Free(RPGsprite *sprite) {
@@ -29,11 +35,156 @@ RPG_RESULT RPG_Sprite_Free(RPGsprite *sprite) {
     RPG_FREE(sprite);
 }
 
-RPG_RESULT RPG_Sprite_Create(RPGgame *game, RPGsprite **sprite) {
+RPG_RESULT RPG_Sprite_Create(RPGgame *game, RPGviewport *viewport, RPGsprite **sprite) {
     RPG_ALLOC_ZERO(s, RPGsprite);
-    RPG_Renderable_Init(game, &s->base, RPG_Sprite_Render);
+    RPGbatch *batch = viewport ? &viewport->batch : &game->batch;
+    RPG_Renderable_Init(game, &s->base, RPG_Sprite_Render, batch);
 
+    // Generate VAO/VBO
+    glGenVertexArrays(1, &s->vao);
+    glBindVertexArray(s->vao);
+    glGenBuffers(1, &s->vbo);
+    glBindBuffer(GL_ARRAY_BUFFER, s->vbo);
+    glBufferData(GL_ARRAY_BUFFER, VERTICES_SIZE, NULL, GL_DYNAMIC_DRAW);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(RPGfloat), NULL);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindVertexArray(0);
 
     *sprite = s;
+    return RPG_NO_ERROR;
+}
+
+RPG_RESULT RPG_Sprite_GetViewport(RPGsprite *sprite, RPGviewport **viewport) {
+    RPG_RETURN_IF_NULL(sprite);
+    RPG_RETURN_IF_NULL(*viewport);
+    *viewport = sprite->viewport;
+    return RPG_NO_ERROR;
+}
+
+RPG_RESULT RPG_Sprite_GetImage(RPGsprite *sprite, RPGimage **image) {
+    RPG_RETURN_IF_NULL(sprite);
+    RPG_RETURN_IF_NULL(*image);
+    *image = sprite->img;
+    return RPG_NO_ERROR;
+}
+
+RPG_RESULT RPG_Sprite_SetImage(RPGsprite *sprite, RPGimage *image) {
+    RPG_RETURN_IF_NULL(sprite);
+    sprite->img = image;
+    if (image) {
+        RPG_Sprite_SetSourceRectValues(sprite, 0, 0, image->width, image->height);
+    } else {
+        sprite->srcRect = (RPGrect){0, 0, 0, 0};
+    }
+    return RPG_NO_ERROR;
+}
+
+RPG_RESULT RPG_Sprite_GetSourceRect(RPGsprite *sprite, RPGrect *rect) {
+    RPG_RETURN_IF_NULL(sprite);
+    RPG_RETURN_IF_NULL(rect);
+    memcpy(rect, &sprite->srcRect, sizeof(RPGrect));
+    return RPG_NO_ERROR;
+}
+
+RPG_RESULT RPG_Sprite_SetSourceRectValues(RPGsprite *sprite, RPGint x, RPGint y, RPGint w, RPGint h) {
+    RPG_RETURN_IF_NULL(sprite);
+    if (sprite->img == NULL) {
+        return RPG_NO_ERROR;
+    }
+
+    sprite->srcRect.x = x;
+    sprite->srcRect.y = y;
+    sprite->srcRect.w = w;
+    sprite->srcRect.h = h;
+
+    GLfloat l = (GLfloat)x / sprite->img->width;
+    GLfloat t = (GLfloat)y / sprite->img->height;
+    GLfloat r = l + ((GLfloat)w / sprite->img->width);
+    GLfloat b = t + ((GLfloat)h / sprite->img->height);
+
+    glBindBuffer(GL_ARRAY_BUFFER, sprite->vbo);
+    float vertices[VERTICES_COUNT] = {0.0f, 1.0f, l, b, 1.0f, 0.0f, r, t, 0.0f, 0.0f, l, t,
+                                      0.0f, 1.0f, l, b, 1.0f, 1.0f, r, b, 1.0f, 0.0f, r, t};
+    glBufferSubData(GL_ARRAY_BUFFER, 0, VERTICES_SIZE, vertices);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+    sprite->base.updated = RPG_TRUE;
+    return RPG_NO_ERROR;
+}
+
+RPG_RESULT RPG_Sprite_SetSourceRect(RPGsprite *sprite, RPGrect *rect) {
+    RPG_RETURN_IF_NULL(rect);
+    return RPG_Sprite_SetSourceRectValues(sprite, rect->x, rect->y, rect->w, rect->h);
+}
+
+RPG_RESULT RPG_Sprite_GetVertexArray(RPGsprite *sprite, RPGuint *vao) {
+    RPG_RETURN_IF_NULL(sprite);
+    if (vao != NULL) {
+        *vao = sprite->vao;
+    }
+    return RPG_NO_ERROR;
+}
+
+RPG_RESULT RPG_Sprite_GetVertexBuffer(RPGsprite *sprite, RPGuint *vbo) {
+    RPG_RETURN_IF_NULL(sprite);
+    if (vbo != NULL) {
+        *vbo = sprite->vbo;
+    }
+    return RPG_NO_ERROR;
+}
+
+RPG_RESULT RPG_Sprite_GetX(RPGsprite *sprite, RPGint *x) {
+    RPG_RETURN_IF_NULL(sprite);
+    if (x != NULL) {
+        *x = sprite->x;
+    }
+    return RPG_NO_ERROR;
+}
+
+RPG_RESULT RPG_Sprite_GetY(RPGsprite *sprite, RPGint *y) {
+    RPG_RETURN_IF_NULL(sprite);
+    if (y != NULL) {
+        *y = sprite->y;
+    }
+    return RPG_NO_ERROR;
+}
+
+RPG_RESULT RPG_Sprite_SetX(RPGsprite *sprite, RPGint x) {
+    RPG_RETURN_IF_NULL(sprite);
+    if (x != sprite->x) {
+        sprite->x            = x;
+        sprite->base.updated = RPG_TRUE;
+    }
+    return RPG_NO_ERROR;
+}
+
+RPG_RESULT RPG_Sprite_SetY(RPGsprite *sprite, RPGint y) {
+    RPG_RETURN_IF_NULL(sprite);
+    if (y != sprite->y) {
+        sprite->x            = y;
+        sprite->base.updated = RPG_TRUE;
+    }
+    return RPG_NO_ERROR;
+}
+
+RPG_RESULT RPG_Sprite_GetLocation(RPGsprite *sprite, RPGint *x, RPGint *y) {
+    RPG_RETURN_IF_NULL(sprite);
+    if (x != NULL) {
+        *x = sprite->x;
+    }
+    if (y != NULL) {
+        *y = sprite->y;
+    }
+    return RPG_NO_ERROR;
+}
+
+RPG_RESULT RPG_Sprite_SetLocation(RPGsprite *sprite, RPGint x, RPGint y) {
+    RPG_RETURN_IF_NULL(sprite);
+    if (x != sprite->x || y != sprite->y) {
+        sprite->x            = x;
+        sprite->y            = y;
+        sprite->base.updated = RPG_TRUE;
+    }
     return RPG_NO_ERROR;
 }

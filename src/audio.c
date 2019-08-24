@@ -8,8 +8,6 @@
 #include <AL/al.h>
 #include <AL/alc.h>
 #include <AL/alext.h>
-#include <math.h>
-#include <string.h>
 
 #define RPG_VALID_CHANNEL(i) (i >= 0 && i < RPG_MAX_CHANNELS && CHANNELS[i] != NULL) 
 #define BUFFER_COUNT 3
@@ -155,6 +153,7 @@ RPG_RESULT RPG_Audio_FreeChannel(RPGint index) {
     RPGchannel *channel = CHANNELS[index];
     if (channel) {
         alSourceStop(channel->source);
+        pthread_join(channel->thread, NULL);
         alDeleteSources(1, &channel->source);
         alDeleteBuffers(BUFFER_COUNT, channel->buffers);
         RPG_Audio_FreeSound(channel->sound);

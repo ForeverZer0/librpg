@@ -6,6 +6,8 @@ project(open-rpg
 
 set(CMAKE_C_STANDARD 11)
 
+set (CMAKE_CXX_FLAGS "-Wall")
+
 set(RPG_INCLUDE_DIRS
         ${CMAKE_CURRENT_SOURCE_DIR}/include/RPG
         ${CMAKE_CURRENT_SOURCE_DIR}/src/include)

@@ -1,9 +1,11 @@
 #ifndef OPEN_RPG_INTERNAL_H
 #define OPEN_RPG_INTERNAL_H 1
 
-#include "glad.h"
 #include "platform.h"
+#include <math.h>
 #include <string.h>
+
+#define RPG_PI 3.14159274f
 
 #define RPG_ENSURE_FILE(filename)                                                                                                          \
     if (!RPG_FILE_EXISTS(filename))                                                                                                        \
@@ -13,13 +15,13 @@
     if (ptr == NULL)                                                                                                                       \
     return RPG_ERR_INVALID_POINTER
 
-static inline int maxi(int i1, int i2) { return i1 > i2 ? i1 : i2; }
+static inline int imax(int i1, int i2) { return i1 > i2 ? i1 : i2; }
 
-static inline int mini(int i1, int i2) { return i1 < i2 ? i1 : i2; }
+static inline int imin(int i1, int i2) { return i1 < i2 ? i1 : i2; }
 
 #define RPG_CLAMPF(v, min, max) (fmaxf(min, fminf(max, v)))
 
-#define RPG_CLAMPI(v, min, max) (maxi(min, mini(v, max)))
+#define RPG_CLAMPI(v, min, max) (imax(min, imin(v, max)))
 
 #define DEF_FX_PARAM_F(type, name, param, min, max)                                                                                        \
     RPG_RESULT RPG_##type##_Get##name(RPGaudiofx *fx, RPGfloat *value) {                                                                   \
@@ -72,12 +74,66 @@ static inline int mini(int i1, int i2) { return i1 < i2 ? i1 : i2; }
 #define DEF_FX_CREATE(name, type)                                                                                                          \
     RPG_RESULT RPG_##name##_Create(RPGaudiofx **fx) { return RPG_Audio_CreateEffect(type, fx); }
 
-
 #define RPG_ALLOC(type) ((type *)RPG_MALLOC(sizeof(type)))
 #define RPG_ALLOC_N(type, n) ((type *)RPG_MALLOC(sizeof(type) * n))
 #define RPG_ALLOC_ZERO(var, type)                                                                                                          \
     type *var = RPG_ALLOC(type);                                                                                                           \
     memset(var, 0, sizeof(type))
 
+#define RPG_MAT4_ORTHO(mat4, left, right, top, bottom, near, far)                                                                          \
+    mat4.m11 = 2.0f / (right - left);                                                                                                      \
+    mat4.m12 = mat4.m13 = mat4.m14 = 0.0f;                                                                                                 \
+    mat4.m22                       = 2.0f / (top - bottom);                                                                                \
+    mat4.m21 = mat4.m23 = mat4.m24 = 0.0f;                                                                                                 \
+    mat4.m33                       = 1.0f / (near - far);                                                                                  \
+    mat4.m31 = mat4.m32 = mat4.m34 = 0.0f;                                                                                                 \
+    mat4.m41                       = (left + right) / (RPGfloat)(left - right);                                                            \
+    mat4.m42                       = (top + bottom) / (RPGfloat)(bottom - top);                                                            \
+    mat4.m43                       = near / (RPGfloat)(near - far);                                                                        \
+    mat4.m44                       = 1.0f
+
+#define RPG_MAT4_SET(mat4, _m11, _m12, _m13, _m14, _m21, _m22, _m23, _m24, _m31, _m32, _m33, _m34, _m41, _m42, _m43, _m44)                 \
+    mat4.m11 = _m11;                                                                                                                       \
+    mat4.m12 = _m12;                                                                                                                       \
+    mat4.m13 = _m13;                                                                                                                       \
+    mat4.m14 = _m14;                                                                                                                       \
+    mat4.m21 = _m21;                                                                                                                       \
+    mat4.m22 = _m22;                                                                                                                       \
+    mat4.m23 = _m23;                                                                                                                       \
+    mat4.m24 = _m24;                                                                                                                       \
+    mat4.m31 = _m31;                                                                                                                       \
+    mat4.m32 = _m32;                                                                                                                       \
+    mat4.m33 = _m33;                                                                                                                       \
+    mat4.m34 = _m34;                                                                                                                       \
+    mat4.m41 = _m41;                                                                                                                       \
+    mat4.m42 = _m42;                                                                                                                       \
+    mat4.m43 = _m43;                                                                                                                       \
+    mat4.m44 = _m44
+
+#define RPG_RENDER_TEXTURE(TEXTURE, VAO)                                                                                                   \
+    glActiveTexture(GL_TEXTURE0);                                                                                                          \
+    glBindTexture(GL_TEXTURE_2D, TEXTURE);                                                                                                 \
+    glBindVertexArray(VAO);                                                                                                                \
+    glDrawArrays(GL_TRIANGLES, 0, 6);                                                                                                      \
+    glBindVertexArray(0)
+
+#define DEF_GETTER(name, param, objtype, paramtype, field)                                                                                 \
+    RPG_RESULT RPG_##name##_Get##param(objtype *obj, paramtype *value) {                                                                   \
+        RPG_RETURN_IF_NULL(obj);                                                                                                           \
+        RPG_RETURN_IF_NULL(value);                                                                                                         \
+        *value = obj->field;                                                                                                               \
+        return RPG_NO_ERROR;                                                                                                               \
+    }
+
+#define DEF_SETTER(name, param, objtype, paramtype, field)                                                                                 \
+    RPG_RESULT RPG_##name_Set##param(objtype *obj, paramtype value) {                                                                      \
+        RPG_RETURN_IF_NULL(obj);                                                                                                           \
+        obj->field = value;                                                                                                                \
+        return RPG_NO_ERROR;                                                                                                               \
+    }
+
+#define DEF_PARAM(name, param, objtype, paramtype, field)                                                                                  \
+    DEF_GETTER(name, param, objtype, paramtype, field)                                                                                     \
+    DEF_SETTER(name, param, objtype, paramtype, field)
 
 #endif /* OPEN_RPG_INTERNAL_H */

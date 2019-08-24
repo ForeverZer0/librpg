@@ -20,4 +20,4 @@ set_target_properties(rpg PROPERTIES SOVERSION 1)
 # TODO: Audd rpgaudio.h to public headers
 set_target_properties(rpg PROPERTIES PUBLIC_HEADER include/RPG/rpg.h)
 
-target_link_libraries(rpg glfw openal sndfile)
+target_link_libraries(rpg glfw m pthread openal sndfile)
