@@ -55,16 +55,27 @@ int main(int argc, char **argv) {
     RPG_Viewport_Create(game, 200, 96, 300, 300, &viewport);
 
     // Create an image
-    RPGimage *image;
+    RPGimage *image, *src;
+    RPGcolor back = { 1.0f, 0.5f, 1.0f, 1.0f };
+    RPGcolor fill = { 0.3f, 0.3f, 1.3f, 1.0f };
     RPGint w, h;
-    RPG_Image_CreateFromFile("/home/eric/Pictures/character.png", &image);
+    RPG_Image_CreateFromFile(game, "/home/eric/Pictures/character.png", &src);
+    RPG_Image_CreateFilled(game, 64, 64, &back, &image);
+    RPG_Image_Fill(image, &fill, 16, 16, 32, 32);
     RPG_Image_GetSize(image, &w, &h);
+
+
+
+    RPGrect d = { 0, 0, 32, 64 };
+    RPGrect s = { 0, 0, 32, 32 };
+    RPG_Image_Blit(image, &d, src, &s, 1.0);
+
 
     // Create a sprite to display the image
     RPGsprite *sprite;
     RPG_Sprite_Create(game, viewport, &sprite);
     RPG_Sprite_SetImage(sprite, image);
-    RPG_Sprite_SetSourceRectValues(sprite, 0, 0, w / 3, h / 4);
+    // RPG_Sprite_SetSourceRectValues(sprite, 0, 0, w / 3, h / 4);
     RPG_Renderable_SetLocation((RPGrenderable*) sprite, 32, 64);
     
     // Play some music

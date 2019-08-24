@@ -238,15 +238,22 @@ RPG_RESULT RPG_Game_SetIconFromFile(RPGgame *game, const char *filename);
 const char *RPG_GetErrorString(RPG_RESULT result);
 
 // Image
-RPG_RESULT RPG_Image_Create(RPGint width, RPGint height, const void *pixels, RPG_PIXEL_FORMAT format, RPGimage **image);
-RPG_RESULT RPG_Image_CreateEmpty(RPGint width, RPGint height, RPGimage **image);
-RPG_RESULT RPG_Image_CreateFilled(RPGint width, RPGint height, RPGcolor *color, RPGimage **image);
-RPG_RESULT RPG_Image_CreateFromFile(const char *filename, RPGimage **image);
+RPG_RESULT RPG_Image_Create(RPGgame *game, RPGint width, RPGint height, const void *pixels, RPG_PIXEL_FORMAT format, RPGimage **image);
+RPG_RESULT RPG_Image_CreateEmpty(RPGgame *game, RPGint width, RPGint height, RPGimage **image);
+RPG_RESULT RPG_Image_CreateFilled(RPGgame *game, RPGint width, RPGint height, RPGcolor *color, RPGimage **image);
+RPG_RESULT RPG_Image_CreateFromFile(RPGgame *game, const char *filename, RPGimage **image);
 RPG_RESULT RPG_Image_Free(RPGimage *image);
 RPG_RESULT RPG_Image_LoadRaw(const char *filename, RPGrawimage **rawImage);
 RPG_RESULT RPG_Image_GetSize(RPGimage *image, RPGint *width, RPGint *height);
 RPG_RESULT RPG_Image_GetUserPointer(RPGimage *image, void **pointer);
 RPG_RESULT RPG_Image_SetUserPointer(RPGimage *image, void *pointer);
+RPG_RESULT RPG_Image_Clear(RPGimage *image);
+RPG_RESULT RPG_Image_Fill(RPGimage *image, RPGcolor *color, RPGint x, RPGint y, RPGint w, RPGint h);
+RPG_RESULT RPG_Image_FillRect(RPGimage *image, RPGcolor *color, RPGrect *rect);
+RPG_RESULT RPG_Image_GetTexture(RPGimage *image, RPGuint *texture);
+RPG_RESULT RPG_Image_GetFramebuffer(RPGimage *image, RPGuint *fbo);
+RPG_RESULT RPG_Image_SubImage(RPGimage *image, RPGint x, RPGint y, RPGint width, RPGint height, RPGimage **subImage);
+RPG_RESULT RPG_Image_Blit(RPGimage *dst, RPGrect *dstRect, RPGimage *src, RPGrect *srcRect, RPGfloat alpha);
 
 // Renderable (base for Sprite, Viewport, Plane)
 RPG_RESULT RPG_Renderable_Update(RPGrenderable *renderable);

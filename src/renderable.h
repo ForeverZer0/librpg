@@ -16,6 +16,7 @@ typedef struct RPGimage {
     RPGint height;
     GLuint texture;
     GLuint fbo;
+    RPGgame *game;
     void *user;
 } RPGimage;
 

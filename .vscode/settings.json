@@ -9,7 +9,8 @@
         "array": "c",
         "audio.h": "c",
         "alext.h": "c",
-        "typeinfo": "c"
+        "typeinfo": "c",
+        "renderable.h": "c"
     },
     "clang-format.style": "file"
 }
