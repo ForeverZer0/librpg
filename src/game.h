@@ -66,12 +66,13 @@ extern const char *RPG_FRAGMENT_SHADER;
 
 
 void RPG_Batch_Init(RPGbatch *batch);
+void RPG_Batch_Free(RPGbatch *v);
 int RPG_Batch_Total(RPGbatch *batch);
 void RPG_Batch_Add(RPGbatch *batch, RPGrenderable *item);
 void RPG_Batch_Set(RPGbatch *batch, int index, RPGrenderable *item);
 RPGrenderable *RPG_Batch_Get(RPGbatch *batch, int index);
 void RPG_Batch_Delete(RPGbatch *batch, int index);
-void RPG_Batch_Delete_Item(RPGbatch *batch, RPGrenderable *item);
+void RPG_Batch_DeleteItem(RPGbatch *batch, RPGrenderable *item);
 void RPG_Batch_Sort(RPGbatch *batch, int first, int last);
 
 #endif /* OPEN_RPG_GAME_H */

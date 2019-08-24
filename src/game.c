@@ -12,15 +12,15 @@ static void RPG_Game_FramebufferResize(GLFWwindow *window, int width, int height
     if ((g->flags & RPG_INIT_AUTO_ASPECT) != 0) {
 
         // Calculate ratios
-        g->bounds.ratio.x = (GLfloat)width / g->resolution.width;
-        g->bounds.ratio.y = (GLfloat)height / g->resolution.height;
-        GLfloat ratio = fminf(g->bounds.ratio.x, g->bounds.ratio.y);
+        g->bounds.ratio.x = (GLfloat) width / g->resolution.width;
+        g->bounds.ratio.y = (GLfloat) height / g->resolution.height;
+        GLfloat ratio     = fminf(g->bounds.ratio.x, g->bounds.ratio.y);
 
         // Calculate letterbox/pillar rendering coordinates as required
-        g->bounds.w = (GLint)roundf(g->resolution.width * ratio);
-        g->bounds.h = (GLint)roundf(g->resolution.height * ratio);
-        g->bounds.x = (GLint)roundf((width - g->resolution.width * ratio) / 2);
-        g->bounds.y = (GLint)roundf((height - g->resolution.height * ratio) / 2);
+        g->bounds.w = (GLint) roundf(g->resolution.width * ratio);
+        g->bounds.h = (GLint) roundf(g->resolution.height * ratio);
+        g->bounds.x = (GLint) roundf((width - g->resolution.width * ratio) / 2);
+        g->bounds.y = (GLint) roundf((height - g->resolution.height * ratio) / 2);
         glViewport(g->bounds.x, g->bounds.y, g->bounds.w, g->bounds.h);
 
         // Ensure the clipping area is also cleared
@@ -46,23 +46,23 @@ static RPG_RESULT RPG_Game_GetError(void) {
     switch (errorCode) {
         case GLFW_NO_ERROR: return RPG_NO_ERROR;
         // TODO: Translate GLFW errors
-        default: return RPG_ERR_UNKNOWN; // Change to generic "graphics failed" type error
+        default: return RPG_ERR_UNKNOWN;  // Change to generic "graphics failed" type error
     }
 }
 
 static void RPG_Game_CacheUniformLocations(RPGgame *game) {
     RPG_ASSERT(game->shader.program);
     game->shader.projection = glGetUniformLocation(game->shader.program, UNIFORM_PROJECTION);
-    game->shader.model = glGetUniformLocation(game->shader.program, UNIFORM_MODEL);
-    game->shader.color = glGetUniformLocation(game->shader.program, UNIFORM_COLOR);
-    game->shader.tone = glGetUniformLocation(game->shader.program, UNIFORM_TONE);
-    game->shader.alpha = glGetUniformLocation(game->shader.program, UNIFORM_ALPHA);
-    game->shader.hue = glGetUniformLocation(game->shader.program, UNIFORM_HUE);
+    game->shader.model      = glGetUniformLocation(game->shader.program, UNIFORM_MODEL);
+    game->shader.color      = glGetUniformLocation(game->shader.program, UNIFORM_COLOR);
+    game->shader.tone       = glGetUniformLocation(game->shader.program, UNIFORM_TONE);
+    game->shader.alpha      = glGetUniformLocation(game->shader.program, UNIFORM_ALPHA);
+    game->shader.hue        = glGetUniformLocation(game->shader.program, UNIFORM_HUE);
 }
 
 static inline RPGbool RPG_Game_CreateShader(const char *source, GLenum type, GLuint *result) {
     GLuint shader = glCreateShader(type);
-    GLint length = (GLint) strlen(source);
+    GLint length  = (GLint) strlen(source);
     glShaderSource(shader, 1, &source, &length);
     glCompileShader(shader);
 
@@ -80,7 +80,7 @@ static inline RPGbool RPG_Game_CreateShader(const char *source, GLenum type, GLu
 static RPG_RESULT RPG_Game_CreateProgram(RPGgame *game) {
     if (game->shader.program)
         return RPG_NO_ERROR;
-    
+
     GLuint program, vertex, fragment;
     if (RPG_Game_CreateShader(RPG_VERTEX_SHADER, GL_VERTEX_SHADER, &vertex)) {
         return RPG_ERR_SHADER_COMPILE;
@@ -115,29 +115,6 @@ static void RPG_Game_BindCallbacks(RPGgame *game) {
     glfwSetFramebufferSizeCallback(window, RPG_Game_FramebufferResize);
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 RPG_RESULT RPG_Game_GetResolution(RPGgame *game, RPGint *width, RPGint *height) {
     RPG_RETURN_IF_NULL(game);
     if (width != NULL) {
@@ -150,16 +127,14 @@ RPG_RESULT RPG_Game_GetResolution(RPGgame *game, RPGint *width, RPGint *height) 
 }
 
 RPG_RESULT RPG_Game_SetResolution(RPGgame *game, RPGint width, RPGint height) {
-    if (width < 1 || height < 1) {
-        return RPG_ERR_OUT_OF_RANGE;
-    }
+    RPG_CHECK_DIMENSIONS(width, height);
     RPG_RETURN_IF_NULL(game);
-    game->resolution.width = width;
+    game->resolution.width  = width;
     game->resolution.height = height;
 
     // Update projection in the shader
     RPG_MAT4_ORTHO(game->projection, 0.0f, game->resolution.width, 0.0f, game->resolution.height, -1.0f, 1.0f);
-    glUniformMatrix4fv(game->shader.projection, 1, GL_FALSE, (float *)&game->projection);
+    glUniformMatrix4fv(game->shader.projection, 1, GL_FALSE, (float *) &game->projection);
 
     // Fake a framebuffer resize event to recalulate rendering area
     int w, h;
@@ -168,22 +143,8 @@ RPG_RESULT RPG_Game_SetResolution(RPGgame *game, RPGint width, RPGint height) {
     return RPG_NO_ERROR;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 const char *RPG_GetErrorString(RPG_RESULT result) {
-    switch (result) { // TODO:
+    switch (result) {  // TODO:
         case RPG_NO_ERROR: return "No error.";
         case RPG_ERR_AUDIO_DEVICE: return "Failed to open audio device.";
         case RPG_ERR_AUDIO_CONTEXT: return "An error occurred creating or setting the audio context.";
@@ -191,11 +152,7 @@ const char *RPG_GetErrorString(RPG_RESULT result) {
     }
 }
 
-
-
-
-
-RPG_RESULT RPG_Game_Destroy(RPGgame *game) { glfwTerminate(); } // TODO:
+RPG_RESULT RPG_Game_Destroy(RPGgame *game) { glfwTerminate(); }  // TODO:
 
 RPG_RESULT RPG_Game_Create(const char *title, RPGint width, RPGint height, RPG_INIT_FLAGS flags, RPGgame **game) {
     RPG_ALLOC_ZERO(g, RPGgame);
@@ -212,10 +169,7 @@ RPG_RESULT RPG_Game_Create(const char *title, RPGint width, RPGint height, RPG_I
         return RPG_Game_GetError();
     }
     RPG_Batch_Init(&g->batch);
-
-    if (width < 1 || height < 1) {
-        return RPG_ERR_OUT_OF_RANGE;
-    }
+    RPG_CHECK_DIMENSIONS(width, height);
 
     g->resolution.width  = width;
     g->resolution.height = height;
@@ -252,7 +206,7 @@ RPG_RESULT RPG_Game_Create(const char *title, RPGint width, RPGint height, RPG_I
 
     // Make context current, import OpenGL functions
     glfwMakeContextCurrent(g->window);
-    gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
+    gladLoadGLLoader((GLADloadproc) glfwGetProcAddress);
     glfwSetWindowUserPointer(g->window, g);
 
     // Enable required OpenGL capabilities
@@ -350,7 +304,7 @@ RPG_RESULT RPG_Game_Render(RPGgame *game) {
 RPG_RESULT RPG_Game_SetIcon(RPGgame *game, RPGrawimage *image) {
     RPG_RETURN_IF_NULL(game);
     if (image) {
-        glfwSetWindowIcon(game->window, 1, (GLFWimage*) image);
+        glfwSetWindowIcon(game->window, 1, (GLFWimage *) image);
     } else {
         glfwSetWindowIcon(game->window, 0, NULL);
     }
@@ -361,7 +315,7 @@ RPG_RESULT RPG_Game_SetIconFromFile(RPGgame *game, const char *filename) {
     RPG_RETURN_IF_NULL(game);
     if (filename) {
         GLFWimage *img;
-        RPG_RESULT result = RPG_Image_LoadRaw(filename, (RPGrawimage**) &img);
+        RPG_RESULT result = RPG_Image_LoadRaw(filename, (RPGrawimage **) &img);
         if (result == RPG_NO_ERROR) {
             glfwSetWindowIcon(game->window, 1, img);
         }
@@ -372,29 +326,21 @@ RPG_RESULT RPG_Game_SetIconFromFile(RPGgame *game, const char *filename) {
     return RPG_NO_ERROR;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 void RPG_Batch_Init(RPGbatch *v) {
     v->capacity = BATCH_INIT_CAPACITY;
+    v->total    = 0;
+    v->items    = RPG_MALLOC(sizeof(void *) * BATCH_INIT_CAPACITY);
+}
+
+void RPG_Batch_Free(RPGbatch *v) {
     v->total = 0;
-    v->items = RPG_MALLOC(sizeof(void *) * BATCH_INIT_CAPACITY);
+    RPG_FREE(v->items);
 }
 
 static void RPG_Batch_Resize(RPGbatch *v, int capacity) {
     RPGrenderable **items = RPG_REALLOC(v->items, sizeof(void *) * capacity);
     if (items) {
-        v->items = items;
+        v->items    = items;
         v->capacity = capacity;
     }
 }
@@ -406,13 +352,13 @@ void RPG_Batch_Add(RPGbatch *v, RPGrenderable *item) {
         RPG_Batch_Resize(v, v->capacity * 2);
     }
     v->items[v->total++] = item;
-    v->updated = RPG_TRUE;
+    v->updated           = RPG_TRUE;
 }
 
 void RPG_Batch_Set(RPGbatch *v, int index, RPGrenderable *item) {
     if (index >= 0 && index < v->total) {
         v->items[index] = item;
-        v->updated = RPG_TRUE;
+        v->updated      = RPG_TRUE;
     }
 }
 
@@ -423,7 +369,7 @@ RPGrenderable *RPG_Batch_Get(RPGbatch *v, int index) {
     return NULL;
 }
 
-void RPG_Batch_Delete_Item(RPGbatch *batch, RPGrenderable *item) {
+void RPG_Batch_DeleteItem(RPGbatch *batch, RPGrenderable *item) {
     if (item == NULL) {
         return;
     }
@@ -442,7 +388,7 @@ void RPG_Batch_Delete(RPGbatch *v, int index) {
 
     v->items[index] = NULL;
     for (int i = index; i < v->total - 1; i++) {
-        v->items[i] = v->items[i + 1];
+        v->items[i]     = v->items[i + 1];
         v->items[i + 1] = NULL;
     }
 
@@ -452,18 +398,16 @@ void RPG_Batch_Delete(RPGbatch *v, int index) {
     }
 }
 
-static inline int RPG_Batch_MedianOfThree(int a, int b, int c) {
-    return imax(imin(a,b), imin(imax(a,b),c));
-}
+static inline int RPG_Batch_MedianOfThree(int a, int b, int c) { return imax(imin(a, b), imin(imax(a, b), c)); }
 
 void RPG_Batch_Sort(RPGbatch *v, int first, int last) {
     // Basic qsort algorithm using z-axis
     int i, j, pivot;
     RPGrenderable *temp;
     if (first < last) {
-        pivot = ((last - first) / 2) + first; // TODO: Use median?
-        i = first;
-        j = last;
+        pivot = ((last - first) / 2) + first;  // TODO: Use median?
+        i     = first;
+        j     = last;
         while (i < j) {
             while (v->items[i]->z <= v->items[pivot]->z && i < last) {
                 i++;
@@ -472,18 +416,17 @@ void RPG_Batch_Sort(RPGbatch *v, int first, int last) {
                 j--;
             }
             if (i < j) {
-                temp = v->items[i];
+                temp        = v->items[i];
                 v->items[i] = v->items[j];
                 v->items[j] = temp;
             }
         }
 
-        temp = v->items[pivot];
+        temp            = v->items[pivot];
         v->items[pivot] = v->items[j];
-        v->items[j] = temp;
+        v->items[j]     = temp;
         RPG_Batch_Sort(v, first, j - 1);
         RPG_Batch_Sort(v, j + 1, last);
     }
     v->updated = RPG_FALSE;
 }
-

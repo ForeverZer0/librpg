@@ -9,24 +9,6 @@
 #define VERTICES_SIZE (sizeof(RPGfloat) * VERTICES_COUNT)
 #define VERTICES_STRIDE (sizeof(RPGfloat) * 4)
 
-/**
- * @brief Resets the clear color back to the user-defined value.
- */
-#define RPG_RESET_BACK_COLOR(game) glClearColor(game->color.x, game->color.y, game->color.z, game->color.w)
-
-/**
- * @brief Sets the viewport and scissor rectangle of the primary viewport.
- */
-#define RPG_VIEWPORT(x, y, w, h)                                                                                                           \
-    glViewport(x, y, w, h);                                                                                                                \
-    glScissor(x, y, w, h)
-
-/**
- * @brief Resets the primary viewport to fit the window correctly.
- */
-#define RPG_RESET_VIEWPORT(game) RPG_VIEWPORT(game->bounds.x, game->bounds.y, game->bounds.w, game->bounds.h)
-
-
 typedef void (*RPGrenderfunc)(void *renderable);
 
 typedef struct RPGimage {
@@ -41,7 +23,9 @@ typedef struct RPGimage {
  * @brief Base structure for objects that can be rendered.
  */
 typedef struct RPGrenderable {
-    RPGint z;        /** The position of the object on the z-axis. */
+    RPGint x;        /** The location of the sprite on the x-axis. */
+    RPGint y;        /** The location of the sprite on the y-axis. */
+    RPGint z;        /** The position of the sprite on the z-axis. */
     RPGint ox;       /** The origin point on the x-axis, context-dependent definition. */
     RPGint oy;       /** The origin point on the y-axis, context-dependent definition. */
     RPGbool updated; /** Flag indicating if the model matrix needs updated to reflect changes. */
@@ -68,7 +52,7 @@ typedef struct RPGrenderable {
     RPGrenderfunc render; /** The function to call when the object needs rendered. */
     RPGmat4 model;        /** The model matrix for the object. */
     RPGgame *game;        /** The host game */
-    RPGbatch *batch;      /** Pointer to the rendering batch the object is contained within */
+    RPGbatch *parent;     /** Pointer to the rendering batch the object is contained within */
     void *user;           /** Arbitrary user-defined pointer to store with this instance */
 } RPGrenderable;
 
@@ -79,9 +63,7 @@ typedef struct RPGsprite {
     RPGrenderable base;    /** The base renderable object, MUST BE FIRST FIELD IN THE STRUCTURE! */
     RPGimage *img;         /** A pointer ot the sprite's image, or NULL. */
     RPGviewport *viewport; /** A pointer to the sprite's viewport, or NULL. */
-    GLint x;               /** The location of the sprite on the x-axis. */
-    GLint y;               /** The location of the sprite on the y-axis. */
-    RPGrect srcRect;       /** The source rectangle of the sprite's image. */
+    RPGrect rect;          /** The source rectangle of the sprite's image. */
     GLuint vbo;            /** The Vertex Buffer Object bound to this sprite. */
     GLuint vao;            /** The Vertex Array Object bound to this sprite. */
 } RPGsprite;
@@ -91,11 +73,14 @@ typedef struct RPGsprite {
  */
 typedef struct RPGviewport {
     RPGrenderable base; /** The base renderable object, MUST BE FIRST FIELD IN THE STRUCTURE! */
-    RPGrect rect;       /** Rectangle describing the plane's on-screen location and size. */
-    RPGbatch batch;    /** A collection containing pointers to the sprites within this viewport. */
+    RPGint width;       /** The dimension of the viewport, in pixels, on the x-axis. */
+    RPGint height;      /** The dimension of the viewport, in pixels, on the y-axis. */
+    RPGbatch batch;     /** A collection containing pointers to the sprites within this viewport. */
     GLuint fbo;         /** The Framebuffer Object for rendering to the viewport. */
     GLuint texture;     /** Texture with the viewport batch rendered onto it. */
     RPGmat4 projection; /** The projection matrix for the viewport. */
+    GLuint vbo;         /** The Vertex Buffer Object bound to this viewport. */
+    GLuint vao;         /** The Vertex Array Object bound to this viewport. */
 } RPGviewport;
 
 #define RPG_BASE_UNIFORMS(r)                                                                                                               \
@@ -104,7 +89,7 @@ typedef struct RPGviewport {
     glUniform1f(r.game->shader.alpha, r.alpha);                                                                                            \
     glUniform1f(r.game->shader.hue, r.hue);                                                                                                \
     glUniform4f(r.game->shader.flash, r.flash.color.x, r.flash.color.y, r.flash.color.z, r.flash.color.w);                                 \
-    glUniformMatrix4fv(r.game->shader.model, 1, GL_FALSE, (GLfloat *)&r.model);                                                            \
+    glUniformMatrix4fv(r.game->shader.model, 1, GL_FALSE, (GLfloat *) &r.model);                                                           \
     glBlendEquation(r.blend.op);                                                                                                           \
     glBlendFunc(r.blend.src, r.blend.dst)
 

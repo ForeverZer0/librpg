@@ -59,12 +59,12 @@ static inline int imin(int i1, int i2) { return i1 < i2 ? i1 : i2; }
     RPG_RESULT RPG_##type##_Get##name(RPGaudiofx *fx, RPGvec3 *value) {                                                                    \
         RPG_RETURN_IF_NULL(fx);                                                                                                            \
         RPG_RETURN_IF_NULL(value);                                                                                                         \
-        alGetEffectfv(fx->effect, param, (RPGfloat *)value);                                                                               \
+        alGetEffectfv(fx->effect, param, (RPGfloat *) value);                                                                              \
         return RPG_NO_ERROR;                                                                                                               \
     }                                                                                                                                      \
     RPG_RESULT RPG_##type##_Set##name(RPGaudiofx *fx, RPGvec3 *value) {                                                                    \
         RPG_RETURN_IF_NULL(fx);                                                                                                            \
-        alEffectfv(fx->effect, param, (RPGfloat *)value);                                                                                  \
+        alEffectfv(fx->effect, param, (RPGfloat *) value);                                                                                 \
         if (alGetError())                                                                                                                  \
             return RPG_ERR_INVALID_POINTER;                                                                                                \
         RPG_Audio_UpdateEffectChange(fx);                                                                                                  \
@@ -74,8 +74,8 @@ static inline int imin(int i1, int i2) { return i1 < i2 ? i1 : i2; }
 #define DEF_FX_CREATE(name, type)                                                                                                          \
     RPG_RESULT RPG_##name##_Create(RPGaudiofx **fx) { return RPG_Audio_CreateEffect(type, fx); }
 
-#define RPG_ALLOC(type) ((type *)RPG_MALLOC(sizeof(type)))
-#define RPG_ALLOC_N(type, n) ((type *)RPG_MALLOC(sizeof(type) * n))
+#define RPG_ALLOC(type) ((type *) RPG_MALLOC(sizeof(type)))
+#define RPG_ALLOC_N(type, n) ((type *) RPG_MALLOC(sizeof(type) * n))
 #define RPG_ALLOC_ZERO(var, type)                                                                                                          \
     type *var = RPG_ALLOC(type);                                                                                                           \
     memset(var, 0, sizeof(type))
@@ -120,8 +120,9 @@ static inline int imin(int i1, int i2) { return i1 < i2 ? i1 : i2; }
 #define DEF_GETTER(name, param, objtype, paramtype, field)                                                                                 \
     RPG_RESULT RPG_##name##_Get##param(objtype *obj, paramtype *value) {                                                                   \
         RPG_RETURN_IF_NULL(obj);                                                                                                           \
-        RPG_RETURN_IF_NULL(value);                                                                                                         \
-        *value = obj->field;                                                                                                               \
+        if (value != NULL) {                                                                                                               \
+            *value = obj->field;                                                                                                           \
+        }                                                                                                                                  \
         return RPG_NO_ERROR;                                                                                                               \
     }
 
@@ -136,4 +137,28 @@ static inline int imin(int i1, int i2) { return i1 < i2 ? i1 : i2; }
     DEF_GETTER(name, param, objtype, paramtype, field)                                                                                     \
     DEF_SETTER(name, param, objtype, paramtype, field)
 
+#define RPG_CHECK_DIMENSIONS(w, h) if ((w) < 1 || (h) < 1) return RPG_ERR_OUT_OF_RANGE                                                                                                       \
+
+/**
+ * @brief Resets the clear color back to the user-defined value.
+ */
+#define RPG_RESET_BACK_COLOR(game) glClearColor(game->color.x, game->color.y, game->color.z, game->color.w)
+
+/**
+ * @brief Resets the primary viewport to fit the window correctly.
+ */
+#define RPG_RESET_VIEWPORT(game) RPG_VIEWPORT(game->bounds.x, game->bounds.y, game->bounds.w, game->bounds.h)
+
+/**
+ * @brief Resets the primary projection matrix.
+ */
+#define RPG_RESET_PROJECTION(game) glUniformMatrix4fv(game->shader.projection, 1, GL_FALSE, (GLfloat *)& game->projection)
+
+/**
+ * @brief Sets the viewport and scissor rectangle of the primary viewport.
+ */
+#define RPG_VIEWPORT(x, y, w, h)                                                                                                           \
+    glViewport(x, y, w, h);                                                                                                                \
+    glScissor(x, y, w, h)
+    
 #endif /* OPEN_RPG_INTERNAL_H */

@@ -252,8 +252,6 @@ RPG_RESULT RPG_Image_SetUserPointer(RPGimage *image, void *pointer);
 RPG_RESULT RPG_Renderable_Update(RPGrenderable *renderable);
 RPG_RESULT RPG_Renderable_GetZ(RPGrenderable *renderable, RPGint *z);
 RPG_RESULT RPG_Renderable_SetZ(RPGrenderable *renderable, RPGint z);
-RPG_RESULT RPG_Renderable_GetOrigin(RPGrenderable *renderable, RPGint *x, RPGint *y);
-RPG_RESULT RPG_Renderable_SetOrigin(RPGrenderable *renderable, RPGint x, RPGint y);
 RPG_RESULT RPG_Renderable_GetVisible(RPGrenderable *renderable, RPGbool *visible);
 RPG_RESULT RPG_Renderable_SetVisible(RPGrenderable *renderable, RPGbool visible);
 RPG_RESULT RPG_Renderable_GetAlpha(RPGrenderable *renderable, RPGfloat *alpha);
@@ -274,6 +272,12 @@ RPG_RESULT RPG_Renderable_GetBlendMode(RPGrenderable *renderable, RPG_BLEND *src
 RPG_RESULT RPG_Renderable_SetBlendMode(RPGrenderable *renderable, RPG_BLEND src, RPG_BLEND dst, RPG_BLEND_OP op);
 RPG_RESULT RPG_Renderable_GetFlash(RPGrenderable *renderable, RPGcolor *color, RPGubyte *duration);
 RPG_RESULT RPG_Renderable_SetFlash(RPGrenderable *renderable, RPGcolor *color, RPGubyte duration);
+RPG_RESULT RPG_Renderable_GetX(RPGrenderable *renderable, RPGint *x); 
+RPG_RESULT RPG_Renderable_GetY(RPGrenderable *renderable, RPGint *y);
+RPG_RESULT RPG_Renderable_SetX(RPGrenderable *renderable, RPGint x); 
+RPG_RESULT RPG_Renderable_SetY(RPGrenderable *renderable, RPGint y);
+RPG_RESULT RPG_Renderable_GetLocation(RPGrenderable *renderable, RPGint *x, RPGint *y);
+RPG_RESULT RPG_Renderable_SetLocation(RPGrenderable *renderable, RPGint x, RPGint y);
 
 // Sprite
 RPG_RESULT RPG_Sprite_Create(RPGgame *game, RPGviewport *viewport, RPGsprite **sprite);
@@ -286,19 +290,19 @@ RPG_RESULT RPG_Sprite_SetSourceRect(RPGsprite *sprite, RPGrect *rect);
 RPG_RESULT RPG_Sprite_SetSourceRectValues(RPGsprite *sprite, RPGint x, RPGint y, RPGint w, RPGint h);
 RPG_RESULT RPG_Sprite_GetVertexArray(RPGsprite *sprite, RPGuint *vao);
 RPG_RESULT RPG_Sprite_GetVertexBuffer(RPGsprite *sprite, RPGuint *vbo);
-RPG_RESULT RPG_Sprite_GetX(RPGsprite *sprite, RPGint *x); 
-RPG_RESULT RPG_Sprite_GetY(RPGsprite *sprite, RPGint *y);
-RPG_RESULT RPG_Sprite_SetX(RPGsprite *sprite, RPGint x); 
-RPG_RESULT RPG_Sprite_SetY(RPGsprite *sprite, RPGint y);
-RPG_RESULT RPG_Sprite_GetLocation(RPGsprite *sprite, RPGint *x, RPGint *y);
-RPG_RESULT RPG_Sprite_SetLocation(RPGsprite *sprite, RPGint x, RPGint y);
+RPG_RESULT RPG_Renderable_GetSprite(RPGsprite *sprite, RPGint *x, RPGint *y);
+RPG_RESULT RPG_Renderable_SetSprite(RPGsprite *sprite, RPGint x, RPGint y);
 
 // Viewport
 RPG_RESULT RPG_Viewport_Create(RPGgame *game, RPGint x, RPGint y, RPGint width, RPGint height, RPGviewport **viewport);
 RPG_RESULT RPG_Viewport_CreateFromRect(RPGgame *game, RPGrect *rect, RPGviewport **viewport);
 RPG_RESULT RPG_Viewport_CreateDefault(RPGgame *game, RPGviewport **viewport);
 RPG_RESULT RPG_Viewport_Free(RPGviewport *viewport);
-RPG_RESULT RPG_Viewport_GetRect(RPGviewport *viewport, RPGint *x, RPGint *y, RPGint *width, RPGint *height);
+RPG_RESULT RPG_Viewport_GetRect(RPGviewport *viewport, RPGrect *rect);
+RPG_RESULT RPG_Viewport_GetBounds(RPGviewport *viewport, RPGint *x, RPGint *y, RPGint *width, RPGint *height);
+RPG_RESULT RPG_Viewport_GetOrigin(RPGviewport *viewport, RPGint *x, RPGint *y);
+RPG_RESULT RPG_Viewport_SetOrigin(RPGviewport *viewport, RPGint x, RPGint y);
+
 
 #ifdef __cplusplus
 }

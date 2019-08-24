@@ -31,7 +31,7 @@ static void update(RPGint64 tick) {
         printf("%d\n", sec);
     }
 
-    RPGmat4 m;
+
 }
 
 static inline float comp(void) {
@@ -53,12 +53,12 @@ int main(int argc, char **argv) {
     RPG_Image_CreateFromFile("/home/eric/Pictures/character.png", &image);
     RPG_Image_GetSize(image, &w, &h);
 
-    // Create a sprite, and use our image to display it
+    // Create a sprite to display the image
     RPGsprite *sprite;
     RPG_Sprite_Create(game, NULL, &sprite);
     RPG_Sprite_SetImage(sprite, image);
     RPG_Sprite_SetSourceRectValues(sprite, 0, 0, w / 3, h / 4);
-    RPG_Sprite_SetLocation(sprite, 32, 64);
+    RPG_Renderable_SetLocation((RPGrenderable*) sprite, 32, 64);
     
     // Get some random background color, and set an app icon
     RPGcolor color = { .x=comp(), .y=comp(), .z=comp(), .w=1.0f };

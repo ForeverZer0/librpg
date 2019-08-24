@@ -31,9 +31,7 @@
 #define RPG_IMG_ORTHO(x,y,w,h) 
 
 RPG_RESULT RPG_Image_Create(RPGint width, RPGint height, const void *pixels, RPG_PIXEL_FORMAT format, RPGimage **image) {
-    if (width < 1 || height < 1) {
-        return RPG_ERR_OUT_OF_RANGE;
-    }
+    RPG_CHECK_DIMENSIONS(width, height);
     RPG_ALLOC_ZERO(img, RPGimage);
     img->width  = width;
     img->height = height;
@@ -56,9 +54,7 @@ RPG_RESULT RPG_Image_CreateEmpty(RPGint width, RPGint height, RPGimage **image) 
 }
 
 RPG_RESULT RPG_Image_CreateFilled(RPGint width, RPGint height, RPGcolor *color, RPGimage **image) {
-    if (width < 1 || height < 1) {
-        return RPG_ERR_OUT_OF_RANGE;
-    }
+    RPG_CHECK_DIMENSIONS(width, height);
     RPG_RETURN_IF_NULL(color);
 
     RPGsize size    = sizeof(RPGuint) * width * height;
