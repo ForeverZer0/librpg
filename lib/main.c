@@ -42,10 +42,17 @@ static inline float comp(void) {
 int main(int argc, char **argv) {
     srand(time(NULL));
     RPG_Audio_Initialize();
-
     // Let's create a game object, and make a window for it
     RPGgame *game;
     RPG_Game_Create("OpenRPG", 800, 600, RPG_INIT_DEFAULT | RPG_INIT_RESIZABLE, &game);
+
+    // Get some random background color, and set an app icon
+    RPGcolor color = { .x=comp(), .y=comp(), .z=comp(), .w=1.0f };
+    RPG_Game_SetBackColor(game, &color);
+    RPG_Game_SetIconFromFile(game, "/home/eric/Pictures/books-512.png");
+
+    RPGviewport *viewport;
+    RPG_Viewport_Create(game, 200, 96, 300, 300, &viewport);
 
     // Create an image
     RPGimage *image;
@@ -55,16 +62,11 @@ int main(int argc, char **argv) {
 
     // Create a sprite to display the image
     RPGsprite *sprite;
-    RPG_Sprite_Create(game, NULL, &sprite);
+    RPG_Sprite_Create(game, viewport, &sprite);
     RPG_Sprite_SetImage(sprite, image);
     RPG_Sprite_SetSourceRectValues(sprite, 0, 0, w / 3, h / 4);
     RPG_Renderable_SetLocation((RPGrenderable*) sprite, 32, 64);
     
-    // Get some random background color, and set an app icon
-    RPGcolor color = { .x=comp(), .y=comp(), .z=comp(), .w=1.0f };
-    RPG_Game_SetBackColor(game, &color);
-    RPG_Game_SetIconFromFile(game, "/home/eric/Pictures/books-512.png");
-
     // Play some music
     const char *path = "/home/eric/Music/flora cash - I Wasted You (Audio)-0-kennkvJLE.ogg";
     // const char *path = "/home/eric/Pictures/RTP/XP/Audio/BGS/012-Waterfall02.ogg";

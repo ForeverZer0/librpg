@@ -57,6 +57,12 @@ RPG_RESULT RPG_Viewport_Create(RPGgame *game, RPGint x, RPGint y, RPGint width, 
     RPG_Renderable_Init(game, &v->base, RPG_Viewport_Render, &game->batch);
     RPG_Batch_Init(&v->batch);
 
+    // Set dimensions
+    v->base.x = x;
+    v->base.y = y;
+    v->width = width;
+    v->height = height;
+
     // Create a static VBO/VAO
     glGenVertexArrays(1, &v->vao);
     glGenBuffers(1, &v->vbo);
@@ -77,7 +83,7 @@ RPG_RESULT RPG_Viewport_Create(RPGgame *game, RPGint x, RPGint y, RPGint width, 
     // Texture
     glGenTextures(1, &v->texture);
     glBindTexture(GL_TEXTURE_2D, v->texture);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, v->width, v->height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glBindTexture(GL_TEXTURE_2D, 0);
@@ -85,7 +91,7 @@ RPG_RESULT RPG_Viewport_Create(RPGgame *game, RPGint x, RPGint y, RPGint width, 
     // Bind texture to FBO and creat a projection matrix for this viewport
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, v->texture, 0);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    RPG_MAT4_ORTHO(v->projection, 0.0f, v->width, v->height, 0.0f, -1.0f, 1.0f);
+    RPG_MAT4_ORTHO(v->projection, 0.0f, width, height, 0.0f, -1.0f, 1.0f);
 
     *viewport = v;
     return RPG_NO_ERROR;
