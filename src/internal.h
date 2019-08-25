@@ -5,6 +5,11 @@
 #include <math.h>
 #include <string.h>
 
+extern const char *RPG_VERTEX_SHADER;  
+extern const char *RPG_FRAGMENT_SHADER;
+extern const char *RPG_FONT_VERTEX;  
+extern const char *RPG_FONT_FRAGMENT;
+
 #define RPG_PI 3.14159274f
 
 #define RPG_ENSURE_FILE(filename)                                                                                                          \
@@ -161,6 +166,26 @@ static inline int imin(int i1, int i2) { return i1 < i2 ? i1 : i2; }
     glViewport(x, y, w, h);                                                                                                                \
     glScissor(x, y, w, h)
 
+#define BYTES_PER_PIXEL 4
 
+#define RPG_ENSURE_FBO(img)                                                                                                                \
+    if (img->fbo == 0) {                                                                                                                   \
+        glGenFramebuffers(1, &img->fbo);                                                                                                   \
+        glBindFramebuffer(GL_FRAMEBUFFER, img->fbo);                                                                                       \
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, img->texture, 0);                                      \
+    } else                                                                                                                                 \
+        glBindFramebuffer(GL_FRAMEBUFFER, img->fbo)
+
+#define RPG_BIND_FBO(img, x, y, w, h)                                                                                                      \
+    RPG_ENSURE_FBO(img);                                                                                                                   \
+    RPGmat4 m;                                                                                                                             \
+    RPG_MAT4_ORTHO(m, 0.0f, w, 0.0f, h, -1.0f, 1.0f);                                                                                      \
+    glUniformMatrix4fv(RPG_GAME->shader.projection, 1, GL_FALSE, (RPGfloat *) &m);                                                        \
+    RPG_VIEWPORT(x, y, w, h)
+
+#define RPG_UNBIND_FBO(img)                                                                                                                \
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);                                                                                                  \
+    RPG_RESET_PROJECTION();                                                                                                       \
+    RPG_RESET_VIEWPORT()
 
 #endif /* OPEN_RPG_INTERNAL_H */

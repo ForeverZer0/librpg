@@ -3,6 +3,7 @@
 #include "glad.h"
 #include "internal.h"
 #include "rpg.h"
+#include <stdio.h>
 
 typedef struct RPGshader {
     GLuint program;
@@ -18,8 +19,12 @@ static RPGbool RPG_Shader_CreateShader(const char *source, GLenum type, GLuint *
     GLint success;
     glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
     if (success != GL_TRUE) {
-        glDeleteShader(shader);
         *result = 0;
+
+        char msg[512];
+        glGetShaderInfoLog(shader, 512, NULL, msg);
+        glDeleteShader(shader);
+        fprintf(stderr, "%s", msg);
         return RPG_TRUE;
     }
     *result = shader;

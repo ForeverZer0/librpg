@@ -17,9 +17,13 @@ extern "C" {
 #ifndef RPG_REALLOC
 #define RPG_REALLOC realloc
 #endif
+#ifdef RPG_DEBUG
 #ifndef RPG_ASSERT
 #include <assert.h>
 #define RPG_ASSERT assert
+#endif
+#else
+#define RPG_ASSERT(expr)
 #endif
 
 #define RPG_NONE 0
@@ -338,7 +342,6 @@ RPG_RESULT RPG_Viewport_GetBounds(RPGviewport *viewport, RPGint *x, RPGint *y, R
 RPG_RESULT RPG_Viewport_GetOrigin(RPGviewport *viewport, RPGint *x, RPGint *y);
 RPG_RESULT RPG_Viewport_SetOrigin(RPGviewport *viewport, RPGint x, RPGint y);
 
-
 // Font
 RPG_RESULT RPG_Font_Create(void *buffer, RPGsize sizeBuffer, RPGfont **font);
 RPG_RESULT RPG_Font_CreateFromFile(const char *filename, RPGfont **font);
@@ -349,7 +352,6 @@ RPG_RESULT RPG_Font_SetSize(RPGfont *font, RPGint size);
 RPG_RESULT RPG_Font_GetColor(RPGfont *font, RPGcolor *color);
 RPG_RESULT RPG_Font_SetColor(RPGfont *font, RPGcolor *color);
 RPG_RESULT RPG_Font_GetName(RPGfont *font, void *buffer, RPGsize sizeBuffer, RPGsize *written);
-
 
 // Shader
 RPG_RESULT RPG_Shader_Create(const char *vertSrc, const char *fragSrc, const char *geoSrc, RPGshader **shader);

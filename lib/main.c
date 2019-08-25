@@ -97,9 +97,7 @@ int main(int argc, char **argv) {
     // Let's create a game object, and make a window for it
     RPGgame *game;
     RPG_RESULT r = RPG_Game_Create("OpenRPG", 800, 600, RPG_INIT_DEFAULT | RPG_INIT_RESIZABLE, &game);
-
-
-    RPG_Audio_SetCallback(RPG_AUDIO_CB_DONE, audio_done);
+    // RPG_Audio_SetCallback(RPG_AUDIO_CB_DONE, audio_done);
 
     // Get some random background color, and set an app icon
     RPGcolor color = { .x=comp(), .y=comp(), .z=comp(), .w=1.0f };
@@ -111,22 +109,21 @@ int main(int argc, char **argv) {
 
     // Create an image
     RPGimage *image, *src;
-    RPGcolor back = { 1.0f, 0.5f, 1.0f, 1.0f };
+    RPGcolor back = { 0.0f, 0.0f, 0.0f, 1.0f };
     RPGcolor fill = { 0.3f, 0.3f, 1.3f, 1.0f };
     RPGint w, h;
     RPG_Image_CreateFromFile("/home/eric/Pictures/character.png", &src);
-    RPG_Image_CreateFilled(64, 64, &back, &image);
-    RPG_Image_Fill(image, &fill, 16, 16, 32, 32);
+    RPG_Image_CreateFilled(128, 128, &back, &image);
     RPG_Image_GetSize(image, &w, &h);
 
 
+    RPGrect dr = { 0, 0, 64, 64 };
     RPGfont *font;
     RPG_RESULT result = RPG_Font_CreateFromFile("/code/c/open_rpg/assets/fonts/NotoSans-Black.ttf", &font);
-    RPG_Font_DrawText(font, image, "Hello", NULL, RPG_ALIGN_DEFAULT, 1.0f);
+    RPG_Font_DrawText(font, image, "Hello from OpenRPG!", &dr, RPG_ALIGN_DEFAULT, 1.0f);
 
 
-    RPG_Font_GetName(font, NULL, 0, NULL);
-
+   
 
     RPGrect d = { 0, 0, 32, 64 };
     RPGrect s = { 0, 0, 32, 32 };
@@ -139,13 +136,13 @@ int main(int argc, char **argv) {
     // RPG_Sprite_SetSourceRectValues(sprite, 0, 0, w / 3, h / 4);
     RPG_Renderable_SetLocation((RPGrenderable*) sprite, 32, 64);
     
-    // Play some music
-    const char *path = "/home/eric/Music/flora cash - I Wasted You (Audio)-0-kennkvJLE.ogg";
-    // const char *path = "/home/eric/Pictures/RTP/XP/Audio/BGS/012-Waterfall02.ogg";
-    RPG_Audio_Play(0, path, 1.0f, 1.0f, 5);
-    RPGaudiofx *e;
-    RPG_Reverb_CreateFromType(RPG_REVERB_TYPE_SEWERPIPE, &e);
-    RPG_Audio_AttachEffect(0, e);
+    // // Play some music
+    // const char *path = "/home/eric/Music/flora cash - I Wasted You (Audio)-0-kennkvJLE.ogg";
+    // // const char *path = "/home/eric/Pictures/RTP/XP/Audio/BGS/012-Waterfall02.ogg";
+    // RPG_Audio_Play(0, path, 1.0f, 1.0f, 5);
+    // RPGaudiofx *e;
+    // RPG_Reverb_CreateFromType(RPG_REVERB_TYPE_SEWERPIPE, &e);
+    // RPG_Audio_AttachEffect(0, e);
 
     // Cleanup
     RPG_Game_Main(game, 40.0, update);

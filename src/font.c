@@ -1,27 +1,24 @@
-#include "glad.h"
+#include "rpg.h"
+
+#include "game.h"
 #include "internal.h"
 #include "renderable.h"
-#include "rpg.h"
 #include "utf8.h"
 #include "uthash.h"
 #include <stdio.h>
 
 #define STB_TRUETYPE_IMPLEMENTATION
+#define STBTT_malloc(x, u) RPG_MALLOC(x)
+#define STBTT_free(x, u) RPG_FREE(x)
+#define STBTT_assert(x) RPG_ASSERT(x)
 #include "stb_truetype.h"
-
-GLuint font_program;
-GLint font_projection;
-GLint font_color;
-GLuint font_vao;
-GLuint font_vbo;
 
 typedef struct RPGglyph {
     UT_hash_handle hh;
     RPGint codepoint;
     GLuint tex;
-    // GLuint vao;
-    // GLuint vbo;
     RPGint w, h, ox, oy;
+    RPGint advance, bearing;
 } RPGglyph;
 
 typedef struct RPGfontsize {
@@ -76,9 +73,11 @@ static void RPG_Font_GetGlyph(RPGfont *font, int codepoint, RPGglyph **glyph) {
     RPGglyph *g = NULL;
     HASH_FIND(hh, fs->glyphs, &codepoint, sizeof(RPGint), g);
     if (g == NULL) {
-        g = RPG_ALLOC(RPGglyph);
+        g            = RPG_ALLOC(RPGglyph);
         g->codepoint = codepoint;
-        void* bmp = stbtt_GetCodepointBitmap(&font->font, fs->scale, fs->scale, codepoint, &g->w, &g->h, &g->ox, &g->oy);
+        void *bmp    = stbtt_GetCodepointBitmap(&font->font, fs->scale, fs->scale, codepoint, &g->w, &g->h, &g->ox, &g->oy);
+        stbtt_GetCodepointHMetrics(&font->font, codepoint, &g->advance, &g->bearing);
+        
         glGenTextures(1, &g->tex);
         glBindTexture(GL_TEXTURE_2D, g->tex);
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, g->w, g->h, 0, GL_RED, GL_UNSIGNED_BYTE, bmp);
@@ -92,14 +91,31 @@ static void RPG_Font_GetGlyph(RPGfont *font, int codepoint, RPGglyph **glyph) {
     *glyph = g;
 }
 
-static void RPG_Font_Initialize() {
-    // TODO:
+static void RPG_Font_Initialize(RPGgame *game) {
+    RPGshader *shader;
+    RPG_RESULT s = RPG_Shader_Create(RPG_FONT_VERTEX, RPG_FONT_FRAGMENT, NULL, &shader);
+
+    game->font.program    = *((GLuint *) shader);
+    game->font.projection = glGetUniformLocation(game->font.program, "projection");
+    game->font.color      = glGetUniformLocation(game->font.program, "color");
+
+    glGenVertexArrays(1, &game->font.vao);
+    glGenBuffers(1, &game->font.vbo);
+    glBindVertexArray(game->font.vao);
+    glBindBuffer(GL_ARRAY_BUFFER, game->font.vbo);
+    glBufferData(GL_ARRAY_BUFFER, VERTICES_SIZE, NULL, GL_DYNAMIC_DRAW);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(float), NULL);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindVertexArray(0);
+
+    RPG_FREE(shader);
 }
 
 RPG_RESULT RPG_Font_Create(void *buffer, RPGsize sizeBuffer, RPGfont **font) {
     RPG_RETURN_IF_NULL(buffer);
-    if (font_program == 0) {
-        RPG_Font_Initialize();
+    if (RPG_GAME->font.program == 0) {
+        RPG_Font_Initialize(RPG_GAME);
     }
     if (sizeBuffer == 0) {
         return RPG_ERR_INVALID_VALUE;
@@ -151,16 +167,16 @@ RPG_RESULT RPG_Font_SetSize(RPGfont *font, RPGint size) {
     if (size < 1) {
         return RPG_ERR_OUT_OF_RANGE;
     }
-    font->size  = size;
+    font->size      = size;
     RPGfontsize *fs = NULL;
     HASH_FIND(hh, font->sizes, &size, sizeof(RPGint), fs);
     if (fs == NULL) {
-        fs = RPG_ALLOC(RPGfontsize);
-        fs->size = size;
+        fs        = RPG_ALLOC(RPGfontsize);
+        fs->size  = size;
         fs->scale = stbtt_ScaleForPixelHeight(&font->font, size);
         stbtt_GetFontVMetrics(&font->font, &fs->ascent, NULL, NULL);
         fs->baseline = (int) (fs->ascent * fs->scale);
-        fs->glyphs = NULL;
+        fs->glyphs   = NULL;
         HASH_ADD(hh, font->sizes, size, sizeof(RPGint), fs);
     }
     return RPG_NO_ERROR;
@@ -188,28 +204,74 @@ RPG_RESULT RPG_Font_DrawText(RPGfont *font, RPGimage *image, const char *text, R
     RPG_RETURN_IF_NULL(font);
     RPG_RETURN_IF_NULL(image);
     RPG_RETURN_IF_NULL(text);
+
+    // Use full image bounds to draw if no destination rectangle is defined
     RPGrect d;
     if (dstRect == NULL) {
+        d.x = 0;
+        d.y = 0;
         d.w = image->width;
         d.h = image->height;
     } else {
         d = *dstRect;
     }
+
+    // Find the current size set for the font
+    RPGfontsize *fs = NULL;
+    HASH_FIND(hh, font->sizes, &font->size, sizeof(RPGint), fs);
+
+    // Declare variables, and get number of Unicode codepoints in the string
     size_t len = utf8len(text);
     utf8_int32_t cp;
     RPGglyph *glyph;
-    void *str = (void*) text;
+    void *str = (void *) text;
 
-    // TODO: Change shaders
+    // Enable the font shader, bind the FBO, and set the projection matrix
+    glUseProgram(RPG_GAME->font.program);    
+    RPG_ENSURE_FBO(image);
+    RPGmat4 ortho;                                                                                                                             
+    RPG_MAT4_ORTHO(ortho, 0.0f, image->width, image->height, 0.0f, -1.0f, 1.0f);  
+    RPG_VIEWPORT(0, 0, image->width, image->height);                                                                                    
+    glUniformMatrix4fv(RPG_GAME->font.projection, 1, GL_FALSE, (RPGfloat *) &ortho);   
+    // glUniform4f(RPG_GAME->font.color, font->color.x, font->color.y, font->color.z, font->color.w);     TODO:  
+    glUniform4f(RPG_GAME->font.color, 1.0f, 1.0f, 1.0f, 1.0f);                                             
+
+    RPGfloat xOffset = d.x;
+    RPGfloat x, y, w, h;
+
+    glActiveTexture(GL_TEXTURE0);
+    glBindVertexArray(RPG_GAME->font.vao);
+    glBindBuffer(GL_ARRAY_BUFFER, RPG_GAME->font.vbo);
+        glBlendEquation(GL_FUNC_ADD);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    // Enumerate through each codepoint in the string, calculating metrics and rendering each glyph
     for (size_t i = 0; i < len; i++) {
         str = utf8codepoint(str, &cp);
         RPGglyph *glyph;
         RPG_Font_GetGlyph(font, cp, &glyph);
+        x = xOffset + glyph->ox;
+        y = d.y + glyph->oy + fs->baseline;
+        w = glyph->w;
+        h = glyph->h;
 
+        glBindTexture(GL_TEXTURE_2D, glyph->tex);
+        float vertices[VERTICES_COUNT] = {x, y + h, 0.0f, 1.0f, x + w, y,     1.0f, 0.0f, x,     y, 0.0f, 0.0f,
+                                          x, y + h, 0.0f, 1.0f, x + w, y + h, 1.0f, 1.0f, x + w, y, 1.0f, 0.0f};
+        glBufferSubData(GL_ARRAY_BUFFER, 0, VERTICES_SIZE, vertices);
+        glDrawArrays(GL_TRIANGLES, 0, 6);
+
+        xOffset += w; // TODO: This is wrong, just testing 
         // TODO: Render glyph, kerning
     }
 
-    // TODO: Revert shader
-}
-    
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindVertexArray(0);
+    glBindTexture(GL_TEXTURE_2D, 0);
 
+    // Restore projection to the primary framebuffer
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glUseProgram(RPG_GAME->shader.program);
+    RPG_RESET_PROJECTION();
+    RPG_RESET_VIEWPORT();
+}

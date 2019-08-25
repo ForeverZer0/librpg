@@ -60,11 +60,15 @@ typedef struct RPGgame {
         ALCcontext *context;
         ALCdevice *device;
     } audio;
+    struct {
+        GLuint program;
+        GLint projection;
+        GLint color;
+        GLuint vbo;
+        GLuint vao;
+    } font;
     void *user;
 } RPGgame;
-
-extern const char *RPG_VERTEX_SHADER;  // TODO: Move to internal.h?
-extern const char *RPG_FRAGMENT_SHADER;
 
 void RPG_Batch_Init(RPGbatch *batch);
 void RPG_Batch_Free(RPGbatch *v);

@@ -26,28 +26,6 @@ GLuint blitVBO;
 GLuint blitVAO;
 pthread_mutex_t vaoMutex;
 
-#define BYTES_PER_PIXEL 4
-
-#define RPG_ENSURE_FBO(img)                                                                                                                \
-    if (img->fbo == 0) {                                                                                                                   \
-        glGenFramebuffers(1, &img->fbo);                                                                                                   \
-        glBindFramebuffer(GL_FRAMEBUFFER, img->fbo);                                                                                       \
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, img->texture, 0);                                      \
-    } else                                                                                                                                 \
-        glBindFramebuffer(GL_FRAMEBUFFER, img->fbo)
-
-#define RPG_BIND_FBO(img, x, y, w, h)                                                                                                      \
-    RPG_ENSURE_FBO(img);                                                                                                                   \
-    RPGmat4 m;                                                                                                                             \
-    RPG_MAT4_ORTHO(m, 0.0f, w, 0.0f, h, -1.0f, 1.0f);                                                                                      \
-    glUniformMatrix4fv(RPG_GAME->shader.projection, 1, GL_FALSE, (RPGfloat *) &m);                                                        \
-    RPG_VIEWPORT(x, y, w, h)
-
-#define RPG_UNBIND_FBO(img)                                                                                                                \
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);                                                                                                  \
-    RPG_RESET_PROJECTION();                                                                                                       \
-    RPG_RESET_VIEWPORT()
-
 RPG_RESULT RPG_Image_Create(RPGint width, RPGint height, const void *pixels, RPG_PIXEL_FORMAT format, RPGimage **image) {
     RPG_CHECK_DIMENSIONS(width, height);
     RPG_ALLOC_ZERO(img, RPGimage);
