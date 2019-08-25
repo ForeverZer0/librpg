@@ -10,7 +10,7 @@ static void RPG_Viewport_Render(void *viewport) {
 
     // Bind the viewport's FBO as the current render target
     glBindFramebuffer(GL_FRAMEBUFFER, v->fbo);
-    glUniformMatrix4fv(v->base.game->shader.projection, 1, GL_FALSE, (GLfloat *)&v->projection);
+    glUniformMatrix4fv(RPG_GAME->shader.projection, 1, GL_FALSE, (GLfloat *)&v->projection);
     RPG_VIEWPORT(0, 0, v->width, v->height);
     glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
     glClear(GL_COLOR_BUFFER_BIT);
@@ -24,8 +24,8 @@ static void RPG_Viewport_Render(void *viewport) {
 
     // Unbind the viewport's FBO, changing the render target back to the screen
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    RPG_RESET_VIEWPORT(v->base.game);
-    RPG_RESET_BACK_COLOR(v->base.game);
+    RPG_RESET_VIEWPORT();
+    RPG_RESET_BACK_COLOR();
 
     // Update Model (if required)
     if (v->base.updated) {
@@ -42,19 +42,18 @@ static void RPG_Viewport_Render(void *viewport) {
 
     // Set shader uniforms, restore projection, and render the viewport to the screen
     RPG_BASE_UNIFORMS(v->base);
-    RPG_RESET_PROJECTION(v->base.game);
+    RPG_RESET_PROJECTION();
     RPG_RENDER_TEXTURE(v->texture, v->vao);
 }
 
-RPG_RESULT RPG_Viewport_Create(RPGgame *game, RPGint x, RPGint y, RPGint width, RPGint height, RPGviewport **viewport) {
+RPG_RESULT RPG_Viewport_Create(RPGint x, RPGint y, RPGint width, RPGint height, RPGviewport **viewport) {
     // Obligatory argument checking
-    RPG_RETURN_IF_NULL(game);
     RPG_RETURN_IF_NULL(*viewport);
     RPG_CHECK_DIMENSIONS(width, height);
 
     // Allocate a new viewport object, and initialize fields
     RPG_ALLOC_ZERO(v, RPGviewport);
-    RPG_Renderable_Init(game, &v->base, RPG_Viewport_Render, &game->batch);
+    RPG_Renderable_Init(&v->base, RPG_Viewport_Render, &RPG_GAME->batch);
     RPG_Batch_Init(&v->batch);
 
     // Set dimensions
@@ -97,14 +96,13 @@ RPG_RESULT RPG_Viewport_Create(RPGgame *game, RPGint x, RPGint y, RPGint width, 
     return RPG_NO_ERROR;
 }
 
-RPG_RESULT RPG_Viewport_CreateFromRect(RPGgame *game, RPGrect *rect, RPGviewport **viewport) {
+RPG_RESULT RPG_Viewport_CreateFromRect(RPGrect *rect, RPGviewport **viewport) {
     RPG_RETURN_IF_NULL(rect);
-    return RPG_Viewport_Create(game, rect->x, rect->y, rect->w, rect->h, viewport);
+    return RPG_Viewport_Create(rect->x, rect->y, rect->w, rect->h, viewport);
 }
 
-RPG_RESULT RPG_Viewport_CreateDefault(RPGgame *game, RPGviewport **viewport) {
-    RPG_RETURN_IF_NULL(game);
-    return RPG_Viewport_Create(game, 0, 0, game->bounds.w, game->bounds.h, viewport);
+RPG_RESULT RPG_Viewport_CreateDefault(RPGviewport **viewport) {
+    return RPG_Viewport_Create(0, 0, RPG_GAME->bounds.w, RPG_GAME->bounds.h, viewport);
 }
 
 RPG_RESULT RPG_Viewport_GetRect(RPGviewport *viewport, RPGrect *rect) {

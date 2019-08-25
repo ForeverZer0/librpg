@@ -7,7 +7,7 @@ extern "C" {
 
 #include "rpg.h"
 
-#if !defined(RPG_NO_AUDIO)
+#ifndef RPG_NO_AUDIO
 
 /** The maximum number of slots that can contain an active sound */
 #define RPG_MAX_CHANNELS 32
@@ -90,17 +90,20 @@ typedef enum {
     RPG_PLAYBACK_STATE_STOPPED = 0x0003, /* Not playing */
 } RPG_PLAYBACK_STATE;
 
+
 typedef enum {
-    RPG_AUDIO_SEEK_MS      = 0x0000, /* Seek the stream in millisecond units */
-    RPG_AUDIO_SEEK_SAMPLES = 0x0001  /* Seek the stream in sample units */
-} RPG_AUDIO_SEEK;
+    RPG_AUDIO_CB_DONE,
+    RPG_AUDIO_CB_PLAY
+    // RPG_AUDIO_SEEK 
+} RPG_AUDIO_CB_TYPE;
 
 typedef void (*RPGaudiofunc)(RPGint channel); // TODO:
 
-RPG_RESULT RPG_Audio_Initialize(void);
+RPG_RESULT RPG_Audio_Initialize(RPGgame *game);
 RPG_RESULT RPG_Audio_Terminate(void);
 RPG_RESULT RPG_Audio_Play(RPGint channel, const char *filename, RPGfloat volume, RPGfloat pitch, RPGint loopCount);
-RPG_RESULT RPG_Audio_FreeChannel(RPGint index);
+RPG_RESULT RPG_Audio_SetCallback(RPG_AUDIO_CB_TYPE type, RPGaudiofunc func);
+RPG_RESULT RPG_Audio_FreeChannel(RPGint index); // TODO: Make private?
 RPG_RESULT RPG_Audio_GetVolume(RPGint channel, RPGfloat *volume);
 RPG_RESULT RPG_Audio_SetVolume(RPGint channel, RPGfloat volume);
 RPG_RESULT RPG_Audio_GetPitch(RPGint channel, RPGfloat *pitch);
@@ -112,14 +115,15 @@ RPG_RESULT RPG_Audio_GetSectionCount(RPGint channel, RPGint *count);
 RPG_RESULT RPG_Audio_GetFormat(RPGint channel, RPG_SOUND_FORMAT *format);
 RPG_RESULT RPG_Audio_GetType(RPGint channel, RPG_SOUND_TYPE *format);
 RPG_RESULT RPG_Audio_GetDuration(RPGint channel, RPGint64 *milliseconds);
-RPG_RESULT RPG_Audio_GetInfo(RPGint channel, RPG_SOUND_INFO type, char *buffer, size_t bufferSize, size_t *written);
+RPG_RESULT RPG_Audio_GetInfo(RPGint channel, RPG_SOUND_INFO type, char *buffer, size_t sizeBuffer, size_t *written);
 RPG_RESULT RPG_Audio_GetPlaybackState(RPGint channel, RPG_PLAYBACK_STATE *state);
 RPG_RESULT RPG_Audio_GetLoopCount(RPGint channel, RPGint *count);
 RPG_RESULT RPG_Audio_SetLoopCount(RPGint channel, RPGint count);
 RPG_RESULT RPG_Audio_Resume(RPGint channel);
 RPG_RESULT RPG_Audio_Stop(RPGint channel);
 RPG_RESULT RPG_Audio_Pause(RPGint channel);
-RPG_RESULT RPG_Audio_Seek(RPGint channel, RPGint64 position, RPG_AUDIO_SEEK seek);
+RPG_RESULT RPG_Audio_GetPosition(RPGint channel, RPGint64 *ms);
+RPG_RESULT RPG_Audio_Seek(RPGint channel, RPGint64 ms);
 
 #if !defined(RPG_AUDIO_NO_EFFECTS)
 
@@ -328,7 +332,7 @@ RPG_RESULT RPG_Reverb_CreateFromType(RPG_REVERB_TYPE type, RPGaudiofx **reverb);
 RPG_RESULT RPG_Reverb_CreateFromPreset(RPGreverbpreset *preset, RPGaudiofx **reverb);
 RPG_RESULT RPG_Reverb_GetPresetFromType(RPG_REVERB_TYPE type, RPGreverbpreset *preset);
 RPG_RESULT RPG_Reverb_SetPreset(RPGaudiofx *e, RPGreverbpreset *p);
-RPG_RESULT RPG_Reverb_GetPresetDescription(RPG_REVERB_TYPE type, char *buffer, RPGsize bufferSize, RPGsize *written);
+RPG_RESULT RPG_Reverb_GetPresetDescription(RPG_REVERB_TYPE type, char *buffer, RPGsize sizeBuffer, RPGsize *written);
 RPG_RESULT RPG_Reverb_GetDensity(RPGaudiofx *fx, RPGfloat *value);
 RPG_RESULT RPG_Reverb_GetDiffusion(RPGaudiofx *fx, RPGfloat *value);
 RPG_RESULT RPG_Reverb_GetGain(RPGaudiofx *fx, RPGfloat *value);

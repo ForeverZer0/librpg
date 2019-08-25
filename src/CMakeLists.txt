@@ -9,8 +9,12 @@ add_library(rpg SHARED
         glad.c
         audio.c
         game.c
+        font.c
+        shader.c
         stb_image.h 
         stb_image_write.h 
+        stb_truetype.h
+        utf8.h
         image.c
         shaders.c uthash.h renderable.c sprite.c viewport.c renderable.h)
 
@@ -18,6 +22,8 @@ add_library(rpg SHARED
 set_target_properties(rpg PROPERTIES VERSION ${PROJECT_VERSION})
 set_target_properties(rpg PROPERTIES SOVERSION 1)
 # TODO: Audd rpgaudio.h to public headers
+
+
 set_target_properties(rpg PROPERTIES PUBLIC_HEADER include/RPG/rpg.h)
 
 target_link_libraries(rpg glfw m pthread openal sndfile)

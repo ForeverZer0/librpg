@@ -5,6 +5,7 @@
 #include "internal.h"
 #include "platform.h"
 #include "sndfile.h"
+#include "game.h"
 #include <AL/al.h>
 #include <AL/alc.h>
 #include <AL/alext.h>
@@ -61,6 +62,7 @@ typedef struct RPGsound {
 } RPGsound;
 
 typedef struct RPGchannel {
+    RPGint index;
     ALuint source;
     ALuint buffers[BUFFER_COUNT];
     void *pcm;
@@ -75,17 +77,19 @@ typedef struct RPGchannel {
     } aux;
 } RPGchannel;
 
-RPGchannel *CHANNELS[RPG_MAX_CHANNELS];
-ALCcontext *context;
-ALCdevice *device;
+RPGchannel *CHANNELS[RPG_MAX_CHANNELS]; // FIXME: Evil global
+RPGaudiofunc CALLBACKS[2];
 
-RPG_RESULT RPG_Audio_Initialize(void) {
-    device = alcOpenDevice(NULL);
+RPG_RESULT RPG_Audio_Initialize(RPGgame *game) {
+    if (game->audio.context) {
+        return RPG_NO_ERROR;
+    }
+    ALCdevice *device = alcOpenDevice(NULL);
     RPG_ASSERT(device);
     if (device == NULL) {
         return RPG_ERR_AUDIO_DEVICE;
     }
-    context = alcCreateContext(device, NULL);
+    ALCcontext *context = alcCreateContext(device, NULL);
     RPG_ASSERT(context);
     if (context == NULL) {
         return RPG_ERR_AUDIO_CONTEXT;
@@ -125,14 +129,17 @@ RPG_RESULT RPG_Audio_Initialize(void) {
 
 #undef AL_LOAD_PROC
 #endif /* RPG_AUDIO_NO_EFFECTS */
+
+    game->audio.context = context;
+    game->audio.device = device;
+    return RPG_NO_ERROR;
 }
 
 RPG_RESULT RPG_Audio_Terminate(void) {
     for (int i = 0; i < RPG_MAX_CHANNELS; i++) {
         RPG_Audio_FreeChannel(i);
     }
-    alcDestroyContext(context);
-    return alcCloseDevice(device) ? RPG_NO_ERROR : RPG_ERR_AUDIO_DEVICE;
+    return RPG_NO_ERROR;
 }
 
 static void RPG_Audio_FreeSound(RPGsound *sound) {
@@ -251,6 +258,7 @@ static RPGbool RPG_Audio_TryGetSlot(RPGint index, RPGchannel **channel) {
         alGenSources(1, &s->source);
         alGenBuffers(BUFFER_COUNT, s->buffers);
         s->pcm          = RPG_MALLOC(BUFFER_SIZE);
+        s->index = index;
         CHANNELS[index] = s;
     }
     *channel = CHANNELS[index];
@@ -287,13 +295,14 @@ static RPGbool RPG_Channel_FillBuffer(RPGchannel *channel, ALuint buffer) {
 
 static void *RPG_Audio_Stream(void *channel) {
     RPGchannel *s = channel;
-
     for (int i = 0; i < BUFFER_COUNT; i++) {
         RPG_Channel_FillBuffer(s, s->buffers[i]);
     }
     alSourceQueueBuffers(s->source, BUFFER_COUNT, s->buffers);
+    if (CALLBACKS[RPG_AUDIO_CB_PLAY]) {
+        CALLBACKS[RPG_AUDIO_CB_PLAY](s->index);
+    }
     alSourcePlay(s->source);
-
     RPGbool done;
     ALint processed, state;
     ALuint buffer;
@@ -317,7 +326,16 @@ static void *RPG_Audio_Stream(void *channel) {
             alSourceQueueBuffers(s->source, 1, &buffer);
         }
     }
+    if (CALLBACKS[RPG_AUDIO_CB_DONE]) {
+        CALLBACKS[RPG_AUDIO_CB_DONE](s->index);
+    }
     return NULL;
+}
+
+RPG_RESULT RPG_Audio_SetCallback(RPG_AUDIO_CB_TYPE type, RPGaudiofunc func) {
+    // TODO: Return existing
+    CALLBACKS[type] = func;
+    return RPG_NO_ERROR;
 }
 
 RPG_RESULT RPG_Audio_Play(RPGint index, const char *filename, RPGfloat volume, RPGfloat pitch, RPGint loopCount) {
@@ -466,20 +484,20 @@ RPG_RESULT RPG_Audio_GetDuration(RPGint channel, RPGint64 *milliseconds) {
     return RPG_ERR_AUDIO_NO_SOUND;
 }
 
-RPG_RESULT RPG_Audio_GetInfo(RPGint channel, RPG_SOUND_INFO type, char *buffer, size_t bufferSize, size_t *written) {
-    if (bufferSize == 0) {
+RPG_RESULT RPG_Audio_GetInfo(RPGint channel, RPG_SOUND_INFO type, char *buffer, size_t sizeBuffer, size_t *written) {
+    if (sizeBuffer == 0) {
         return RPG_NO_ERROR;
     }
     if (buffer == NULL) {
         *written = 0;
         return RPG_ERR_INVALID_POINTER;
     }
-    memset(buffer, 0, bufferSize);
+    memset(buffer, 0, sizeBuffer);
     if (RPG_VALID_CHANNEL(channel) && CHANNELS[channel]->sound != NULL) {
         const char *str = sf_get_string(CHANNELS[channel]->sound->file, type);
         if (str != NULL) {
             size_t sz = strlen(str) + 1;
-            *written  = bufferSize > sz ? sz : bufferSize;
+            *written  = sizeBuffer > sz ? sz : sizeBuffer;
             memcpy(buffer, str, *written);
         }
         return RPG_NO_ERROR;
@@ -541,15 +559,25 @@ RPG_RESULT RPG_Audio_Pause(RPGint channel) {
     return RPG_ERR_AUDIO_NO_SOUND;
 }
 
-RPG_RESULT RPG_Audio_Seek(RPGint channel, RPGint64 position, RPG_AUDIO_SEEK seek) {
+RPG_RESULT RPG_Audio_GetPosition(RPGint channel, RPGint64 *position) {
+    RPG_RETURN_IF_NULL(position);
+    if (RPG_VALID_CHANNEL(channel) && CHANNELS[channel]->sound){
+        RPGchannel *s = CHANNELS[channel];
+        pthread_mutex_lock(&s->sound->mutex);
+        sf_count_t pos = sf_seek(s->sound->file, 0, SF_SEEK_CUR);
+        pthread_mutex_unlock(&s->sound->mutex); 
+        *position = (RPGint64) round(pos / (s->sound->info.samplerate / 1000.0));
+        return RPG_NO_ERROR;
+    }
+    *position = 0L;
+    return RPG_ERR_AUDIO_NO_SOUND;
+}
+
+RPG_RESULT RPG_Audio_Seek(RPGint channel, RPGint64 ms) {
     if (RPG_VALID_CHANNEL(channel) && CHANNELS[channel]->sound) {
         RPGchannel *s = CHANNELS[channel];
-        sf_count_t pos;
-        switch (seek) {
-            case RPG_AUDIO_SEEK_MS: pos = (sf_count_t)round(position * (s->sound->info.samplerate / 1000.0)); break;
-            case RPG_AUDIO_SEEK_SAMPLES: pos = position; break;
-            default: return RPG_ERR_INVALID_VALUE;
-        }
+        sf_count_t pos = (sf_count_t)round(ms * (s->sound->info.samplerate / 1000.0));
+
         if (pos < 0 || pos > s->sound->info.frames) {
             return RPG_ERR_OUT_OF_RANGE;
         }
@@ -978,8 +1006,8 @@ static const char *RPG_Reverb_GetPresetDescription_S(RPG_REVERB_TYPE type) {
     }
 }
 
-RPG_RESULT RPG_Reverb_GetPresetDescription(RPG_REVERB_TYPE type, char *buffer, RPGsize bufferSize, RPGsize *written) {
-    if (bufferSize == 0) {
+RPG_RESULT RPG_Reverb_GetPresetDescription(RPG_REVERB_TYPE type, char *buffer, RPGsize sizeBuffer, RPGsize *written) {
+    if (sizeBuffer == 0) {
         *written = 0;
         return RPG_NO_ERROR;
     }
@@ -991,10 +1019,10 @@ RPG_RESULT RPG_Reverb_GetPresetDescription(RPG_REVERB_TYPE type, char *buffer, R
         *written = 0;
         return RPG_ERR_OUT_OF_RANGE;
     }
-    memset(buffer, 0, bufferSize);
+    memset(buffer, 0, sizeBuffer);
     const char *desc = RPG_Reverb_GetPresetDescription_S(type);
     RPGsize sz       = strlen(desc);
-    *written         = sz > bufferSize ? bufferSize : sz;
+    *written         = sz > sizeBuffer ? sizeBuffer : sz;
     memcpy(buffer, desc, *written);
     return RPG_NO_ERROR;
 }

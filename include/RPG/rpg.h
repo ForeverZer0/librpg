@@ -48,6 +48,8 @@ typedef struct RPGsprite RPGsprite;
 typedef struct RPGviewport RPGviewport;
 typedef struct RPGgame RPGgame;
 typedef struct RPGimage RPGimage;
+typedef struct RPGfont RPGfont;
+typedef struct RPGshader RPGshader;
 
 // Function protoypes
 typedef void (*RPGupdatefunc)(RPGint64 time);
@@ -149,6 +151,7 @@ typedef enum {
     RPG_ERR_SYSTEM,
     RPG_ERR_FORMAT,
     RPG_ERR_FILE_NOT_FOUND,
+    RPG_ERR_FILE_READ_ERROR,
     RPG_ERR_AUDIO_DEVICE,
     RPG_ERR_AUDIO_CONTEXT,
     RPG_ERR_AUDIO_CANNOT_SEEK,
@@ -161,6 +164,7 @@ typedef enum {
     RPG_ERR_INVALID_VALUE,
     RPG_ERR_THREAD_FAILURE,
     RPG_ERR_IMAGE_LOAD,
+    RPG_ERR_IMAGE_SAVE,
     RPG_ERR_MEMORY,
     RPG_ERR_SHADER_COMPILE,
     RPG_ERR_SHADER_LINK,
@@ -219,6 +223,26 @@ typedef enum {
     RPG_PIXEL_FORMAT_BGRA = 0x80E1
 } RPG_PIXEL_FORMAT;
 
+typedef enum {
+    RPG_ALIGN_NONE = 0x00,
+    RPG_ALIGN_TOP = 0x01,
+    RPG_ALIGN_CENTER_V = 0x02,
+    RPG_ALIGN_BOTTOM = 0x04,
+    RPG_ALIGN_LEFT = 0x08,
+    RPG_ALIGN_CENTER_H = 0x10,
+    RPG_ALIGN_RIGHT = 0x20,
+    RPG_ALIGN_TOP_LEFT = RPG_ALIGN_TOP | RPG_ALIGN_LEFT,
+    RPG_ALIGN_TOP_RIGHT = RPG_ALIGN_TOP | RPG_ALIGN_RIGHT,
+    RPG_ALIGN_TOP_CENTER = RPG_ALIGN_TOP | RPG_ALIGN_CENTER_H,
+    RPG_ALIGN_BOTTOM_LEFT = RPG_ALIGN_BOTTOM | RPG_ALIGN_LEFT,
+    RPG_ALIGN_BOTTOM_RIGHT = RPG_ALIGN_BOTTOM | RPG_ALIGN_RIGHT,
+    RPG_ALIGN_BOTTOM_CENTER = RPG_ALIGN_BOTTOM | RPG_ALIGN_CENTER_H,
+    RPG_ALIGN_CENTER_LEFT = RPG_ALIGN_CENTER_V | RPG_ALIGN_LEFT,
+    RPG_ALIGN_CENTER_RIGHT = RPG_ALIGN_CENTER_V | RPG_ALIGN_RIGHT,
+    RPG_ALIGN_CENTER = RPG_ALIGN_CENTER_V | RPG_ALIGN_CENTER_H,
+    RPG_ALIGN_DEFAULT = RPG_ALIGN_CENTER_LEFT
+} RPG_ALIGN;
+
 typedef enum { RPG_IMAGE_FORMAT_PNG, RPG_IMAGE_FORMAT_JPG, RPG_IMAGE_FORMAT_BMP } RPG_IMAGE_FORMAT;
 
 // Game
@@ -238,10 +262,10 @@ RPG_RESULT RPG_Game_SetIconFromFile(RPGgame *game, const char *filename);
 const char *RPG_GetErrorString(RPG_RESULT result);
 
 // Image
-RPG_RESULT RPG_Image_Create(RPGgame *game, RPGint width, RPGint height, const void *pixels, RPG_PIXEL_FORMAT format, RPGimage **image);
-RPG_RESULT RPG_Image_CreateEmpty(RPGgame *game, RPGint width, RPGint height, RPGimage **image);
-RPG_RESULT RPG_Image_CreateFilled(RPGgame *game, RPGint width, RPGint height, RPGcolor *color, RPGimage **image);
-RPG_RESULT RPG_Image_CreateFromFile(RPGgame *game, const char *filename, RPGimage **image);
+RPG_RESULT RPG_Image_Create(RPGint width, RPGint height, const void *pixels, RPG_PIXEL_FORMAT format, RPGimage **image);
+RPG_RESULT RPG_Image_CreateEmpty(RPGint width, RPGint height, RPGimage **image);
+RPG_RESULT RPG_Image_CreateFilled(RPGint width, RPGint height, RPGcolor *color, RPGimage **image);
+RPG_RESULT RPG_Image_CreateFromFile(const char *filename, RPGimage **image);
 RPG_RESULT RPG_Image_Free(RPGimage *image);
 RPG_RESULT RPG_Image_LoadRaw(const char *filename, RPGrawimage **rawImage);
 RPG_RESULT RPG_Image_GetSize(RPGimage *image, RPGint *width, RPGint *height);
@@ -254,6 +278,10 @@ RPG_RESULT RPG_Image_GetTexture(RPGimage *image, RPGuint *texture);
 RPG_RESULT RPG_Image_GetFramebuffer(RPGimage *image, RPGuint *fbo);
 RPG_RESULT RPG_Image_SubImage(RPGimage *image, RPGint x, RPGint y, RPGint width, RPGint height, RPGimage **subImage);
 RPG_RESULT RPG_Image_Blit(RPGimage *dst, RPGrect *dstRect, RPGimage *src, RPGrect *srcRect, RPGfloat alpha);
+RPG_RESULT RPG_Image_GetPixel(RPGimage *image, RPGint x, RPGint y, RPGcolor *color);
+RPG_RESULT RPG_Image_SetPixel(RPGimage *image, RPGint x, RPGint y, RPGcolor *color);
+RPG_RESULT RPG_Image_GetPixels(RPGimage *image, void *buffer, RPGsize sizeBuffer);
+RPG_RESULT RPG_Image_Save(RPGimage *image, const char *filename, RPG_IMAGE_FORMAT format, RPGfloat quality);
 
 // Renderable (base for Sprite, Viewport, Plane)
 RPG_RESULT RPG_Renderable_Update(RPGrenderable *renderable);
@@ -287,7 +315,7 @@ RPG_RESULT RPG_Renderable_GetLocation(RPGrenderable *renderable, RPGint *x, RPGi
 RPG_RESULT RPG_Renderable_SetLocation(RPGrenderable *renderable, RPGint x, RPGint y);
 
 // Sprite
-RPG_RESULT RPG_Sprite_Create(RPGgame *game, RPGviewport *viewport, RPGsprite **sprite);
+RPG_RESULT RPG_Sprite_Create(RPGviewport *viewport, RPGsprite **sprite);
 RPG_RESULT RPG_Sprite_Free(RPGsprite *sprite);
 RPG_RESULT RPG_Sprite_GetViewport(RPGsprite *sprite, RPGviewport **viewport);
 RPG_RESULT RPG_Sprite_GetImage(RPGsprite *sprite, RPGimage **image);
@@ -301,14 +329,38 @@ RPG_RESULT RPG_Renderable_GetSprite(RPGsprite *sprite, RPGint *x, RPGint *y);
 RPG_RESULT RPG_Renderable_SetSprite(RPGsprite *sprite, RPGint x, RPGint y);
 
 // Viewport
-RPG_RESULT RPG_Viewport_Create(RPGgame *game, RPGint x, RPGint y, RPGint width, RPGint height, RPGviewport **viewport);
-RPG_RESULT RPG_Viewport_CreateFromRect(RPGgame *game, RPGrect *rect, RPGviewport **viewport);
-RPG_RESULT RPG_Viewport_CreateDefault(RPGgame *game, RPGviewport **viewport);
+RPG_RESULT RPG_Viewport_Create(RPGint x, RPGint y, RPGint width, RPGint height, RPGviewport **viewport);
+RPG_RESULT RPG_Viewport_CreateFromRect(RPGrect *rect, RPGviewport **viewport);
+RPG_RESULT RPG_Viewport_CreateDefault(RPGviewport **viewport);
 RPG_RESULT RPG_Viewport_Free(RPGviewport *viewport);
 RPG_RESULT RPG_Viewport_GetRect(RPGviewport *viewport, RPGrect *rect);
 RPG_RESULT RPG_Viewport_GetBounds(RPGviewport *viewport, RPGint *x, RPGint *y, RPGint *width, RPGint *height);
 RPG_RESULT RPG_Viewport_GetOrigin(RPGviewport *viewport, RPGint *x, RPGint *y);
 RPG_RESULT RPG_Viewport_SetOrigin(RPGviewport *viewport, RPGint x, RPGint y);
+
+
+// Font
+RPG_RESULT RPG_Font_Create(void *buffer, RPGsize sizeBuffer, RPGfont **font);
+RPG_RESULT RPG_Font_CreateFromFile(const char *filename, RPGfont **font);
+RPG_RESULT RPG_Font_Free(RPGfont *font);
+RPG_RESULT RPG_Font_DrawText(RPGfont *font, RPGimage *img, const char *text, RPGrect *dstRect, RPG_ALIGN align, RPGfloat alpha);
+RPG_RESULT RPG_Font_GetSize(RPGfont *font, RPGint *size);
+RPG_RESULT RPG_Font_SetSize(RPGfont *font, RPGint size);
+RPG_RESULT RPG_Font_GetColor(RPGfont *font, RPGcolor *color);
+RPG_RESULT RPG_Font_SetColor(RPGfont *font, RPGcolor *color);
+RPG_RESULT RPG_Font_GetName(RPGfont *font, void *buffer, RPGsize sizeBuffer, RPGsize *written);
+
+
+// Shader
+RPG_RESULT RPG_Shader_Create(const char *vertSrc, const char *fragSrc, const char *geoSrc, RPGshader **shader);
+RPG_RESULT RPG_Shader_Begin(RPGshader *shader);
+RPG_RESULT RPG_Shader_Finish(RPGshader *shader);
+
+
+/**
+ * @brief Pointer to the game whose context is current on the calling thread.
+ */
+extern RPGgame *RPG_GAME;
 
 
 #ifdef __cplusplus

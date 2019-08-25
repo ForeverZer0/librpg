@@ -142,17 +142,17 @@ static inline int imin(int i1, int i2) { return i1 < i2 ? i1 : i2; }
 /**
  * @brief Resets the clear color back to the user-defined value.
  */
-#define RPG_RESET_BACK_COLOR(game) glClearColor(game->color.x, game->color.y, game->color.z, game->color.w)
+#define RPG_RESET_BACK_COLOR() glClearColor(RPG_GAME->color.x, RPG_GAME->color.y, RPG_GAME->color.z, RPG_GAME->color.w)
 
 /**
  * @brief Resets the primary viewport to fit the window correctly.
  */
-#define RPG_RESET_VIEWPORT(game) RPG_VIEWPORT(game->bounds.x, game->bounds.y, game->bounds.w, game->bounds.h)
+#define RPG_RESET_VIEWPORT() RPG_VIEWPORT(RPG_GAME->bounds.x, RPG_GAME->bounds.y, RPG_GAME->bounds.w, RPG_GAME->bounds.h)
 
 /**
  * @brief Resets the primary projection matrix.
  */
-#define RPG_RESET_PROJECTION(game) glUniformMatrix4fv(game->shader.projection, 1, GL_FALSE, (GLfloat *)& game->projection)
+#define RPG_RESET_PROJECTION() glUniformMatrix4fv(RPG_GAME->shader.projection, 1, GL_FALSE, (GLfloat *)& RPG_GAME->projection)
 
 /**
  * @brief Sets the viewport and scissor rectangle of the primary viewport.
@@ -160,5 +160,7 @@ static inline int imin(int i1, int i2) { return i1 < i2 ? i1 : i2; }
 #define RPG_VIEWPORT(x, y, w, h)                                                                                                           \
     glViewport(x, y, w, h);                                                                                                                \
     glScissor(x, y, w, h)
-    
+
+
+
 #endif /* OPEN_RPG_INTERNAL_H */

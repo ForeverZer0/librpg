@@ -16,7 +16,6 @@ typedef struct RPGimage {
     RPGint height;
     GLuint texture;
     GLuint fbo;
-    RPGgame *game;
     void *user;
 } RPGimage;
 
@@ -52,7 +51,6 @@ typedef struct RPGrenderable {
     } blend;              /** The blending factors to apply during rendering. */
     RPGrenderfunc render; /** The function to call when the object needs rendered. */
     RPGmat4 model;        /** The model matrix for the object. */
-    RPGgame *game;        /** The host game */
     RPGbatch *parent;     /** Pointer to the rendering batch the object is contained within */
     void *user;           /** Arbitrary user-defined pointer to store with this instance */
 } RPGrenderable;
@@ -85,15 +83,15 @@ typedef struct RPGviewport {
 } RPGviewport;
 
 #define RPG_BASE_UNIFORMS(r)                                                                                                               \
-    glUniform4f(r.game->shader.color, r.color.x, r.color.y, r.color.z, r.color.w);                                                         \
-    glUniform4f(r.game->shader.tone, r.tone.x, r.tone.y, r.tone.z, r.tone.w);                                                              \
-    glUniform1f(r.game->shader.alpha, r.alpha);                                                                                            \
-    glUniform1f(r.game->shader.hue, r.hue);                                                                                                \
-    glUniform4f(r.game->shader.flash, r.flash.color.x, r.flash.color.y, r.flash.color.z, r.flash.color.w);                                 \
-    glUniformMatrix4fv(r.game->shader.model, 1, GL_FALSE, (GLfloat *) &r.model);                                                           \
+    glUniform4f(RPG_GAME->shader.color, r.color.x, r.color.y, r.color.z, r.color.w);                                                         \
+    glUniform4f(RPG_GAME->shader.tone, r.tone.x, r.tone.y, r.tone.z, r.tone.w);                                                              \
+    glUniform1f(RPG_GAME->shader.alpha, r.alpha);                                                                                            \
+    glUniform1f(RPG_GAME->shader.hue, r.hue);                                                                                                \
+    glUniform4f(RPG_GAME->shader.flash, r.flash.color.x, r.flash.color.y, r.flash.color.z, r.flash.color.w);                                 \
+    glUniformMatrix4fv(RPG_GAME->shader.model, 1, GL_FALSE, (GLfloat *) &r.model);                                                           \
     glBlendEquation(r.blend.op);                                                                                                           \
     glBlendFunc(r.blend.src, r.blend.dst)
 
-void RPG_Renderable_Init(RPGgame *game, RPGrenderable *renderable, RPGrenderfunc renderfunc, RPGbatch *batch);
+void RPG_Renderable_Init(RPGrenderable *renderable, RPGrenderfunc renderfunc, RPGbatch *batch);
 
 #endif /* OPEN_RPG_RENDERABLE_H */

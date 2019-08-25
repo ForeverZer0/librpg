@@ -10,7 +10,8 @@
         "audio.h": "c",
         "alext.h": "c",
         "typeinfo": "c",
-        "renderable.h": "c"
+        "renderable.h": "c",
+        "functional": "c"
     },
     "clang-format.style": "file"
 }

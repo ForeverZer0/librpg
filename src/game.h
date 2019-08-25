@@ -5,6 +5,7 @@
 #include "GLFW/glfw3.h"
 #include "glad.h"
 #include "rpg.h"
+#include <AL/alc.h>
 
 #define BATCH_INIT_CAPACITY 4
 
@@ -14,8 +15,6 @@
 #define UNIFORM_TONE "tone"
 #define UNIFORM_ALPHA "alpha"
 #define UNIFORM_HUE "hue"
-
-#define RPG_RESET_BACK_COLOR(game) glClearColor(game->color.x, game->color.y, game->color.z, game->color.w)
 
 /**
  * @brief Container for a rendering batch, with a quick-sort based on sprite's position on the z-axis.
@@ -35,7 +34,6 @@ typedef struct RPGgame {
         RPGint width;
         RPGint height;
     } resolution;
-    RPGbool autoAspect;
     struct {
         RPGint x, y, w, h;
         RPGvec2 ratio;
@@ -58,12 +56,15 @@ typedef struct RPGgame {
         GLint alpha;
         GLint hue;
     } shader;
+    struct {
+        ALCcontext *context;
+        ALCdevice *device;
+    } audio;
     void *user;
 } RPGgame;
 
-extern const char *RPG_VERTEX_SHADER;
+extern const char *RPG_VERTEX_SHADER;  // TODO: Move to internal.h?
 extern const char *RPG_FRAGMENT_SHADER;
-
 
 void RPG_Batch_Init(RPGbatch *batch);
 void RPG_Batch_Free(RPGbatch *v);

@@ -39,10 +39,10 @@ RPG_RESULT RPG_Sprite_Free(RPGsprite *sprite) {
     return RPG_NO_ERROR;
 }
 
-RPG_RESULT RPG_Sprite_Create(RPGgame *game, RPGviewport *viewport, RPGsprite **sprite) {
+RPG_RESULT RPG_Sprite_Create(RPGviewport *viewport, RPGsprite **sprite) {
     RPG_ALLOC_ZERO(s, RPGsprite);
-    RPGbatch *batch = viewport ? &viewport->batch : &game->batch;
-    RPG_Renderable_Init(game, &s->base, RPG_Sprite_Render, batch);
+    RPGbatch *batch = viewport ? &viewport->batch : &RPG_GAME->batch;
+    RPG_Renderable_Init(&s->base, RPG_Sprite_Render, batch);
 
     // Generate VAO/VBO
     glGenVertexArrays(1, &s->vao);

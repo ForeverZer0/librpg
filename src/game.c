@@ -2,6 +2,9 @@
 #include "internal.h"
 #include "renderable.h"
 #include "rpg.h"
+#include "rpgaudio.h"
+
+RPGgame *RPG_GAME;
 
 volatile int errorCode;
 
@@ -21,15 +24,17 @@ static void RPG_Game_FramebufferResize(GLFWwindow *window, int width, int height
         g->bounds.h = (GLint) roundf(g->resolution.height * ratio);
         g->bounds.x = (GLint) roundf((width - g->resolution.width * ratio) / 2);
         g->bounds.y = (GLint) roundf((height - g->resolution.height * ratio) / 2);
+
         glViewport(g->bounds.x, g->bounds.y, g->bounds.w, g->bounds.h);
+        glScissor(g->bounds.x, g->bounds.y, g->bounds.w, g->bounds.h);
 
         // Ensure the clipping area is also cleared
         glDisable(GL_SCISSOR_TEST);
         glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
         glClear(GL_COLOR_BUFFER_BIT);
         glEnable(GL_SCISSOR_TEST);
-        RPG_RESET_BACK_COLOR(g);
-        glScissor(g->bounds.x, g->bounds.y, g->bounds.w, g->bounds.h);
+        RPG_RESET_BACK_COLOR();
+
     } else {
         g->bounds.x = 0;
         g->bounds.y = 0;
@@ -50,61 +55,31 @@ static RPG_RESULT RPG_Game_GetError(void) {
     }
 }
 
-static void RPG_Game_CacheUniformLocations(RPGgame *game) {
-    RPG_ASSERT(game->shader.program);
+static RPG_RESULT RPG_Game_CreateShaderProgram(RPGgame *game) {
+    RPG_RETURN_IF_NULL(game);
+    if (game->shader.program) {
+        return RPG_NO_ERROR;
+    }
+
+    RPGshader *shader;
+    RPG_RESULT result = RPG_Shader_Create(RPG_VERTEX_SHADER, RPG_FRAGMENT_SHADER, NULL, &shader);
+    if (result) {
+        return result;
+    }
+
+    // Only need the shader name for storing within the game structure
+    game->shader.program = *((GLuint *) shader);
+    RPG_FREE(shader);
+    glUseProgram(game->shader.program);
+
+    // Pre-cache the uniform locations
     game->shader.projection = glGetUniformLocation(game->shader.program, UNIFORM_PROJECTION);
     game->shader.model      = glGetUniformLocation(game->shader.program, UNIFORM_MODEL);
     game->shader.color      = glGetUniformLocation(game->shader.program, UNIFORM_COLOR);
     game->shader.tone       = glGetUniformLocation(game->shader.program, UNIFORM_TONE);
     game->shader.alpha      = glGetUniformLocation(game->shader.program, UNIFORM_ALPHA);
     game->shader.hue        = glGetUniformLocation(game->shader.program, UNIFORM_HUE);
-}
 
-static inline RPGbool RPG_Game_CreateShader(const char *source, GLenum type, GLuint *result) {
-    GLuint shader = glCreateShader(type);
-    GLint length  = (GLint) strlen(source);
-    glShaderSource(shader, 1, &source, &length);
-    glCompileShader(shader);
-
-    GLint success;
-    glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
-    if (success != GL_TRUE) {
-        glDeleteShader(shader);
-        *result = 0;
-        return RPG_TRUE;
-    }
-    *result = shader;
-    return RPG_FALSE;
-}
-
-static RPG_RESULT RPG_Game_CreateProgram(RPGgame *game) {
-    if (game->shader.program)
-        return RPG_NO_ERROR;
-
-    GLuint program, vertex, fragment;
-    if (RPG_Game_CreateShader(RPG_VERTEX_SHADER, GL_VERTEX_SHADER, &vertex)) {
-        return RPG_ERR_SHADER_COMPILE;
-    }
-    if (RPG_Game_CreateShader(RPG_FRAGMENT_SHADER, GL_FRAGMENT_SHADER, &fragment)) {
-        glDeleteShader(vertex);
-        return RPG_ERR_SHADER_COMPILE;
-    }
-
-    program = glCreateProgram();
-    glAttachShader(program, vertex);
-    glAttachShader(program, fragment);
-    glLinkProgram(program);
-    glDeleteShader(vertex);
-    glDeleteShader(fragment);
-
-    GLint success;
-    glGetProgramiv(program, GL_LINK_STATUS, &success);
-    if (success != GL_TRUE) {
-        glDeleteProgram(program);
-        return RPG_ERR_SHADER_LINK;
-    }
-    glUseProgram(program);
-    game->shader.program = program;
     return RPG_NO_ERROR;
 }
 
@@ -152,10 +127,29 @@ const char *RPG_GetErrorString(RPG_RESULT result) {
     }
 }
 
-RPG_RESULT RPG_Game_Destroy(RPGgame *game) { glfwTerminate(); }  // TODO:
+RPG_RESULT RPG_Game_Destroy(RPGgame *game) {
+    glfwTerminate();
+#ifndef RPG_NO_AUDIO
+    RPG_Audio_Terminate();
+    alcDestroyContext(game->audio.context);
+    alcCloseDevice(game->audio.device);
+#endif
+    RPG_Batch_Free(&game->batch);  // TODO: Check if initialized first
+    RPG_FREE(game);
+    return RPG_NO_ERROR;
+}  // TODO:
 
 RPG_RESULT RPG_Game_Create(const char *title, RPGint width, RPGint height, RPG_INIT_FLAGS flags, RPGgame **game) {
     RPG_ALLOC_ZERO(g, RPGgame);
+    RPG_RESULT result;
+#ifndef RPG_NO_AUDIO
+    result = RPG_Audio_Initialize(g);
+    if (result) {
+        RPG_FREE(g);
+        return result;
+    }
+#endif
+
     glfwSetErrorCallback(RPG_Game_ErrorCallback);
     if (glfwInit()) {
         glfwDefaultWindowHints();
@@ -200,12 +194,11 @@ RPG_RESULT RPG_Game_Create(const char *title, RPGint width, RPGint height, RPG_I
     // Lock aspect ratio if necessary
     if ((flags & RPG_INIT_LOCK_ASPECT) != 0) {
         glfwSetWindowAspectRatio(g->window, width, height);
-    } else {
-        g->autoAspect = (flags & RPG_INIT_AUTO_ASPECT) != 0;
     }
 
     // Make context current, import OpenGL functions
     glfwMakeContextCurrent(g->window);
+    RPG_GAME = g;
     gladLoadGLLoader((GLADloadproc) glfwGetProcAddress);
     glfwSetWindowUserPointer(g->window, g);
 
@@ -214,13 +207,13 @@ RPG_RESULT RPG_Game_Create(const char *title, RPGint width, RPGint height, RPG_I
     glEnable(GL_SCISSOR_TEST);
     glEnable(GL_BLEND);
 
-    RPG_RESULT result = RPG_Game_CreateProgram(g);
+    result = RPG_Game_CreateShaderProgram(g);
     if (result) {
         glfwDestroyWindow(g->window);
         RPG_FREE(g);
         return result;
     }
-    RPG_Game_CacheUniformLocations(g);
+
     RPG_Game_BindCallbacks(g);
     RPG_Game_SetResolution(g, width, height);
     *game = g;
@@ -326,6 +319,14 @@ RPG_RESULT RPG_Game_SetIconFromFile(RPGgame *game, const char *filename) {
     return RPG_NO_ERROR;
 }
 
+RPG_RESULT RPG_Game_MakeCurrent(RPGgame *game) {
+    RPG_RETURN_IF_NULL(game);
+    glfwMakeContextCurrent(game->window);
+    alcMakeContextCurrent(game->audio.context);
+    RPG_GAME = game;
+    return RPG_NO_ERROR;
+}
+
 void RPG_Batch_Init(RPGbatch *v) {
     v->capacity = BATCH_INIT_CAPACITY;
     v->total    = 0;
@@ -400,7 +401,7 @@ void RPG_Batch_Delete(RPGbatch *v, int index) {
 
 static inline int RPG_Batch_MedianOfThree(int a, int b, int c) { return imax(imin(a, b), imin(imax(a, b), c)); }
 
-void RPG_Batch_Sort(RPGbatch *v, int first, int last) {
+void RPG_Batch_Sort(RPGbatch *v, int first, int last) {  // FIXME: Move batch to own source file?
     // Basic qsort algorithm using z-axis
     int i, j, pivot;
     RPGrenderable *temp;
@@ -421,7 +422,6 @@ void RPG_Batch_Sort(RPGbatch *v, int first, int last) {
                 v->items[j] = temp;
             }
         }
-
         temp            = v->items[pivot];
         v->items[pivot] = v->items[j];
         v->items[j]     = temp;

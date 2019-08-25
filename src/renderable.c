@@ -3,8 +3,7 @@
 #include "internal.h"
 #include "rpg.h"
 
-void RPG_Renderable_Init(RPGgame *game, RPGrenderable *renderable, RPGrenderfunc renderfunc, RPGbatch *batch) {
-    RPG_ASSERT(game);
+void RPG_Renderable_Init(RPGrenderable *renderable, RPGrenderfunc renderfunc, RPGbatch *batch) {
     RPG_ASSERT(renderable);
     RPG_ASSERT(renderfunc);
     renderable->scale     = (RPGvec2){1.0f, 1.0f};
@@ -15,7 +14,6 @@ void RPG_Renderable_Init(RPGgame *game, RPGrenderable *renderable, RPGrenderfunc
     renderable->alpha     = 1.0f;
     renderable->updated   = RPG_TRUE;
     renderable->render    = renderfunc;
-    renderable->game      = game;
     renderable->parent    = batch;
     RPG_Batch_Add(batch, renderable);
 }
