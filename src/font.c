@@ -77,7 +77,7 @@ static void RPG_Font_GetGlyph(RPGfont *font, int codepoint, RPGglyph **glyph) {
         g->codepoint = codepoint;
         void *bmp    = stbtt_GetCodepointBitmap(&font->font, fs->scale, fs->scale, codepoint, &g->w, &g->h, &g->ox, &g->oy);
         stbtt_GetCodepointHMetrics(&font->font, codepoint, &g->advance, &g->bearing);
-        
+
         glGenTextures(1, &g->tex);
         glBindTexture(GL_TEXTURE_2D, g->tex);
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, g->w, g->h, 0, GL_RED, GL_UNSIGNED_BYTE, bmp);
@@ -220,51 +220,55 @@ RPG_RESULT RPG_Font_DrawText(RPGfont *font, RPGimage *image, const char *text, R
     RPGfontsize *fs = NULL;
     HASH_FIND(hh, font->sizes, &font->size, sizeof(RPGint), fs);
 
-    // Declare variables, and get number of Unicode codepoints in the string
-    size_t len = utf8len(text);
-    utf8_int32_t cp;
-    RPGglyph *glyph;
-    void *str = (void *) text;
-
     // Enable the font shader, bind the FBO, and set the projection matrix
-    glUseProgram(RPG_GAME->font.program);    
+    glUseProgram(RPG_GAME->font.program);
     RPG_ENSURE_FBO(image);
-    RPGmat4 ortho;                                                                                                                             
-    RPG_MAT4_ORTHO(ortho, 0.0f, image->width, image->height, 0.0f, -1.0f, 1.0f);  
-    RPG_VIEWPORT(0, 0, image->width, image->height);                                                                                    
-    glUniformMatrix4fv(RPG_GAME->font.projection, 1, GL_FALSE, (RPGfloat *) &ortho);   
-    // glUniform4f(RPG_GAME->font.color, font->color.x, font->color.y, font->color.z, font->color.w);     TODO:  
-    glUniform4f(RPG_GAME->font.color, 1.0f, 1.0f, 1.0f, 1.0f);                                             
-
-    RPGfloat xOffset = d.x;
-    RPGfloat x, y, w, h;
+    RPGmat4 ortho;
+    RPG_MAT4_ORTHO(ortho, 0.0f, image->width, image->height, 0.0f, -1.0f, 1.0f);
+    RPG_VIEWPORT(0, 0, image->width, image->height);
+    glUniformMatrix4fv(RPG_GAME->font.projection, 1, GL_FALSE, (RPGfloat *) &ortho);
+    // glUniform4f(RPG_GAME->font.color, font->color.x, font->color.y, font->color.z, font->color.w);     TODO:
+    glUniform4f(RPG_GAME->font.color, 1.0f, 1.0f, 1.0f, 1.0f);
 
     glActiveTexture(GL_TEXTURE0);
     glBindVertexArray(RPG_GAME->font.vao);
     glBindBuffer(GL_ARRAY_BUFFER, RPG_GAME->font.vbo);
-        glBlendEquation(GL_FUNC_ADD);
+    glBlendEquation(GL_FUNC_ADD);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
+    // Declare variable storage
+    utf8_int32_t cp, next;
+    RPGglyph *glyph;
+    RPGfloat ox = d.x;
+    RPGfloat x, y, w, h;
+    void *str = utf8codepoint(text, &cp);
+
     // Enumerate through each codepoint in the string, calculating metrics and rendering each glyph
-    for (size_t i = 0; i < len; i++) {
-        str = utf8codepoint(str, &cp);
-        RPGglyph *glyph;
+    while (cp) {
+        // Load the glyph for the current codepoint
         RPG_Font_GetGlyph(font, cp, &glyph);
-        x = xOffset + glyph->ox;
+        x = ox + glyph->ox;
         y = d.y + glyph->oy + fs->baseline;
         w = glyph->w;
         h = glyph->h;
 
+        // Buffer glyph vertices
         glBindTexture(GL_TEXTURE_2D, glyph->tex);
-        float vertices[VERTICES_COUNT] = {x, y + h, 0.0f, 1.0f, x + w, y,     1.0f, 0.0f, x,     y, 0.0f, 0.0f,
-                                          x, y + h, 0.0f, 1.0f, x + w, y + h, 1.0f, 1.0f, x + w, y, 1.0f, 0.0f};
+        GLfloat vertices[VERTICES_COUNT] = {x, y + h, 0.0f, 1.0f, x + w, y,     1.0f, 0.0f, x,     y, 0.0f, 0.0f,
+                                            x, y + h, 0.0f, 1.0f, x + w, y + h, 1.0f, 1.0f, x + w, y, 1.0f, 0.0f};
         glBufferSubData(GL_ARRAY_BUFFER, 0, VERTICES_SIZE, vertices);
         glDrawArrays(GL_TRIANGLES, 0, 6);
 
-        xOffset += w; // TODO: This is wrong, just testing 
-        // TODO: Render glyph, kerning
+        // Check if there is another codepoint to render after this one, if so, apply kerning
+        str = utf8codepoint(str, &next);
+        if (next) {
+            ox += fs->scale * stbtt_GetCodepointKernAdvance(&font->font, cp, next);
+        }
+        ox += fs->scale * glyph->advance;
+        cp = next;
     }
 
+    // Unbind attachments
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
     glBindTexture(GL_TEXTURE_2D, 0);

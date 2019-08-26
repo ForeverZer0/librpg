@@ -41,51 +41,6 @@ static inline float comp(void) {
     return (float) rand() / (float) RAND_MAX ;
 }
 
-
-// #include "temp.h"
-
-// char buffer[24<<20];
-// unsigned char screen[20][79];
-
-// int main(int arg, char **argv)
-// {
-//    stbtt_fontinfo font;
-//    int i,j,ascent,baseline,ch=0;
-//    float scale, xpos=2; // leave a little padding in case the character extends left
-//    char *text = "Heljo World!"; // intentionally misspelled to show 'lj' brokenness
-
-//    fread(buffer, 1, 1000000, fopen("/code/c/open_rpg/assets/fonts/NotoSans-Black.ttf", "rb"));
-//    stbtt_InitFont(&font, buffer, 0);
-
-//    scale = stbtt_ScaleForPixelHeight(&font, 15);
-//    stbtt_GetFontVMetrics(&font, &ascent,0,0);
-//    baseline = (int) (ascent*scale);
-
-//    while (text[ch]) {
-//       int advance,lsb,x0,y0,x1,y1;
-//       float x_shift = xpos - (float) floor(xpos);
-//       stbtt_GetCodepointHMetrics(&font, text[ch], &advance, &lsb);
-//       stbtt_GetCodepointBitmapBoxSubpixel(&font, text[ch], scale, scale, x_shift, 0, &x0,&y0, &x1, &y1);
-//       stbtt_MakeCodepointBitmapSubpixel(&font, &screen[baseline + y0][(int) xpos + x0], x1-x0,y1-y0, 79, scale,scale,x_shift,0, text[ch]);
-//       // note that this stomps the old data, so where character boxes overlap (e.g. 'lj') it's wrong
-//       // because this API is really for baking character bitmaps into textures. if you want to render
-//       // a sequence of characters, you really need to render each bitmap to a temp buffer, then
-//       // "alpha blend" that into the working buffer
-//       xpos += (advance * scale);
-//       if (text[ch+1])
-//          xpos += scale*stbtt_GetCodepointKernAdvance(&font, text[ch],text[ch+1]);
-//       ++ch;
-//    }
-
-//    for (j=0; j < 20; ++j) {
-//       for (i=0; i < 78; ++i)
-//          putchar(" .:ioVM@"[screen[j][i]>>5]);
-//       putchar('\n');
-//    }
-
-//    return 0;
-// }
-
 void audio_done(RPGint channel) {
     printf("Channel %d is done playing.\n");
 }
@@ -113,7 +68,7 @@ int main(int argc, char **argv) {
     RPGcolor fill = { 0.3f, 0.3f, 1.3f, 1.0f };
     RPGint w, h;
     RPG_Image_CreateFromFile("/home/eric/Pictures/character.png", &src);
-    RPG_Image_CreateFilled(128, 128, &back, &image);
+    RPG_Image_CreateFilled(400, 128, &back, &image);
     RPG_Image_GetSize(image, &w, &h);
 
 
@@ -123,11 +78,9 @@ int main(int argc, char **argv) {
     RPG_Font_DrawText(font, image, "Hello from OpenRPG!", &dr, RPG_ALIGN_DEFAULT, 1.0f);
 
 
-   
-
-    RPGrect d = { 0, 0, 32, 64 };
-    RPGrect s = { 0, 0, 32, 32 };
-    RPG_Image_Blit(image, &d, src, &s, 1.0);
+    // RPGrect d = { 0, 0, 32, 64 };
+    // RPGrect s = { 0, 0, 32, 32 };
+    // RPG_Image_Blit(image, &d, src, &s, 1.0);
 
     // Create a sprite to display the image
     RPGsprite *sprite;
