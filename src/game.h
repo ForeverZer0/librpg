@@ -66,6 +66,8 @@ typedef struct RPGgame {
         GLint color;
         GLuint vbo;
         GLuint vao;
+        RPGcolor defaultColor;
+        RPGint defaultSize;
     } font;
     void *user;
 } RPGgame;

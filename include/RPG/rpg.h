@@ -351,7 +351,12 @@ RPG_RESULT RPG_Font_GetSize(RPGfont *font, RPGint *size);
 RPG_RESULT RPG_Font_SetSize(RPGfont *font, RPGint size);
 RPG_RESULT RPG_Font_GetColor(RPGfont *font, RPGcolor *color);
 RPG_RESULT RPG_Font_SetColor(RPGfont *font, RPGcolor *color);
-RPG_RESULT RPG_Font_GetName(RPGfont *font, void *buffer, RPGsize sizeBuffer, RPGsize *written);
+RPG_RESULT RPG_Font_GetName(RPGfont *font, void *buffer, RPGsize sizeBuffer, RPGsize *written); // TODO:
+RPG_RESULT RPG_Font_GetDefaultSize(RPGint *size);
+RPG_RESULT RPG_Font_GetDefaultColor(RPGcolor *color);
+RPG_RESULT RPG_Font_SetDefaultColor(RPGcolor *color);
+RPG_RESULT RPG_Font_SetDefaultSize(RPGint size);
+RPG_RESULT RPG_Font_MeasureText(RPGfont *font, const char *text, RPGint *width, RPGint *height);
 
 // Shader
 RPG_RESULT RPG_Shader_Create(const char *vertSrc, const char *fragSrc, const char *geoSrc, RPGshader **shader);

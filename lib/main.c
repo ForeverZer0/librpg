@@ -59,24 +59,36 @@ int main(int argc, char **argv) {
     RPG_Game_SetBackColor(game, &color);
     RPG_Game_SetIconFromFile(game, "/home/eric/Pictures/books-512.png");
 
-    RPGviewport *viewport;
-    RPG_Viewport_Create(200, 96, 300, 300, &viewport);
-
     // Create an image
     RPGimage *image, *src;
     RPGcolor back = { 0.0f, 0.0f, 0.0f, 1.0f };
     RPGcolor fill = { 0.3f, 0.3f, 1.3f, 1.0f };
     RPGint w, h;
     RPG_Image_CreateFromFile("/home/eric/Pictures/character.png", &src);
-    RPG_Image_CreateFilled(400, 128, &back, &image);
+    RPG_Image_CreateFilled(600, 400, &back, &image);
     RPG_Image_GetSize(image, &w, &h);
 
 
-    RPGrect dr = { 0, 0, 64, 64 };
+    RPGrect dr = { 0, 0, 600, 400 };
     RPGfont *font;
     RPG_RESULT result = RPG_Font_CreateFromFile("/code/c/open_rpg/assets/fonts/NotoSans-Black.ttf", &font);
-    RPG_Font_DrawText(font, image, "Hello from OpenRPG!", &dr, RPG_ALIGN_DEFAULT, 1.0f);
+    
 
+    RPG_ALIGN aligns[9] = 
+    { 
+        RPG_ALIGN_TOP_LEFT, RPG_ALIGN_TOP_CENTER, RPG_ALIGN_TOP_RIGHT, 
+        RPG_ALIGN_CENTER_LEFT, RPG_ALIGN_CENTER, RPG_ALIGN_CENTER_RIGHT, 
+        RPG_ALIGN_BOTTOM_LEFT, RPG_ALIGN_BOTTOM_CENTER, RPG_ALIGN_BOTTOM_RIGHT,
+    };
+    for (int i = 0; i < 9; i++) {
+        RPG_Font_DrawText(font, image, "OpenRPG", &dr, aligns[i], 1.0f);
+    }
+
+
+
+
+    RPGint fw, fh;
+    RPG_Font_MeasureText(font, "Hello from  ³OoenRPG!", &fw, &fh);
 
     // RPGrect d = { 0, 0, 32, 64 };
     // RPGrect s = { 0, 0, 32, 32 };
@@ -84,7 +96,7 @@ int main(int argc, char **argv) {
 
     // Create a sprite to display the image
     RPGsprite *sprite;
-    RPG_Sprite_Create(viewport, &sprite);
+    RPG_Sprite_Create(NULL, &sprite);
     RPG_Sprite_SetImage(sprite, image);
     // RPG_Sprite_SetSourceRectValues(sprite, 0, 0, w / 3, h / 4);
     RPG_Renderable_SetLocation((RPGrenderable*) sprite, 32, 64);
@@ -100,5 +112,4 @@ int main(int argc, char **argv) {
     // Cleanup
     RPG_Game_Main(game, 40.0, update);
     RPG_Game_Destroy(game);
-    RPG_Audio_Terminate();
 }
