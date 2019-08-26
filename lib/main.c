@@ -22,6 +22,8 @@
 //     }
 // }
 
+
+
 int sec;
 
 static void update(RPGint64 tick) {
@@ -29,9 +31,7 @@ static void update(RPGint64 tick) {
     if ((tick % 40) == 0) {
         sec++;
         RPGint64 ms;
-        // printf("%d\n", sec);
-        RPG_Audio_GetPosition(0, &ms);
-        printf("%f ms\n", ms / 1000.0);
+        printf("%d\n", sec);
     }
 
     
@@ -52,7 +52,6 @@ int main(int argc, char **argv) {
     // Let's create a game object, and make a window for it
     RPGgame *game;
     RPG_RESULT r = RPG_Game_Create("OpenRPG", 800, 600, RPG_INIT_DEFAULT | RPG_INIT_RESIZABLE, &game);
-    // RPG_Audio_SetCallback(RPG_AUDIO_CB_DONE, audio_done);
 
     // Get some random background color, and set an app icon
     // RPGcolor backColor = { .x=comp(), .y=comp(), .z=comp(), .w=1.0f };
@@ -61,8 +60,8 @@ int main(int argc, char **argv) {
     RPG_Game_SetIconFromFile(game, "/home/eric/Pictures/books-512.png");
 
     // Create an image
-    RPGimage *image;
-    RPGcolor blockColor = { 1.0f, 1.0f, 1.0f, 1.0f };
+    RPGimage *image; 
+    RPGcolor blockColor = { 0.2f, 0.2f, 0.2f, 1.0f };
     RPGcolor fontColor = { 0.3f, 0.3f, 0.3f, 1.1f };
     RPG_Image_CreateFilled(600, 400, &blockColor, &image);
 
@@ -73,10 +72,14 @@ int main(int argc, char **argv) {
 
 
     RPGfont *font;
-    RPG_Font_SetDefaultColor(&fontColor);
+    // RPG_Font_SetDefaultColor(&fontColor);
     RPG_Font_CreateFromFile("/code/c/open_rpg/assets/fonts/NotoSans-Black.ttf", &font);
     
-RPG_Font_DrawText(font, image, "OpenRPG", NULL, RPG_ALIGN_DEFAULT, 1.0f);
+RPG_Font_DrawText(font, image, "Heljo", NULL, RPG_ALIGN_DEFAULT);
+
+
+    RPG_Image_Blit(image, NULL, character, NULL, 1.0f);
+
     // RPG_ALIGN aligns[9] = 
     // { 
     //     RPG_ALIGN_TOP_LEFT, RPG_ALIGN_TOP_CENTER, RPG_ALIGN_TOP_RIGHT, 
@@ -97,15 +100,15 @@ RPG_Font_DrawText(font, image, "OpenRPG", NULL, RPG_ALIGN_DEFAULT, 1.0f);
     RPG_Sprite_SetImage(sprite2, character);
 
     // RPG_Sprite_SetSourceRectValues(sprite, 0, 0, w / 3, h / 4);
-    RPG_Renderable_SetLocation((RPGrenderable*) sprite1, 32, 64);
+    RPG_Renderable_SetLocation((RPGrenderable*) sprite1, 128, 128);
     
-    // // Play some music
-    // const char *path = "/home/eric/Music/flora cash - I Wasted You (Audio)-0-kennkvJLE.ogg";
-    // // const char *path = "/home/eric/Pictures/RTP/XP/Audio/BGS/012-Waterfall02.ogg";
-    // RPG_Audio_Play(0, path, 1.0f, 1.0f, 5);
-    // RPGaudiofx *e;
-    // RPG_Reverb_CreateFromType(RPG_REVERB_TYPE_SEWERPIPE, &e);
-    // RPG_Audio_AttachEffect(0, e);
+    // Play some music
+    const char *path = "/home/eric/Desktop/The Blackest Day.ogg";
+    RPG_Audio_SetPlaybackCompleteCallback(audio_done, NULL);
+    RPG_Audio_Play(0, path, 1.0f, 1.0f, 3);
+    RPGaudiofx *e;
+    RPG_Reverb_CreateFromType(RPG_REVERB_TYPE_BATHROOM, &e);
+    RPG_Audio_AttachEffect(0, e);
 
     // Cleanup
     RPG_Game_Main(game, 40.0, update);

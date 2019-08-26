@@ -9,9 +9,6 @@ extern "C" {
 
 #ifndef RPG_NO_AUDIO
 
-/** The maximum number of slots that can contain an active sound */
-#define RPG_MAX_CHANNELS 32
-
 typedef enum {
     RPG_SOUND_FORMAT_NONE  = 0x000000, /* Undefined/invalid */
     RPG_SOUND_FORMAT_WAV   = 0x010000, /* Microsoft WAV format (little endian). */
@@ -90,19 +87,12 @@ typedef enum {
     RPG_PLAYBACK_STATE_STOPPED = 0x0003, /* Not playing */
 } RPG_PLAYBACK_STATE;
 
-
-typedef enum {
-    RPG_AUDIO_CB_DONE,
-    RPG_AUDIO_CB_PLAY
-    // RPG_AUDIO_SEEK 
-} RPG_AUDIO_CB_TYPE;
-
 typedef void (*RPGaudiofunc)(RPGint channel); // TODO:
 
 RPG_RESULT RPG_Audio_Initialize(RPGgame *game);
 RPG_RESULT RPG_Audio_Terminate(void);
 RPG_RESULT RPG_Audio_Play(RPGint channel, const char *filename, RPGfloat volume, RPGfloat pitch, RPGint loopCount);
-RPG_RESULT RPG_Audio_SetCallback(RPG_AUDIO_CB_TYPE type, RPGaudiofunc func);
+RPG_RESULT RPG_Audio_SetPlaybackCompleteCallback(RPGaudiofunc func, RPGaudiofunc *previous);
 RPG_RESULT RPG_Audio_FreeChannel(RPGint index); // TODO: Make private?
 RPG_RESULT RPG_Audio_GetVolume(RPGint channel, RPGfloat *volume);
 RPG_RESULT RPG_Audio_SetVolume(RPGint channel, RPGfloat volume);

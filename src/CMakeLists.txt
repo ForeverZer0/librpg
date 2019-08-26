@@ -18,6 +18,7 @@ add_library(rpg SHARED
         image.c
         shaders.c uthash.h renderable.c sprite.c viewport.c renderable.h)
 
+add_compile_definitions(RPG_DEBUG)
 
 set_target_properties(rpg PROPERTIES VERSION ${PROJECT_VERSION})
 set_target_properties(rpg PROPERTIES SOVERSION 1)

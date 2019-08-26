@@ -18,7 +18,7 @@ typedef struct RPGglyph {
     RPGint codepoint;
     GLuint tex;
     RPGint w, h, ox, oy;
-    RPGint advance, bearing;
+    RPGfloat advance;
 } RPGglyph;
 
 typedef struct RPGfontsize {
@@ -74,8 +74,11 @@ static void RPG_Font_GetGlyph(RPGfont *font, int codepoint, RPGglyph **glyph) {
     if (g == NULL) {
         g            = RPG_ALLOC(RPGglyph);
         g->codepoint = codepoint;
+
+        int advance;
         void *bmp    = stbtt_GetCodepointBitmap(&font->font, fs->scale, fs->scale, codepoint, &g->w, &g->h, &g->ox, &g->oy);
-        stbtt_GetCodepointHMetrics(&font->font, codepoint, &g->advance, &g->bearing);
+        stbtt_GetCodepointHMetrics(&font->font, codepoint, &advance, NULL);
+        g->advance = fs->scale * advance;
 
         glGenTextures(1, &g->tex);
         glBindTexture(GL_TEXTURE_2D, g->tex);
@@ -158,12 +161,6 @@ RPG_RESULT RPG_Font_Free(RPGfont *font) {
         RPG_FREE(font->sizes);
     }
     RPG_FREE(font);
-    return RPG_NO_ERROR;
-}
-
-RPG_RESULT RPG_Font_GetName(RPGfont *font, void *buffer, RPGsize sizeBuffer, RPGsize *written) {
-    RPG_RETURN_IF_NULL(font);
-    // TODO: ?
     return RPG_NO_ERROR;
 }
 
@@ -266,7 +263,7 @@ static void RPG_Font_AlignAdjust(RPGrect *rect, RPG_ALIGN align, RPGint dimX, RP
 
 }
 
-RPG_RESULT RPG_Font_DrawText(RPGfont *font, RPGimage *image, const char *text, RPGrect *dstRect, RPG_ALIGN align, RPGfloat alpha) { // TODO: alpha?
+RPG_RESULT RPG_Font_DrawText(RPGfont *font, RPGimage *image, const char *text, RPGrect *dstRect, RPG_ALIGN align) {
     RPG_RETURN_IF_NULL(font);
     RPG_RETURN_IF_NULL(image);
     RPG_RETURN_IF_NULL(text);
@@ -336,7 +333,7 @@ RPG_RESULT RPG_Font_DrawText(RPGfont *font, RPGimage *image, const char *text, R
         if (next) {
             ox += fs->scale * stbtt_GetCodepointKernAdvance(&font->font, cp, next);
         }
-        ox += fs->scale * glyph->advance;
+        ox += glyph->advance;
         cp = next;
     }
 
@@ -405,12 +402,8 @@ RPG_RESULT RPG_Font_MeasureText(RPGfont *font, const char *text, RPGint *width, 
         if (next) {
             w += fs->scale * stbtt_GetCodepointKernAdvance(&font->font, cp, next);
         }
-        w += fs->scale * glyph->advance;
+        w += glyph->advance;
         cp = next;
-
-                if (cp == 'p') {
-            printf("\n");
-        }
     }
     *width = (RPGint) roundf(w);
     *height = (RPGint) roundf(h);

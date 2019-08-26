@@ -262,8 +262,9 @@ RPG_RESULT RPG_Game_GetResolution(RPGgame *game, RPGint *width, RPGint *height);
 RPG_RESULT RPG_Game_SetResolution(RPGgame *game, RPGint width, RPGint height);
 RPG_RESULT RPG_Game_SetIcon(RPGgame *game, RPGrawimage *image);
 RPG_RESULT RPG_Game_SetIconFromFile(RPGgame *game, const char *filename);
+RPG_RESULT RPG_Game_Snapshot(RPGimage **image);
 
-const char *RPG_GetErrorString(RPG_RESULT result);
+const char *RPG_GetErrorString(RPG_RESULT result); // FIXME: 
 
 // Image
 RPG_RESULT RPG_Image_Create(RPGint width, RPGint height, const void *pixels, RPG_PIXEL_FORMAT format, RPGimage **image);
@@ -346,12 +347,11 @@ RPG_RESULT RPG_Viewport_SetOrigin(RPGviewport *viewport, RPGint x, RPGint y);
 RPG_RESULT RPG_Font_Create(void *buffer, RPGsize sizeBuffer, RPGfont **font);
 RPG_RESULT RPG_Font_CreateFromFile(const char *filename, RPGfont **font);
 RPG_RESULT RPG_Font_Free(RPGfont *font);
-RPG_RESULT RPG_Font_DrawText(RPGfont *font, RPGimage *img, const char *text, RPGrect *dstRect, RPG_ALIGN align, RPGfloat alpha);
+RPG_RESULT RPG_Font_DrawText(RPGfont *font, RPGimage *img, const char *text, RPGrect *dstRect, RPG_ALIGN align);
 RPG_RESULT RPG_Font_GetSize(RPGfont *font, RPGint *size);
 RPG_RESULT RPG_Font_SetSize(RPGfont *font, RPGint size);
 RPG_RESULT RPG_Font_GetColor(RPGfont *font, RPGcolor *color);
 RPG_RESULT RPG_Font_SetColor(RPGfont *font, RPGcolor *color);
-RPG_RESULT RPG_Font_GetName(RPGfont *font, void *buffer, RPGsize sizeBuffer, RPGsize *written); // TODO:
 RPG_RESULT RPG_Font_GetDefaultSize(RPGint *size);
 RPG_RESULT RPG_Font_GetDefaultColor(RPGcolor *color);
 RPG_RESULT RPG_Font_SetDefaultColor(RPGcolor *color);
@@ -369,6 +369,12 @@ RPG_RESULT RPG_Shader_Finish(RPGshader *shader);
  */
 extern RPGgame *RPG_GAME;
 
+#ifndef RPG_NO_AUDIO
+/** The maximum number of slots that can contain an active sound */
+#define RPG_MAX_CHANNELS 32
+#else
+#define RPG_MAX_CHANNELS 0
+#endif
 
 #ifdef __cplusplus
 }

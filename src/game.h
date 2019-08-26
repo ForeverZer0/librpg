@@ -16,6 +16,8 @@
 #define UNIFORM_ALPHA "alpha"
 #define UNIFORM_HUE "hue"
 
+typedef struct RPGchannel RPGchannel;
+
 /**
  * @brief Container for a rendering batch, with a quick-sort based on sprite's position on the z-axis.
  */
@@ -59,6 +61,8 @@ typedef struct RPGgame {
     struct {
         ALCcontext *context;
         ALCdevice *device;
+        RPGchannel *channels[RPG_MAX_CHANNELS];
+        void *cb;
     } audio;
     struct {
         GLuint program;

@@ -433,3 +433,47 @@ void RPG_Batch_Sort(RPGbatch *v, int first, int last) {  // FIXME: Move batch to
     }
     v->updated = RPG_FALSE;
 }
+
+RPG_RESULT RPG_Game_Snapshot(RPGimage **image) {
+    if (*image == NULL) {
+        return RPG_ERR_INVALID_POINTER;
+    }
+
+    RPGimage *img = RPG_ALLOC(RPGimage);
+    img->width = RPG_GAME->resolution.width;
+    img->height = RPG_GAME->resolution.height;
+    img->user = NULL;
+    glDisable(GL_SCISSOR_TEST);
+
+    // Create texture the same size as the internal resolution
+    glGenTextures(1, &img->texture);
+    glBindTexture(GL_TEXTURE_2D, img->texture);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, RPG_GAME->resolution.width, RPG_GAME->resolution.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    // Create FBO and bind as the draw buffer
+    glGenFramebuffers(1, &img->fbo);
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, img->fbo);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, img->texture, 0);
+    glClear(GL_COLOR_BUFFER_BIT);
+
+    RPGint l, r, t, b;
+    l = RPG_GAME->bounds.x;
+    t = RPG_GAME->bounds.y;
+    r = l + RPG_GAME->bounds.w;
+    b = t + RPG_GAME->bounds.h;
+
+    // Bind the primary buffer as the read buffer, and blit
+    glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
+    glBlitFramebuffer(l, t, r, b, 0, 0, RPG_GAME->resolution.width, RPG_GAME->resolution.height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+
+    // Rebind primary FBO and return the created image
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+    glEnable(GL_SCISSOR_TEST);
+
+    *image = img;
+    return RPG_NO_ERROR;
+}

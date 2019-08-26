@@ -13,6 +13,7 @@
 #define RPG_VALID_CHANNEL(i) (i >= 0 && i < RPG_MAX_CHANNELS && CHANNELS[i] != NULL) 
 #define BUFFER_COUNT 3
 #define BUFFER_SIZE 32768
+#define CHANNELS (RPG_GAME->audio.channels)
 
 #if !defined(RPG_AUDIO_NO_EFFECTS)
 
@@ -63,6 +64,7 @@ typedef struct RPGsound {
 
 typedef struct RPGchannel {
     RPGint index;
+    RPGaudiofunc cb;
     ALuint source;
     ALuint buffers[BUFFER_COUNT];
     void *pcm;
@@ -76,9 +78,6 @@ typedef struct RPGchannel {
         ALuint *slots;
     } aux;
 } RPGchannel;
-
-RPGchannel *CHANNELS[RPG_MAX_CHANNELS]; // FIXME: Evil global
-RPGaudiofunc CALLBACKS[2];
 
 RPG_RESULT RPG_Audio_Initialize(RPGgame *game) {
     if (game->audio.context) {
@@ -97,6 +96,12 @@ RPG_RESULT RPG_Audio_Initialize(RPGgame *game) {
     if (!alcMakeContextCurrent(context)) {
         return RPG_ERR_AUDIO_CONTEXT;
     }
+
+
+
+    // game->audio.channels = RPG_MALLOC(sizeof(RPGchannel*) * RPG_MAX_CHANNELS);
+    // memset(game->audio.channels, 0, sizeof(RPGchannel*) * RPG_MAX_CHANNELS);
+
 
 #if !defined(RPG_AUDIO_NO_EFFECTS)
 #define AL_LOAD_PROC(x, y)                                                                                                                 \
@@ -160,7 +165,9 @@ RPG_RESULT RPG_Audio_FreeChannel(RPGint index) {
     RPGchannel *channel = CHANNELS[index];
     if (channel) {
         alSourceStop(channel->source);
-        pthread_join(channel->thread, NULL);
+        if (channel->thread) {
+            pthread_join(channel->thread, NULL);
+        }
         alDeleteSources(1, &channel->source);
         alDeleteBuffers(BUFFER_COUNT, channel->buffers);
         RPG_Audio_FreeSound(channel->sound);
@@ -278,12 +285,13 @@ static RPGbool RPG_Channel_FillBuffer(RPGchannel *channel, ALuint buffer) {
         sf_seek(snd->file, 0, SF_SEEK_SET);
         pthread_mutex_unlock(&channel->sound->mutex);
         if (channel->loopCount != 0) {
+            alSourceUnqueueBuffers(channel->source, 0, NULL);
+            RPG_Channel_FillBuffer(channel, buffer);
             ALint state;
             alGetSourcei(channel->source, AL_SOURCE_STATE, &state);
             if (state != AL_PLAYING) {
                 alSourcePlay((channel->source));
             }
-            alSourceUnqueueBuffers(channel->source, 0, NULL);
             channel->loopCount--;
             return AL_FALSE;
         }
@@ -299,9 +307,6 @@ static void *RPG_Audio_Stream(void *channel) {
         RPG_Channel_FillBuffer(s, s->buffers[i]);
     }
     alSourceQueueBuffers(s->source, BUFFER_COUNT, s->buffers);
-    if (CALLBACKS[RPG_AUDIO_CB_PLAY]) {
-        CALLBACKS[RPG_AUDIO_CB_PLAY](s->index);
-    }
     alSourcePlay(s->source);
     RPGbool done;
     ALint processed, state;
@@ -326,15 +331,17 @@ static void *RPG_Audio_Stream(void *channel) {
             alSourceQueueBuffers(s->source, 1, &buffer);
         }
     }
-    if (CALLBACKS[RPG_AUDIO_CB_DONE]) {
-        CALLBACKS[RPG_AUDIO_CB_DONE](s->index);
+    if (s->cb) {
+        s->cb(s->index);
     }
     return NULL;
 }
 
-RPG_RESULT RPG_Audio_SetCallback(RPG_AUDIO_CB_TYPE type, RPGaudiofunc func) {
-    // TODO: Return existing
-    CALLBACKS[type] = func;
+RPG_RESULT RPG_Audio_SetPlaybackCompleteCallback(RPGaudiofunc func, RPGaudiofunc *previous) {
+    if (previous != NULL) {
+        *previous = RPG_GAME->audio.cb;
+    }
+    RPG_GAME->audio.cb = func;
     return RPG_NO_ERROR;
 }
 
@@ -375,9 +382,11 @@ RPG_RESULT RPG_Audio_Play(RPGint index, const char *filename, RPGfloat volume, R
     if (channel->sound == NULL) {
         RPG_RESULT result = RPG_Audio_CreateSound(filename, &channel->sound);
         if (result != RPG_NO_ERROR) {
+            RPG_Audio_FreeChannel(index);
             return result;
         }
         // Begin streaming on separate thread
+        channel->cb = RPG_GAME->audio.cb;
         if (pthread_create(&channel->thread, NULL, RPG_Audio_Stream, channel)) {
             return RPG_ERR_THREAD_FAILURE;
         }

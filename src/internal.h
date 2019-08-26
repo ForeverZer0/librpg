@@ -5,9 +5,9 @@
 #include <math.h>
 #include <string.h>
 
-extern const char *RPG_VERTEX_SHADER;  
+extern const char *RPG_VERTEX_SHADER;
 extern const char *RPG_FRAGMENT_SHADER;
-extern const char *RPG_FONT_VERTEX;  
+extern const char *RPG_FONT_VERTEX;
 extern const char *RPG_FONT_FRAGMENT;
 
 #define RPG_PI 3.14159274f
@@ -142,7 +142,9 @@ static inline int imin(int i1, int i2) { return i1 < i2 ? i1 : i2; }
     DEF_GETTER(name, param, objtype, paramtype, field)                                                                                     \
     DEF_SETTER(name, param, objtype, paramtype, field)
 
-#define RPG_CHECK_DIMENSIONS(w, h) if ((w) < 1 || (h) < 1) return RPG_ERR_OUT_OF_RANGE                                                                                                       \
+#define RPG_CHECK_DIMENSIONS(w, h)                                                                                                         \
+    if ((w) < 1 || (h) < 1)                                                                                                                \
+    return RPG_ERR_OUT_OF_RANGE
 
 /**
  * @brief Resets the clear color back to the user-defined value.
@@ -157,7 +159,7 @@ static inline int imin(int i1, int i2) { return i1 < i2 ? i1 : i2; }
 /**
  * @brief Resets the primary projection matrix.
  */
-#define RPG_RESET_PROJECTION() glUniformMatrix4fv(RPG_GAME->shader.projection, 1, GL_FALSE, (GLfloat *)& RPG_GAME->projection)
+#define RPG_RESET_PROJECTION() glUniformMatrix4fv(RPG_GAME->shader.projection, 1, GL_FALSE, (GLfloat *) &RPG_GAME->projection)
 
 /**
  * @brief Sets the viewport and scissor rectangle of the primary viewport.
@@ -180,15 +182,16 @@ static inline int imin(int i1, int i2) { return i1 < i2 ? i1 : i2; }
     RPG_ENSURE_FBO(img);                                                                                                                   \
     RPGmat4 m;                                                                                                                             \
     RPG_MAT4_ORTHO(m, 0.0f, w, 0.0f, h, -1.0f, 1.0f);                                                                                      \
-    glUniformMatrix4fv(RPG_GAME->shader.projection, 1, GL_FALSE, (RPGfloat *) &m);                                                        \
+    glUniformMatrix4fv(RPG_GAME->shader.projection, 1, GL_FALSE, (RPGfloat *) &m);                                                         \
     RPG_VIEWPORT(x, y, w, h)
 
 #define RPG_UNBIND_FBO(img)                                                                                                                \
     glBindFramebuffer(GL_FRAMEBUFFER, 0);                                                                                                  \
-    RPG_RESET_PROJECTION();                                                                                                       \
+    RPG_RESET_PROJECTION();                                                                                                                \
     RPG_RESET_VIEWPORT()
 
-#define RPG_FONT_DEFAULT_COLOR (RPGcolor) { 1.0f, 1.0f, 1.0f, 1.0f }
+#define RPG_FONT_DEFAULT_COLOR                                                                                                             \
+    (RPGcolor) { 1.0f, 1.0f, 1.0f, 1.0f }
 #define RPG_FONT_DEFAULT_SIZE 32
 
 #endif /* OPEN_RPG_INTERNAL_H */

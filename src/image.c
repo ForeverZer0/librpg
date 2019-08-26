@@ -177,17 +177,21 @@ RPG_RESULT RPG_Image_Blit(RPGimage *dst, RPGrect *dstRect, RPGimage *src, RPGrec
 
     // Get default source/destination rectangles if NULL
     RPGrect d, s;
-    if (dstRect != NULL) {
-        d = *dstRect;
-    } else {
-        d.w = dst->width;
-        d.h = dst->height;
-    }
     if (srcRect != NULL) {
         s = *srcRect;
     } else {
+        s.x = 0;
+        s.y = 0;
         s.w = src->width;
         s.h = src->height;
+    }
+    if (dstRect != NULL) {
+        d = *dstRect;
+    } else {
+        d.x = 0;
+        d.y = 0;
+        d.w = s.w;
+        d.h = s.h;
     }
     // Generate VBO/VAO if not defined yet
     if (blitVAO == 0) {
@@ -227,8 +231,8 @@ RPG_RESULT RPG_Image_Blit(RPGimage *dst, RPGrect *dstRect, RPGimage *src, RPGrec
     GLfloat r = l + ((GLfloat) s.w / src->width);
     GLfloat b = t + ((GLfloat) s.h / src->height);
     glBindBuffer(GL_ARRAY_BUFFER, blitVBO);
-    float vertices[VERTICES_COUNT] = {0.0f, 1.0f, l, b, 1.0f, 0.0f, r, t, 0.0f, 0.0f, l, t,
-                                      0.0f, 1.0f, l, b, 1.0f, 1.0f, r, b, 1.0f, 0.0f, r, t};
+    GLfloat vertices[VERTICES_COUNT] = {0.0f, 1.0f, l, b, 1.0f, 0.0f, r, t, 0.0f, 0.0f, l, t,
+                                        0.0f, 1.0f, l, b, 1.0f, 1.0f, r, b, 1.0f, 0.0f, r, t};
     glBufferSubData(GL_ARRAY_BUFFER, 0, VERTICES_SIZE, vertices);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
