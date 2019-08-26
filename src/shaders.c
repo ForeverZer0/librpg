@@ -96,6 +96,5 @@ const char *RPG_FONT_FRAGMENT = "#version 330 core\n"
                                 "\n"
                                 "void main()\n"
                                 "{\n"
-                                "    vec4 sampled = vec4(1.0, 1.0, 1.0, texture(text, coords).r);\n"
-                                "    result = vec4(color) * sampled;\n"
+                                "    result = vec4(1.0, 1.0, 1.0, texture(text, coords).r) * color;\n"
                                 "}";

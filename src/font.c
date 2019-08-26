@@ -13,9 +13,6 @@
 #define STBTT_assert(x) RPG_ASSERT(x)
 #include "stb_truetype.h"
 
-#define RPG_FONT_DEFAULT_COLOR (RPGcolor) { 1.0f, 1.0f, 1.0f, 1.0f }
-#define RPG_FONT_DEFAULT_SIZE 32
-
 typedef struct RPGglyph {
     UT_hash_handle hh;
     RPGint codepoint;
@@ -100,8 +97,6 @@ static void RPG_Font_Initialize(RPGgame *game) {
     game->font.program      = *((GLuint *) shader);
     game->font.projection   = glGetUniformLocation(game->font.program, "projection");
     game->font.color        = glGetUniformLocation(game->font.program, "color");
-    game->font.defaultColor = RPG_FONT_DEFAULT_COLOR;
-    game->font.defaultSize  = RPG_FONT_DEFAULT_SIZE;
 
     glGenVertexArrays(1, &game->font.vao);
     glGenBuffers(1, &game->font.vbo);
@@ -300,7 +295,9 @@ RPG_RESULT RPG_Font_DrawText(RPGfont *font, RPGimage *image, const char *text, R
     RPG_ENSURE_FBO(image);
     RPGmat4 ortho;
     RPG_MAT4_ORTHO(ortho, 0.0f, image->width, image->height, 0.0f, -1.0f, 1.0f);
-    RPG_VIEWPORT(0, 0, image->width, image->height);
+    glViewport(0, 0, image->width, image->height);
+    glScissor(d.x, d.y, d.w, d.h);
+
     glUniformMatrix4fv(RPG_GAME->font.projection, 1, GL_FALSE, (RPGfloat *) &ortho);
     glUniform4f(RPG_GAME->font.color, font->color.x, font->color.y, font->color.z, font->color.w);
 
@@ -309,6 +306,7 @@ RPG_RESULT RPG_Font_DrawText(RPGfont *font, RPGimage *image, const char *text, R
     glBindBuffer(GL_ARRAY_BUFFER, RPG_GAME->font.vbo);
     glBlendEquation(GL_FUNC_ADD);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
 
     // Declare variable storage
     utf8_int32_t cp, next;

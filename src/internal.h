@@ -188,4 +188,7 @@ static inline int imin(int i1, int i2) { return i1 < i2 ? i1 : i2; }
     RPG_RESET_PROJECTION();                                                                                                       \
     RPG_RESET_VIEWPORT()
 
+#define RPG_FONT_DEFAULT_COLOR (RPGcolor) { 1.0f, 1.0f, 1.0f, 1.0f }
+#define RPG_FONT_DEFAULT_SIZE 32
+
 #endif /* OPEN_RPG_INTERNAL_H */

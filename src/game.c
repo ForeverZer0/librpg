@@ -168,6 +168,8 @@ RPG_RESULT RPG_Game_Create(const char *title, RPGint width, RPGint height, RPG_I
     g->resolution.width  = width;
     g->resolution.height = height;
     g->flags             = flags;
+    g->font.defaultColor = RPG_FONT_DEFAULT_COLOR;
+    g->font.defaultSize = RPG_FONT_DEFAULT_SIZE;
     if (title) {
         g->title = RPG_MALLOC(strlen(title) + 1);
         strcpy(g->title, title);
@@ -206,6 +208,7 @@ RPG_RESULT RPG_Game_Create(const char *title, RPGint width, RPGint height, RPG_I
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
     glEnable(GL_SCISSOR_TEST);
     glEnable(GL_BLEND);
+    
 
     result = RPG_Game_CreateShaderProgram(g);
     if (result) {

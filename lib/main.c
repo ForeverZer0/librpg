@@ -55,51 +55,49 @@ int main(int argc, char **argv) {
     // RPG_Audio_SetCallback(RPG_AUDIO_CB_DONE, audio_done);
 
     // Get some random background color, and set an app icon
-    RPGcolor color = { .x=comp(), .y=comp(), .z=comp(), .w=1.0f };
-    RPG_Game_SetBackColor(game, &color);
+    // RPGcolor backColor = { .x=comp(), .y=comp(), .z=comp(), .w=1.0f };
+    RPGcolor backColor = { .x=1, .y=0, .z=0, .w=1.0f };
+    RPG_Game_SetBackColor(game, &backColor);
     RPG_Game_SetIconFromFile(game, "/home/eric/Pictures/books-512.png");
 
     // Create an image
-    RPGimage *image, *src;
-    RPGcolor back = { 0.0f, 0.0f, 0.0f, 1.0f };
-    RPGcolor fill = { 0.3f, 0.3f, 1.3f, 1.0f };
-    RPGint w, h;
-    RPG_Image_CreateFromFile("/home/eric/Pictures/character.png", &src);
-    RPG_Image_CreateFilled(600, 400, &back, &image);
-    RPG_Image_GetSize(image, &w, &h);
+    RPGimage *image;
+    RPGcolor blockColor = { 1.0f, 1.0f, 1.0f, 1.0f };
+    RPGcolor fontColor = { 0.3f, 0.3f, 0.3f, 1.1f };
+    RPG_Image_CreateFilled(600, 400, &blockColor, &image);
 
 
-    RPGrect dr = { 0, 0, 600, 400 };
+    RPGimage *character;
+    RPG_Image_CreateFromFile("/home/eric/Pictures/character.png", &character);
+
+
+
     RPGfont *font;
-    RPG_RESULT result = RPG_Font_CreateFromFile("/code/c/open_rpg/assets/fonts/NotoSans-Black.ttf", &font);
+    RPG_Font_SetDefaultColor(&fontColor);
+    RPG_Font_CreateFromFile("/code/c/open_rpg/assets/fonts/NotoSans-Black.ttf", &font);
     
+RPG_Font_DrawText(font, image, "OpenRPG", NULL, RPG_ALIGN_DEFAULT, 1.0f);
+    // RPG_ALIGN aligns[9] = 
+    // { 
+    //     RPG_ALIGN_TOP_LEFT, RPG_ALIGN_TOP_CENTER, RPG_ALIGN_TOP_RIGHT, 
+    //     RPG_ALIGN_CENTER_LEFT, RPG_ALIGN_CENTER, RPG_ALIGN_CENTER_RIGHT, 
+    //     RPG_ALIGN_BOTTOM_LEFT, RPG_ALIGN_BOTTOM_CENTER, RPG_ALIGN_BOTTOM_RIGHT,
+    // };
+    // for (int i = 0; i < 9; i++) {
+    //     RPG_Font_DrawText(font, image, "OpenRPG", NULL, aligns[i], 1.0f);
+    // }
 
-    RPG_ALIGN aligns[9] = 
-    { 
-        RPG_ALIGN_TOP_LEFT, RPG_ALIGN_TOP_CENTER, RPG_ALIGN_TOP_RIGHT, 
-        RPG_ALIGN_CENTER_LEFT, RPG_ALIGN_CENTER, RPG_ALIGN_CENTER_RIGHT, 
-        RPG_ALIGN_BOTTOM_LEFT, RPG_ALIGN_BOTTOM_CENTER, RPG_ALIGN_BOTTOM_RIGHT,
-    };
-    for (int i = 0; i < 9; i++) {
-        RPG_Font_DrawText(font, image, "OpenRPG", &dr, aligns[i], 1.0f);
-    }
-
-
-
-
-    RPGint fw, fh;
-    RPG_Font_MeasureText(font, "Hello from  ³OoenRPG!", &fw, &fh);
-
-    // RPGrect d = { 0, 0, 32, 64 };
-    // RPGrect s = { 0, 0, 32, 32 };
-    // RPG_Image_Blit(image, &d, src, &s, 1.0);
 
     // Create a sprite to display the image
-    RPGsprite *sprite;
-    RPG_Sprite_Create(NULL, &sprite);
-    RPG_Sprite_SetImage(sprite, image);
+    RPGsprite *sprite1, *sprite2;
+    RPG_Sprite_Create(NULL, &sprite1);
+    RPG_Sprite_Create(NULL, &sprite2);
+
+    RPG_Sprite_SetImage(sprite1, image);
+    RPG_Sprite_SetImage(sprite2, character);
+
     // RPG_Sprite_SetSourceRectValues(sprite, 0, 0, w / 3, h / 4);
-    RPG_Renderable_SetLocation((RPGrenderable*) sprite, 32, 64);
+    RPG_Renderable_SetLocation((RPGrenderable*) sprite1, 32, 64);
     
     // // Play some music
     // const char *path = "/home/eric/Music/flora cash - I Wasted You (Audio)-0-kennkvJLE.ogg";
