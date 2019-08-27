@@ -10,6 +10,9 @@ extern const char *RPG_FRAGMENT_SHADER;
 extern const char *RPG_FONT_VERTEX;
 extern const char *RPG_FONT_FRAGMENT;
 
+#define VERTICES_COUNT 24
+#define VERTICES_SIZE (sizeof(RPGfloat) * VERTICES_COUNT)
+#define VERTICES_STRIDE (sizeof(RPGfloat) * 4)
 #define RPG_PI 3.14159274f
 
 #define RPG_ENSURE_FILE(filename)                                                                                                          \
@@ -20,9 +23,15 @@ extern const char *RPG_FONT_FRAGMENT;
     if (ptr == NULL)                                                                                                                       \
     return RPG_ERR_INVALID_POINTER
 
-static inline int imax(int i1, int i2) { return i1 > i2 ? i1 : i2; }
-
-static inline int imin(int i1, int i2) { return i1 < i2 ? i1 : i2; }
+#define RPG_BASE_UNIFORMS(r)                                                                                                               \
+    glUniform4f(RPG_GAME->shader.color, r.color.x, r.color.y, r.color.z, r.color.w);                                                       \
+    glUniform4f(RPG_GAME->shader.tone, r.tone.x, r.tone.y, r.tone.z, r.tone.w);                                                            \
+    glUniform1f(RPG_GAME->shader.alpha, r.alpha);                                                                                          \
+    glUniform1f(RPG_GAME->shader.hue, r.hue);                                                                                              \
+    glUniform4f(RPG_GAME->shader.flash, r.flash.color.x, r.flash.color.y, r.flash.color.z, r.flash.color.w);                               \
+    glUniformMatrix4fv(RPG_GAME->shader.model, 1, GL_FALSE, (GLfloat *) &r.model);                                                         \
+    glBlendEquation(r.blend.op);                                                                                                           \
+    glBlendFunc(r.blend.src, r.blend.dst)
 
 #define RPG_CLAMPF(v, min, max) (fmaxf(min, fminf(max, v)))
 
@@ -97,12 +106,18 @@ static inline int imin(int i1, int i2) { return i1 < i2 ? i1 : i2; }
 #define DEF_FX_CREATE(name, type)                                                                                                          \
     RPG_RESULT RPG_##name##_Create(RPGaudiofx **fx) { return RPG_Audio_CreateEffect(type, fx); }
 
+// Dynamically allocates a type
 #define RPG_ALLOC(type) ((type *) RPG_MALLOC(sizeof(type)))
+
+// Dynamically allocates an array of a type
 #define RPG_ALLOC_N(type, n) ((type *) RPG_MALLOC(sizeof(type) * n))
+
+// Dynamically allocates a type and clears it to 0
 #define RPG_ALLOC_ZERO(var, type)                                                                                                          \
     type *var = RPG_ALLOC(type);                                                                                                           \
     memset(var, 0, sizeof(type))
 
+// Sets the values of a 4x4 matrix to an orthogonal
 #define RPG_MAT4_ORTHO(mat4, left, right, top, bottom, near, far)                                                                          \
     mat4.m11 = 2.0f / (right - left);                                                                                                      \
     mat4.m12 = mat4.m13 = mat4.m14 = 0.0f;                                                                                                 \
@@ -115,6 +130,7 @@ static inline int imin(int i1, int i2) { return i1 < i2 ? i1 : i2; }
     mat4.m43                       = near / (RPGfloat)(near - far);                                                                        \
     mat4.m44                       = 1.0f
 
+// Sets the values of a 4x4 matrix
 #define RPG_MAT4_SET(mat4, _m11, _m12, _m13, _m14, _m21, _m22, _m23, _m24, _m31, _m32, _m33, _m34, _m41, _m42, _m43, _m44)                 \
     mat4.m11 = _m11;                                                                                                                       \
     mat4.m12 = _m12;                                                                                                                       \
@@ -133,6 +149,7 @@ static inline int imin(int i1, int i2) { return i1 < i2 ? i1 : i2; }
     mat4.m43 = _m43;                                                                                                                       \
     mat4.m44 = _m44
 
+// Renders a texture to the currently bound framebuffer
 #define RPG_RENDER_TEXTURE(TEXTURE, VAO)                                                                                                   \
     glActiveTexture(GL_TEXTURE0);                                                                                                          \
     glBindTexture(GL_TEXTURE_2D, TEXTURE);                                                                                                 \
@@ -140,6 +157,7 @@ static inline int imin(int i1, int i2) { return i1 < i2 ? i1 : i2; }
     glDrawArrays(GL_TRIANGLES, 0, 6);                                                                                                      \
     glBindVertexArray(0)
 
+// Defines a basic get function
 #define DEF_GETTER(name, param, objtype, paramtype, field)                                                                                 \
     RPG_RESULT RPG_##name##_Get##param(objtype *obj, paramtype *value) {                                                                   \
         RPG_RETURN_IF_NULL(obj);                                                                                                           \
@@ -149,6 +167,7 @@ static inline int imin(int i1, int i2) { return i1 < i2 ? i1 : i2; }
         return RPG_NO_ERROR;                                                                                                               \
     }
 
+// Defines a basic set function
 #define DEF_SETTER(name, param, objtype, paramtype, field)                                                                                 \
     RPG_RESULT RPG_##name_Set##param(objtype *obj, paramtype value) {                                                                      \
         RPG_RETURN_IF_NULL(obj);                                                                                                           \
@@ -156,36 +175,31 @@ static inline int imin(int i1, int i2) { return i1 < i2 ? i1 : i2; }
         return RPG_NO_ERROR;                                                                                                               \
     }
 
+// Defines a pair of basic get/set functions 
 #define DEF_PARAM(name, param, objtype, paramtype, field)                                                                                  \
     DEF_GETTER(name, param, objtype, paramtype, field)                                                                                     \
     DEF_SETTER(name, param, objtype, paramtype, field)
 
+// Checks if both width and height are greater than 0, returning RPG_ERR_OUT_OF_RANGE if not
 #define RPG_CHECK_DIMENSIONS(w, h)                                                                                                         \
     if ((w) < 1 || (h) < 1)                                                                                                                \
     return RPG_ERR_OUT_OF_RANGE
 
-/**
- * @brief Resets the clear color back to the user-defined value.
- */
+// Resets the clear color back to the user-defined value.
 #define RPG_RESET_BACK_COLOR() glClearColor(RPG_GAME->color.x, RPG_GAME->color.y, RPG_GAME->color.z, RPG_GAME->color.w)
 
-/**
- * @brief Resets the primary viewport to fit the window correctly.
- */
+// Resets the primary viewport to fit the window correctly.
 #define RPG_RESET_VIEWPORT() RPG_VIEWPORT(RPG_GAME->bounds.x, RPG_GAME->bounds.y, RPG_GAME->bounds.w, RPG_GAME->bounds.h)
 
-/**
- * @brief Resets the primary projection matrix.
- */
+// Resets the primary projection matrix.
 #define RPG_RESET_PROJECTION() glUniformMatrix4fv(RPG_GAME->shader.projection, 1, GL_FALSE, (GLfloat *) &RPG_GAME->projection)
 
-/**
- * @brief Sets the viewport and scissor rectangle of the primary viewport.
- */
+// Sets the viewport and scissor rectangle of the primary viewport.
 #define RPG_VIEWPORT(x, y, w, h)                                                                                                           \
     glViewport(x, y, w, h);                                                                                                                \
     glScissor(x, y, w, h)
 
+// Binds a an image's framebuffer, creating it if it does not exist
 #define RPG_ENSURE_FBO(img)                                                                                                                \
     if (img->fbo == 0) {                                                                                                                   \
         glGenFramebuffers(1, &img->fbo);                                                                                                   \
@@ -194,6 +208,7 @@ static inline int imin(int i1, int i2) { return i1 < i2 ? i1 : i2; }
     } else                                                                                                                                 \
         glBindFramebuffer(GL_FRAMEBUFFER, img->fbo)
 
+// Binds an image's framebuffer, using the specified coordinates for its ortho
 #define RPG_BIND_FBO(img, x, y, w, h)                                                                                                      \
     RPG_ENSURE_FBO(img);                                                                                                                   \
     RPGmat4 m;                                                                                                                             \
@@ -201,13 +216,35 @@ static inline int imin(int i1, int i2) { return i1 < i2 ? i1 : i2; }
     glUniformMatrix4fv(RPG_GAME->shader.projection, 1, GL_FALSE, (RPGfloat *) &m);                                                         \
     RPG_VIEWPORT(x, y, w, h)
 
+// Unbinds an image's framebuffer, and resets the projection and viewport
 #define RPG_UNBIND_FBO(img)                                                                                                                \
     glBindFramebuffer(GL_FRAMEBUFFER, 0);                                                                                                  \
     RPG_RESET_PROJECTION();                                                                                                                \
     RPG_RESET_VIEWPORT()
 
+// The initial pixel size used for font unless set by the user.
+#define RPG_FONT_DEFAULT_SIZE 32
+
+// The initial color used for fonts unless set by the user.
 #define RPG_FONT_DEFAULT_COLOR                                                                                                             \
     (RPGcolor) { 1.0f, 1.0f, 1.0f, 1.0f }
-#define RPG_FONT_DEFAULT_SIZE 32
+
+/**
+ * @brief Returns the maximum of two integer values.
+ * 
+ * @param i1 First value
+ * @param i2 Second value
+ * @return int The greater of the two values.
+ */
+static inline int imax(int i1, int i2) { return i1 > i2 ? i1 : i2; }
+
+/**
+ * @brief Returns the minimum of two integer values.
+ * 
+ * @param i1 First value
+ * @param i2 Second value
+ * @return int The lesser of the two values.
+ */
+static inline int imin(int i1, int i2) { return i1 < i2 ? i1 : i2; }
 
 #endif /* OPEN_RPG_INTERNAL_H */

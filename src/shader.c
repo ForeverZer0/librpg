@@ -1,8 +1,6 @@
 
 #include "game.h"
-#include "glad.h"
 #include "internal.h"
-#include "rpg.h"
 #include <stdio.h>
 
 typedef struct RPGshader {

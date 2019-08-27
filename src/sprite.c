@@ -1,10 +1,9 @@
-#include "glad.h"
+#include "game.h"
 #include "internal.h"
-#include "renderable.h"
 
 static void RPG_Sprite_Render(void *sprite) {
     RPGsprite *s = sprite;
-    if (!s->base.visible || s->base.alpha < __FLT_EPSILON__ || s->img == NULL) {
+    if (!s->base.visible || s->base.alpha < __FLT_EPSILON__ || s->image == NULL) {
         // No-op if sprite won't be visible
         return;
     }
@@ -25,7 +24,7 @@ static void RPG_Sprite_Render(void *sprite) {
         s->base.updated = RPG_FALSE;
     }
     RPG_BASE_UNIFORMS(s->base);
-    RPG_RENDER_TEXTURE(s->img->texture, s->vao);
+    RPG_RENDER_TEXTURE(s->image->texture, s->vao);
 }
 
 RPG_RESULT RPG_Sprite_Free(RPGsprite *sprite) {
@@ -69,13 +68,13 @@ RPG_RESULT RPG_Sprite_GetViewport(RPGsprite *sprite, RPGviewport **viewport) {
 RPG_RESULT RPG_Sprite_GetImage(RPGsprite *sprite, RPGimage **image) {
     RPG_RETURN_IF_NULL(sprite);
     RPG_RETURN_IF_NULL(*image);
-    *image = sprite->img;
+    *image = sprite->image;
     return RPG_NO_ERROR;
 }
 
 RPG_RESULT RPG_Sprite_SetImage(RPGsprite *sprite, RPGimage *image) {
     RPG_RETURN_IF_NULL(sprite);
-    sprite->img = image;
+    sprite->image = image;
     if (image) {
         RPG_Sprite_SetSourceBounds(sprite, 0, 0, image->width, image->height);
     } else {
@@ -111,7 +110,7 @@ RPG_RESULT RPG_Sprite_GetSourceBounds(RPGsprite *sprite, RPGint *x, RPGint *y, R
 
 RPG_RESULT RPG_Sprite_SetSourceBounds(RPGsprite *sprite, RPGint x, RPGint y, RPGint w, RPGint h) {
     RPG_RETURN_IF_NULL(sprite);
-    if (sprite->img == NULL) {
+    if (sprite->image == NULL) {
         return RPG_NO_ERROR;
     }
 
@@ -120,10 +119,10 @@ RPG_RESULT RPG_Sprite_SetSourceBounds(RPGsprite *sprite, RPGint x, RPGint y, RPG
     sprite->rect.w = w;
     sprite->rect.h = h;
 
-    GLfloat l = (GLfloat)x / sprite->img->width;
-    GLfloat t = (GLfloat)y / sprite->img->height;
-    GLfloat r = l + ((GLfloat)w / sprite->img->width);
-    GLfloat b = t + ((GLfloat)h / sprite->img->height);
+    GLfloat l = (GLfloat)x / sprite->image->width;
+    GLfloat t = (GLfloat)y / sprite->image->height;
+    GLfloat r = l + ((GLfloat)w / sprite->image->width);
+    GLfloat b = t + ((GLfloat)h / sprite->image->height);
 
     glBindBuffer(GL_ARRAY_BUFFER, sprite->vbo);
     GLfloat vertices[VERTICES_COUNT] = {0.0f, 1.0f, l, b, 1.0f, 0.0f, r, t, 0.0f, 0.0f, l, t,

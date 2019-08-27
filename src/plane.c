@@ -1,5 +1,4 @@
 #include "game.h"
-#include "renderable.h"
 #include "internal.h"
 
 static void RPG_Plane_Render(void *plane) {
@@ -8,7 +7,7 @@ static void RPG_Plane_Render(void *plane) {
         return;
     }
 
-    if (p->update_vao) {
+    if (p->updateVAO) {
         GLfloat l = ((GLfloat) p->base.ox / p->image->width) * p->zoom.x;
         GLfloat t = ((GLfloat) p->base.oy / p->image->height) * p->zoom.y;
         GLfloat r = l + (((GLfloat) p->width / p->image->width) * p->zoom.x);
@@ -25,7 +24,7 @@ static void RPG_Plane_Render(void *plane) {
         };
         glBufferSubData(GL_ARRAY_BUFFER, 0, VERTICES_SIZE, vertices);
         glBindBuffer(GL_ARRAY_BUFFER, 0);
-        p->update_vao = RPG_FALSE;
+        p->updateVAO = RPG_FALSE;
     }
 
     if (p->base.updated) {
@@ -72,7 +71,7 @@ RPG_RESULT RPG_Plane_Create(RPGviewport *viewport, RPGplane **plane) {
     }
     p->zoom.x = 1.0f;
     p->zoom.y = 1.0f;
-    p->update_vao = RPG_TRUE;
+    p->updateVAO = RPG_TRUE;
 
     // Generate sampler
     glGenSamplers(1, &p->sampler);
@@ -183,7 +182,7 @@ RPG_RESULT RPG_Plane_SetOrigin(RPGplane *plane, RPGint x, RPGint y) {
     if (x != plane->base.ox || y != plane->base.oy) {
         plane->base.ox = x;
         plane->base.oy = y;
-        plane->update_vao = RPG_TRUE;
+        plane->updateVAO = RPG_TRUE;
     }
     return RPG_NO_ERROR;
 }
@@ -203,7 +202,7 @@ RPG_RESULT RPG_Plane_SetZoom(RPGplane *plane, RPGfloat x, RPGfloat y) {
     RPG_RETURN_IF_NULL(plane);
     plane->zoom.x = x;
     plane->zoom.y = y;
-    plane->update_vao = RPG_TRUE;
+    plane->updateVAO = RPG_TRUE;
     return RPG_NO_ERROR;
 }
 
@@ -218,6 +217,6 @@ RPG_RESULT RPG_Plane_SetImage(RPGplane *plane, RPGimage *image) {
     RPG_RETURN_IF_NULL(plane);
     plane->image = image;
     plane->base.updated = RPG_TRUE;
-    plane->update_vao = RPG_TRUE;
+    plane->updateVAO = RPG_TRUE;
     return RPG_NO_ERROR;
 }

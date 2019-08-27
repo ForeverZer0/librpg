@@ -322,7 +322,6 @@ RPG_RESULT RPG_Reverb_CreateFromType(RPG_REVERB_TYPE type, RPGaudiofx **reverb);
 RPG_RESULT RPG_Reverb_CreateFromPreset(RPGreverbpreset *preset, RPGaudiofx **reverb);
 RPG_RESULT RPG_Reverb_GetPresetFromType(RPG_REVERB_TYPE type, RPGreverbpreset *preset);
 RPG_RESULT RPG_Reverb_SetPreset(RPGaudiofx *e, RPGreverbpreset *p);
-RPG_RESULT RPG_Reverb_GetPresetDescription(RPG_REVERB_TYPE type, char *buffer, RPGsize sizeBuffer, RPGsize *written);
 RPG_RESULT RPG_Reverb_GetDensity(RPGaudiofx *fx, RPGfloat *value);
 RPG_RESULT RPG_Reverb_GetDiffusion(RPGaudiofx *fx, RPGfloat *value);
 RPG_RESULT RPG_Reverb_GetGain(RPGaudiofx *fx, RPGfloat *value);

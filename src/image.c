@@ -1,6 +1,6 @@
 
 
-#include "rpg.h"
+#include "game.h"
 
 // stb_image.h macros
 #define STB_IMAGE_IMPLEMENTATION
@@ -18,7 +18,6 @@
 
 #include "glad.h"
 #include "internal.h"
-#include "renderable.h"
 #include "stb_image.h"
 #include "stb_image_write.h"
 

@@ -25,6 +25,7 @@
 
 
 int sec;
+RPGplane *plane;
 
 static void update(RPGint64 tick) {
 
@@ -34,13 +35,31 @@ static void update(RPGint64 tick) {
         // printf("%d\n", sec);
     }
     RPGint x, y;
-    RPG_Input_GetCursorLocation(&x, &y);
-    // printf("%d, %d\n", x, y);
-    
+    RPG_Plane_GetOrigin(plane, &x, &y);
+    RPG_Plane_SetOrigin(plane, x + 1, y + 1);
+
+    RPGbool trigger;
+    RPG_Input_KeyTrigger(RPG_KEY_A, &trigger);
+
+    if (trigger) {
+        printf("TRIGGER\n");
+    }
+    RPG_Input_Update();
+}
+
+static void focus_change(RPGgame *game, RPGbool focused) {
+    printf("%s", focused ? "Focused\n" : "Focus Lost\n");
 }
 
 static inline float comp(void) {
     return (float) rand() / (float) RAND_MAX ;
+}
+
+static void filedrop(RPGgame *game, RPGint count, const char **files) {
+
+    for (int i = 0; i < count; i++) {
+        printf("%s\n", files[i]);
+    }
 }
 
 void audio_done(RPGint channel) {
@@ -54,63 +73,20 @@ int main(int argc, char **argv) {
     // Let's create a game object, and make a window for it
     RPGgame *game;
     RPG_RESULT r = RPG_Game_Create("OpenRPG", 800, 600, RPG_INIT_DEFAULT | RPG_INIT_RESIZABLE, &game);
-
-    // Get some random background color, and set an app icon
-    // RPGcolor backColor = { .x=comp(), .y=comp(), .z=comp(), .w=1.0f };
-    RPGcolor backColor = { .x=1, .y=1, .z=1, .w=1.0f };
-    RPG_Game_SetBackColor(game, &backColor);
     RPG_Game_SetIconFromFile(game, "/home/eric/Pictures/books-512.png");
-
-    // Create an image
-    RPGimage *image; 
-    RPGcolor blockColor = { 0.2f, 0.2f, 0.2f, 1.0f };
-    RPGcolor fontColor = { 0.3f, 0.3f, 0.3f, 1.1f };
-    RPG_Image_CreateFilled(600, 400, &blockColor, &image);
-
-
-    RPGimage *character;
-    RPG_Image_CreateFromFile("/home/eric/Pictures/character.png", &character);
+    RPG_Game_SetFileDropCallback(game, filedrop);
 
 
 
 
-    RPGfont *font;
-    // RPG_Font_SetDefaultColor(&fontColor);
-    RPG_Font_CreateFromFile("/code/c/open_rpg/assets/fonts/NotoSans-Black.ttf", &font);
-    
-RPG_Font_DrawText(font, image, "Heljo", NULL, RPG_ALIGN_DEFAULT);
 
-
-    RPG_Image_Blit(image, NULL, character, NULL, 1.0f);
-
-    // RPG_ALIGN aligns[9] = 
-    // { 
-    //     RPG_ALIGN_TOP_LEFT, RPG_ALIGN_TOP_CENTER, RPG_ALIGN_TOP_RIGHT, 
-    //     RPG_ALIGN_CENTER_LEFT, RPG_ALIGN_CENTER, RPG_ALIGN_CENTER_RIGHT, 
-    //     RPG_ALIGN_BOTTOM_LEFT, RPG_ALIGN_BOTTOM_CENTER, RPG_ALIGN_BOTTOM_RIGHT,
-    // };
-    // for (int i = 0; i < 9; i++) {
-    //     RPG_Font_DrawText(font, image, "OpenRPG", NULL, aligns[i], 1.0f);
-    // }
-
-
-    // Create a sprite to display the image
-    RPGsprite *sprite1, *sprite2;
-    RPG_Sprite_Create(NULL, &sprite1);
-    RPG_Sprite_Create(NULL, &sprite2);
-
-    RPG_Sprite_SetImage(sprite1, image);
-    RPG_Sprite_SetImage(sprite2, character);
-
-        RPGimage *fog;
+    RPGimage *fog;
     RPG_Image_CreateFromFile("/home/eric/Pictures/RTP/XP/Graphics/Fogs/001-Fog01.png", &fog);
 
-    RPGplane *plane;
     RPG_Plane_Create(NULL, &plane);
     RPG_Plane_SetImage(plane, fog);
 
-    // RPG_Sprite_SetSourceBounds(sprite, 0, 0, w / 3, h / 4);
-    RPG_Renderable_SetLocation((RPGrenderable*) sprite1, 128, 128);
+  
     
     // Play some music
     const char *path = "/home/eric/Desktop/The Blackest Day.ogg";

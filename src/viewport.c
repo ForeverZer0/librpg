@@ -1,5 +1,5 @@
-
-#include "renderable.h"
+#include "game.h"
+#include "internal.h"
 
 static void RPG_Viewport_Render(void *viewport) {
     RPGviewport *v = viewport;

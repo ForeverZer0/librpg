@@ -150,6 +150,8 @@ typedef enum {
     RPG_NO_ERROR,
     RPG_ERR_SYSTEM,
     RPG_ERR_FORMAT,
+    RPG_ERR_CONTEXT,
+    RPG_ERR_UNSUPPORTED,
     RPG_ERR_FILE_NOT_FOUND,
     RPG_ERR_FILE_READ_ERROR,
     RPG_ERR_AUDIO_DEVICE,
@@ -212,8 +214,7 @@ typedef enum {
     RPG_INIT_CENTERED    = 0x0040, /* Center window on the screen (ignored for fullscreen windows) */
 
     /* Auto-aspect, decorated, and centered */
-    RPG_INIT_DEFAULT        = RPG_INIT_AUTO_ASPECT | RPG_INIT_DECORATED | RPG_INIT_CENTERED,
-    RPG_INIT_FORCE_UNSIGNED = 0xFFFFFFFF /* Forces enum to use unsigned values, do not use */
+    RPG_INIT_DEFAULT = RPG_INIT_AUTO_ASPECT | RPG_INIT_DECORATED | RPG_INIT_CENTERED
 } RPG_INIT_FLAGS;
 
 typedef enum {
@@ -414,6 +415,11 @@ typedef void (*RPGrenderfunc)(void *renderable);
 typedef void (*RPGkeyfunc)(RPGgame *game, RPG_KEY key, int scancode, RPG_INPUT_STATE state, RPG_MODKEY mods);
 typedef void (*RPGmbuttonfunc)(RPGgame *game, RPG_MBUTTON button, RPG_INPUT_STATE state, RPG_MODKEY mods);
 typedef void (*RPGcursorfunc)(RPGgame *game, RPGdouble x, RPGdouble y);
+typedef void (*RPGgamestate)(RPGgame *game, RPGbool state);
+typedef void (*RPGgameaction)(RPGgame *game);
+typedef void (*RPGfiledropfunc)(RPGgame *game, RPGint count, const char **files);
+typedef void (*RPGmovefunc)(RPGgame *game, RPGint x, RPGint y);
+typedef void (*RPGsizefunc)(RPGgame *game, RPGint width, RPGint height);
 
 // Game
 RPG_RESULT RPG_Game_Create(const char *title, RPGint width, RPGint height, RPG_INIT_FLAGS flags, RPGgame **game);
@@ -428,7 +434,40 @@ RPG_RESULT RPG_Game_GetResolution(RPGgame *game, RPGint *width, RPGint *height);
 RPG_RESULT RPG_Game_SetResolution(RPGgame *game, RPGint width, RPGint height);
 RPG_RESULT RPG_Game_SetIcon(RPGgame *game, RPGrawimage *image);
 RPG_RESULT RPG_Game_SetIconFromFile(RPGgame *game, const char *filename);
-RPG_RESULT RPG_Game_Snapshot(RPGimage **image);
+RPG_RESULT RPG_Game_Snapshot(RPGgame *game, RPGimage **image);
+RPG_RESULT RPG_Game_Close(RPGgame *game, RPGbool close);
+RPG_RESULT RPG_Game_Show(RPGgame *game);
+RPG_RESULT RPG_Game_Hide(RPGgame *game);
+RPG_RESULT RPG_Game_Focus(RPGgame *game);
+RPG_RESULT RPG_Game_RequestAttention(RPGgame *game);
+RPG_RESULT RPG_Game_Minimize(RPGgame *game);
+RPG_RESULT RPG_Game_Maximize(RPGgame *game);
+RPG_RESULT RPG_Game_Restore(RPGgame *game);
+RPG_RESULT RPG_Game_GetWindowSize(RPGgame *game, RPGint *width, RPGint *height);
+RPG_RESULT RPG_Game_GetWindowLocation(RPGgame *game, RPGint *x, RPGint *y);
+RPG_RESULT RPG_Game_SetWindowSize(RPGgame *game, RPGint width, RPGint height);
+RPG_RESULT RPG_Game_SetWindowLocation(RPGgame *game, RPGint x, RPGint y);
+RPG_RESULT RPG_Game_SetWindowOpacity(RPGgame *game, RPGfloat opacity);
+RPG_RESULT RPG_Game_GetWindowOpacity(RPGgame *game, RPGfloat *opacity);
+RPG_RESULT RPG_Game_GetClipboardString(RPGgame *game, void *buffer, RPGsize sizeBuffer, RPGsize *size);
+RPG_RESULT RPG_Game_SetClipboardString(RPGgame *game, const char *str);
+RPG_RESULT RPG_Game_GetWindowTitle(RPGgame *game, void *buffer, RPGsize sizeBuffer, RPGsize *size);
+RPG_RESULT RPG_Game_SetWindowTitle(RPGgame *game, const char *str);
+RPG_RESULT RPG_Game_GetIsMaximized(RPGgame *game, RPGbool *state);
+RPG_RESULT RPG_Game_GetIsMinimized(RPGgame *game, RPGbool *state);
+RPG_RESULT RPG_Game_GetIsFocused(RPGgame *game, RPGbool *state);
+RPG_RESULT RPG_Game_GetTopMost(RPGgame *game, RPGbool *state);
+RPG_RESULT RPG_Game_SetTopMost(RPGgame *game, RPGbool state);
+RPG_RESULT RPG_Game_GetWindowFrameSize(RPGgame *game, RPGint *left, RPGint *top, RPGint *right, RPGint *bottom);
+RPG_RESULT RPG_Game_SetCloseCallback(RPGgame *game, RPGgameaction func);
+RPG_RESULT RPG_Game_SetMinimizeCallback(RPGgame *game, RPGgamestate func);
+RPG_RESULT RPG_Game_SetMaximizeCallback(RPGgame *game, RPGgamestate func);
+RPG_RESULT RPG_Game_SetFocusCallback(RPGgame *game, RPGgamestate func);
+RPG_RESULT RPG_Game_SetRestoredCallback(RPGgame *game, RPGgameaction func);
+RPG_RESULT RPG_Game_SetFileDropCallback(RPGgame *game, RPGfiledropfunc func);
+RPG_RESULT RPG_Game_SetMoveCallback(RPGgame *game, RPGmovefunc func);
+RPG_RESULT RPG_Game_SetResizeCallback(RPGgame *game, RPGsizefunc func);
+
 
 // Image
 RPG_RESULT RPG_Image_Create(RPGint width, RPGint height, const void *pixels, RPG_PIXEL_FORMAT format, RPGimage **image);

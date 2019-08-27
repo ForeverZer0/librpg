@@ -1,8 +1,6 @@
-#include "rpg.h"
 
 #include "game.h"
 #include "internal.h"
-#include "renderable.h"
 #include "utf8.h"
 #include "uthash.h"
 #include <stdio.h>

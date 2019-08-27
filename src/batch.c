@@ -1,5 +1,5 @@
 #include "game.h"
-#include "renderable.h"
+#include "internal.h"
 
 void RPG_Batch_Init(RPGbatch *v) {
     v->capacity = BATCH_INIT_CAPACITY;
@@ -35,13 +35,6 @@ void RPG_Batch_Set(RPGbatch *v, int index, RPGrenderable *item) {
         v->items[index] = item;
         v->updated      = RPG_TRUE;
     }
-}
-
-RPGrenderable *RPG_Batch_Get(RPGbatch *v, int index) {
-    if (index >= 0 && index < v->total) {
-        return v->items[index];
-    }
-    return NULL;
 }
 
 void RPG_Batch_DeleteItem(RPGbatch *batch, RPGrenderable *item) {

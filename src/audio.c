@@ -15,7 +15,7 @@
 #define BUFFER_SIZE 32768
 #define CHANNELS (RPG_GAME->audio.channels)
 
-#if !defined(RPG_AUDIO_NO_EFFECTS)
+#ifndef RPG_AUDIO_NO_EFFECTS
 
 static LPALGENAUXILIARYEFFECTSLOTS alGenAuxiliaryEffectSlots;
 static LPALDELETEAUXILIARYEFFECTSLOTS alDeleteAuxiliaryEffectSlots;
@@ -184,7 +184,6 @@ RPG_RESULT RPG_Audio_FreeChannel(RPGint index) {
 }
 
 static void RPG_Audio_SetALFormat(RPGsound *sound) {
-
     int type = sound->info.format & SF_FORMAT_SUBMASK;
     switch (type) {
         case SF_FORMAT_PCM_S8:
@@ -221,26 +220,29 @@ static void RPG_Audio_SetALFormat(RPGsound *sound) {
     };
 }
 
-static RPG_RESULT RPG_Audio_GetSoundError(int error) {
-    switch (error) {
-        case SF_ERR_NO_ERROR: return RPG_NO_ERROR;
-        case SF_ERR_UNRECOGNISED_FORMAT: return RPG_ERR_FORMAT;
-        case SF_ERR_SYSTEM: return RPG_ERR_SYSTEM;
-        case SF_ERR_UNSUPPORTED_ENCODING: return RPG_ERR_ENCODING;
-        case SF_ERR_MALFORMED_FILE: return RPG_ERR_MALFORMED;
-        default: return RPG_ERR_UNKNOWN;
-    }
-}
-
 static RPG_RESULT RPG_Audio_CreateSound(const char *filename, RPGsound **sound) {
     *sound = NULL;
     RPG_ENSURE_FILE(filename);
     RPG_ALLOC_ZERO(snd, RPGsound);
     // Createa file handle to the sound
     snd->file = sf_open(filename, SFM_READ, &snd->info);
-    int error = sf_error(snd->file);
+    int error = sf_error(snd->file);    
     if (error) {
-        return RPG_Audio_GetSoundError(error);
+        RPG_FREE(snd);
+        switch (error) {
+            case SF_ERR_NO_ERROR: return RPG_NO_ERROR;
+            case SF_ERR_UNRECOGNISED_FORMAT: return RPG_ERR_FORMAT;
+            case SF_ERR_SYSTEM: return RPG_ERR_SYSTEM;
+            case SF_ERR_UNSUPPORTED_ENCODING: return RPG_ERR_ENCODING;
+            case SF_ERR_MALFORMED_FILE: return RPG_ERR_MALFORMED;
+            default: return RPG_ERR_UNKNOWN;
+        }
+    }
+    // Only mono/stereo sounds supported
+    if (snd->info.channels > 2) {
+        sf_close(snd->file);
+        RPG_FREE(snd);
+        return RPG_ERR_FORMAT;
     }
     pthread_mutex_init(&snd->mutex, NULL);
     // Set the filename
@@ -375,7 +377,7 @@ RPG_RESULT RPG_Audio_Play(RPGint index, const char *filename, RPGfloat volume, R
 
     channel->loopCount = loopCount;
     alSourcef(channel->source, AL_GAIN, RPG_CLAMPF(volume, 0.0f, 1.0f));
-    alSourcef(channel->source, AL_PITCH, fmaxf(pitch, 0.0f));  // TODO: Greater than 0.0f ?
+    alSourcef(channel->source, AL_PITCH, fmaxf(pitch, __FLT_EPSILON__));
     if (channel->sound == NULL) {
         RPG_RESULT result = RPG_Audio_CreateSound(filename, &channel->sound);
         if (result != RPG_NO_ERROR) {
@@ -707,7 +709,7 @@ RPG_RESULT RPG_Audio_DetachEffect(RPGint channel, RPGaudiofx *fx) {
         if (index > -1) {
             alSource3i(c->source, AL_AUXILIARY_SEND_FILTER, 0, index, AL_FILTER_NULL);
             alDeleteAuxiliaryEffectSlots(1, &c->aux.slots[index]);
-            for (int i = index; i < c->aux.num - 1; i++) {  // TODO: Test
+            for (int i = index; i < c->aux.num - 1; i++) {
                 c->aux.effects[i] = c->aux.effects[i + 1];
                 c->aux.slots[i]   = c->aux.slots[i + 1];
             }
@@ -876,161 +878,6 @@ static RPGreverbpreset RPG_Reverb_GetPreset_S(RPG_REVERB_TYPE type) {
         case RPG_REVERB_TYPE_SMALLWATERROOM: return (RPGreverbpreset) EFX_REVERB_PRESET_SMALLWATERROOM;
         default: return (RPGreverbpreset) EFX_REVERB_PRESET_GENERIC;
     }
-}
-
-static const char *RPG_Reverb_GetPresetDescription_S(RPG_REVERB_TYPE type) {
-    // TODO: Localization
-    switch (type) {
-        /* General Presets */
-        case RPG_REVERB_TYPE_GENERIC: return "Generic";
-        case RPG_REVERB_TYPE_PADDEDCELL: return "Padded Cell";
-        case RPG_REVERB_TYPE_ROOM: return "Room";
-        case RPG_REVERB_TYPE_BATHROOM: return "Bathroom";
-        case RPG_REVERB_TYPE_LIVINGROOM: return "Living Room";
-        case RPG_REVERB_TYPE_STONEROOM: return "Stone Room";
-        case RPG_REVERB_TYPE_AUDITORIUM: return "Auditorium";
-        case RPG_REVERB_TYPE_CONCERTHALL: return "Concert Hall";
-        case RPG_REVERB_TYPE_CAVE: return "Cave";
-        case RPG_REVERB_TYPE_ARENA: return "Arena";
-        case RPG_REVERB_TYPE_HANGAR: return "Hangar";
-        case RPG_REVERB_TYPE_CARPETEDHALLWAY: return "Carpeted Hallway";
-        case RPG_REVERB_TYPE_HALLWAY: return "Hallway";
-        case RPG_REVERB_TYPE_STONECORRIDOR: return "Stone Corridor";
-        case RPG_REVERB_TYPE_ALLEY: return "Alley";
-        case RPG_REVERB_TYPE_FOREST: return "Forest";
-        case RPG_REVERB_TYPE_CITY: return "City";
-        case RPG_REVERB_TYPE_MOUNTAINS: return "Mountains";
-        case RPG_REVERB_TYPE_QUARRY: return "Quarry";
-        case RPG_REVERB_TYPE_PLAIN: return "Plain";
-        case RPG_REVERB_TYPE_PARKINGLOT: return "Parking Lot";
-        case RPG_REVERB_TYPE_SEWERPIPE: return "Sewer-Pipe";
-        case RPG_REVERB_TYPE_UNDERWATER: return "Underwater";
-        case RPG_REVERB_TYPE_DRUGGED: return "Drugged";
-        case RPG_REVERB_TYPE_DIZZY: return "Dizzy";
-        case RPG_REVERB_TYPE_PSYCHOTIC: return "Psychotic";
-        /* Castle Presets */
-        case RPG_REVERB_TYPE_CASTLE_SMALLROOM: return "Castle - Small Room";
-        case RPG_REVERB_TYPE_CASTLE_SHORTPASSAGE: return "Castle - Short Passage";
-        case RPG_REVERB_TYPE_CASTLE_MEDIUMROOM: return "Castle - Medium Room";
-        case RPG_REVERB_TYPE_CASTLE_LARGEROOM: return "Castle - Large Room";
-        case RPG_REVERB_TYPE_CASTLE_LONGPASSAGE: return "Castle - Long Passage";
-        case RPG_REVERB_TYPE_CASTLE_HALL: return "Castle - Hall";
-        case RPG_REVERB_TYPE_CASTLE_CUPBOARD: return "Castle - Cupboard";
-        case RPG_REVERB_TYPE_CASTLE_COURTYARD: return "Castle - Courtyard";
-        case RPG_REVERB_TYPE_CASTLE_ALCOVE: return "Castle - Alcove";
-        /* Factory Presets */
-        case RPG_REVERB_TYPE_FACTORY_SMALLROOM: return "Factory - Small Room";
-        case RPG_REVERB_TYPE_FACTORY_SHORTPASSAGE: return "Factory - Short Passage";
-        case RPG_REVERB_TYPE_FACTORY_MEDIUMROOM: return "Factory - Medium Room";
-        case RPG_REVERB_TYPE_FACTORY_LARGEROOM: return "Factory - Large Room";
-        case RPG_REVERB_TYPE_FACTORY_LONGPASSAGE: return "Factory - Long Passage";
-        case RPG_REVERB_TYPE_FACTORY_HALL: return "Factory - Hall";
-        case RPG_REVERB_TYPE_FACTORY_CUPBOARD: return "Factory - Cupboard";
-        case RPG_REVERB_TYPE_FACTORY_COURTYARD: return "Factory - Courtyard";
-        case RPG_REVERB_TYPE_FACTORY_ALCOVE: return "Factory - Alcove";
-        /* Ice Palace Presets */
-        case RPG_REVERB_TYPE_ICEPALACE_SMALLROOM: return "Ice Palace - Small Room";
-        case RPG_REVERB_TYPE_ICEPALACE_SHORTPASSAGE: return "Ice Palace - Short Passage";
-        case RPG_REVERB_TYPE_ICEPALACE_MEDIUMROOM: return "Ice Palace - Medium Room";
-        case RPG_REVERB_TYPE_ICEPALACE_LARGEROOM: return "Ice Palace - Large Room";
-        case RPG_REVERB_TYPE_ICEPALACE_LONGPASSAGE: return "Ice Palace - Long Passage";
-        case RPG_REVERB_TYPE_ICEPALACE_HALL: return "Ice Palace - Hall";
-        case RPG_REVERB_TYPE_ICEPALACE_CUPBOARD: return "Ice Palace - Cupboard";
-        case RPG_REVERB_TYPE_ICEPALACE_COURTYARD: return "Ice Palace - Courtyard";
-        case RPG_REVERB_TYPE_ICEPALACE_ALCOVE: return "Ice Palace - Alcove";
-        /* Space Station Presets */
-        case RPG_REVERB_TYPE_SPACESTATION_SMALLROOM: return "Spacestation - Small Room";
-        case RPG_REVERB_TYPE_SPACESTATION_SHORTPASSAGE: return "Spacestation - Short Passage";
-        case RPG_REVERB_TYPE_SPACESTATION_MEDIUMROOM: return "Spacestation - Medium Room";
-        case RPG_REVERB_TYPE_SPACESTATION_LARGEROOM: return "Spacestation - Large Room";
-        case RPG_REVERB_TYPE_SPACESTATION_LONGPASSAGE: return "Spacestation - Long Passage";
-        case RPG_REVERB_TYPE_SPACESTATION_HALL: return "Spacestation - Hall";
-        case RPG_REVERB_TYPE_SPACESTATION_CUPBOARD: return "Spacestation - Cupboard";
-        case RPG_REVERB_TYPE_SPACESTATION_ALCOVE: return "Spacestation - Alcove";
-        /* Wooden Galleon Presets */
-        case RPG_REVERB_TYPE_WOODEN_SMALLROOM: return "Wooden - Small Room";
-        case RPG_REVERB_TYPE_WOODEN_SHORTPASSAGE: return "Wooden - Short Passage";
-        case RPG_REVERB_TYPE_WOODEN_MEDIUMROOM: return "Wooden - Medium Room";
-        case RPG_REVERB_TYPE_WOODEN_LARGEROOM: return "Wooden - Large Room";
-        case RPG_REVERB_TYPE_WOODEN_LONGPASSAGE: return "Wooden - Long Passage";
-        case RPG_REVERB_TYPE_WOODEN_HALL: return "Wooden - Hall";
-        case RPG_REVERB_TYPE_WOODEN_CUPBOARD: return "Wooden - Cupboard";
-        case RPG_REVERB_TYPE_WOODEN_COURTYARD: return "Wooden - Courtyard";
-        case RPG_REVERB_TYPE_WOODEN_ALCOVE: return "Wooden - Alcove";
-        /* Sports Presets */
-        case RPG_REVERB_TYPE_SPORT_EMPTYSTADIUM: return "Sport - Empty Stadium";
-        case RPG_REVERB_TYPE_SPORT_SQUASHCOURT: return "Sport - Squash Court";
-        case RPG_REVERB_TYPE_SPORT_SMALLSWIMMINGPOOL: return "Sport - Small Swimming Pool";
-        case RPG_REVERB_TYPE_SPORT_LARGESWIMMINGPOOL: return "Sport - Large Swimming Pool";
-        case RPG_REVERB_TYPE_SPORT_GYMNASIUM: return "Sport - Gymnasium";
-        case RPG_REVERB_TYPE_SPORT_FULLSTADIUM: return "Sport - Full Stadium";
-        case RPG_REVERB_TYPE_SPORT_STADIUMTANNOY: return "Sport - Stadium Tannoy";
-        /* Prefab Presets */
-        case RPG_REVERB_TYPE_PREFAB_WORKSHOP: return "Prefab - Workshop";
-        case RPG_REVERB_TYPE_PREFAB_SCHOOLROOM: return "Prefab - Schoolroom";
-        case RPG_REVERB_TYPE_PREFAB_PRACTISEROOM: return "Prefab - Practice Room";
-        case RPG_REVERB_TYPE_PREFAB_OUTHOUSE: return "Prefab - Outhouse";
-        case RPG_REVERB_TYPE_PREFAB_CARAVAN: return "Prefab - Caravan";
-        /* Dome and Pipe Presets */
-        case RPG_REVERB_TYPE_DOME_TOMB: return "Dome - Tomb";
-        case RPG_REVERB_TYPE_PIPE_SMALL: return "Pipe - Small";
-        case RPG_REVERB_TYPE_DOME_SAINTPAULS: return "Dome - Saint Paul;s";
-        case RPG_REVERB_TYPE_PIPE_LONGTHIN: return "Pipe - Long and Thin";
-        case RPG_REVERB_TYPE_PIPE_LARGE: return "Pipe - Large";
-        case RPG_REVERB_TYPE_PIPE_RESONANT: return "Pipe - Resonant";
-        /* Outdoors Presets */
-        case RPG_REVERB_TYPE_OUTDOORS_BACKYARD: return "Outdoors - Backyard";
-        case RPG_REVERB_TYPE_OUTDOORS_ROLLINGPLAINS: return "Outdoors - Rolling Plains";
-        case RPG_REVERB_TYPE_OUTDOORS_DEEPCANYON: return "Outdoors - Deep Canyon";
-        case RPG_REVERB_TYPE_OUTDOORS_CREEK: return "Outdoors - Creek";
-        case RPG_REVERB_TYPE_OUTDOORS_VALLEY: return "Outdoors - Valley";
-        /* Mood Presets */
-        case RPG_REVERB_TYPE_MOOD_HEAVEN: return "Mood - Heaven";
-        case RPG_REVERB_TYPE_MOOD_HELL: return "Mood - Hell";
-        case RPG_REVERB_TYPE_MOOD_MEMORY: return "Mood - Memory";
-        /* Driving Presets */
-        case RPG_REVERB_TYPE_DRIVING_COMMENTATOR: return "Driving - Commentator";
-        case RPG_REVERB_TYPE_DRIVING_PITGARAGE: return "Driving - Pit Garage";
-        case RPG_REVERB_TYPE_DRIVING_INCAR_RACER: return "Driving - Interior Racer";
-        case RPG_REVERB_TYPE_DRIVING_INCAR_SPORTS: return "Driving - Interior Sports";
-        case RPG_REVERB_TYPE_DRIVING_INCAR_LUXURY: return "Driving - Interior Luxury";
-        case RPG_REVERB_TYPE_DRIVING_FULLGRANDSTAND: return "Driving - Full Grandstand";
-        case RPG_REVERB_TYPE_DRIVING_EMPTYGRANDSTAND: return "Driving - Empty Grandstand";
-        case RPG_REVERB_TYPE_DRIVING_TUNNEL: return "Driving - Tunnel";
-        /* City Presets */
-        case RPG_REVERB_TYPE_CITY_STREETS: return "City - Streets";
-        case RPG_REVERB_TYPE_CITY_SUBWAY: return "City - Subway";
-        case RPG_REVERB_TYPE_CITY_MUSEUM: return "City - Museum";
-        case RPG_REVERB_TYPE_CITY_LIBRARY: return "City - Library";
-        case RPG_REVERB_TYPE_CITY_UNDERPASS: return "City - Underpass";
-        case RPG_REVERB_TYPE_CITY_ABANDONED: return "City - Abandoned";
-        /* Misc. Presets */
-        case RPG_REVERB_TYPE_DUSTYROOM: return "Dusty Room";
-        case RPG_REVERB_TYPE_CHAPEL: return "Chapel";
-        case RPG_REVERB_TYPE_SMALLWATERROOM: return "Small Water Room";
-        default: return "";
-    }
-}
-
-RPG_RESULT RPG_Reverb_GetPresetDescription(RPG_REVERB_TYPE type, char *buffer, RPGsize sizeBuffer, RPGsize *written) {
-    if (sizeBuffer == 0) {
-        *written = 0;
-        return RPG_NO_ERROR;
-    }
-    if (buffer == NULL) {
-        *written = 0;
-        return RPG_ERR_INVALID_POINTER;
-    }
-    if (type < 0 || type > RPG_REVERB_TYPE_LAST) {
-        *written = 0;
-        return RPG_ERR_OUT_OF_RANGE;
-    }
-    memset(buffer, 0, sizeBuffer);
-    const char *desc = RPG_Reverb_GetPresetDescription_S(type);
-    RPGsize sz       = strlen(desc);
-    *written         = sz > sizeBuffer ? sizeBuffer : sz;
-    memcpy(buffer, desc, *written);
-    return RPG_NO_ERROR;
 }
 
 RPG_RESULT RPG_Reverb_SetPreset(RPGaudiofx *e, RPGreverbpreset *p) {

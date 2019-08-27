@@ -1,7 +1,5 @@
-#include "renderable.h"
-#include "glad.h"
 #include "internal.h"
-#include "rpg.h"
+#include "game.h"
 
 void RPG_Renderable_Init(RPGrenderable *renderable, RPGrenderfunc renderfunc, RPGbatch *batch) {
     RPG_ASSERT(renderable);
