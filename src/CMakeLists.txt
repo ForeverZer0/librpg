@@ -8,7 +8,10 @@ add_library(rpg SHARED
         internal.h
         glad.c
         audio.c
+        batch.c
+        input.c
         game.c
+        plane.c
         font.c
         shader.c
         stb_image.h 

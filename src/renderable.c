@@ -229,3 +229,10 @@ RPG_RESULT RPG_Renderable_SetLocation(RPGrenderable *renderable, RPGint x, RPGin
     }
     return RPG_NO_ERROR;
 }
+
+RPG_RESULT RPG_Renderable_SetRenderFunc(RPGrenderable *renderable, RPGrenderfunc func) {
+    RPG_RETURN_IF_NULL(renderable);
+    RPG_RETURN_IF_NULL(func);
+    renderable->render = func;
+    return RPG_NO_ERROR;
+}

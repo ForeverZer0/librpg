@@ -1,23 +1,14 @@
 #ifndef OPEN_RPG_RENDERABLE_H
 #define OPEN_RPG_RENDERABLE_H 1
 
+// FIXME: Merge game.h and renderable.h ?
+
 #include "game.h"
 #include "internal.h"
-#include "rpg.h"
 
 #define VERTICES_COUNT 24
 #define VERTICES_SIZE (sizeof(RPGfloat) * VERTICES_COUNT)
 #define VERTICES_STRIDE (sizeof(RPGfloat) * 4)
-
-typedef void (*RPGrenderfunc)(void *renderable);
-
-typedef struct RPGimage {
-    RPGint width;
-    RPGint height;
-    GLuint texture;
-    GLuint fbo;
-    void *user;
-} RPGimage;
 
 /**
  * @brief Base structure for objects that can be rendered.
@@ -82,13 +73,29 @@ typedef struct RPGviewport {
     GLuint vao;         /** The Vertex Array Object bound to this viewport. */
 } RPGviewport;
 
+/**
+ * @brief Specialized sprite that automatically tiles its source image across its bounds.
+ */
+typedef struct RPGplane {
+    RPGrenderable base;    /** The base renderable object, MUST BE FIRST FIELD IN THE STRUCTURE! */
+    RPGimage *image;       /** A pointer ot the sprite's image, or NULL. */
+    RPGviewport *viewport; /** A pointer to the sprite's viewport, or NULL. */
+    RPGint width;          /** The dimension of the plane, in pixels, on the x-axis. */
+    RPGint height;         /** The dimension of the plane, in pixels, on the y-axis. */
+    GLuint vbo;            /** The Vertex Buffer Object bound to this sprite. */
+    GLuint vao;            /** The Vertex Array Object bound to this sprite. */
+    GLuint sampler; /** Sampler object for tiling the image across the bounds of the plane. */
+    GLboolean update_vao;  /** Flag indicating the plane's VAO needs updated to reflect a change. */
+    RPGvec2 zoom;          /** The amount of scaling to apply to the source image. */
+} RPGplane;
+
 #define RPG_BASE_UNIFORMS(r)                                                                                                               \
-    glUniform4f(RPG_GAME->shader.color, r.color.x, r.color.y, r.color.z, r.color.w);                                                         \
-    glUniform4f(RPG_GAME->shader.tone, r.tone.x, r.tone.y, r.tone.z, r.tone.w);                                                              \
-    glUniform1f(RPG_GAME->shader.alpha, r.alpha);                                                                                            \
-    glUniform1f(RPG_GAME->shader.hue, r.hue);                                                                                                \
-    glUniform4f(RPG_GAME->shader.flash, r.flash.color.x, r.flash.color.y, r.flash.color.z, r.flash.color.w);                                 \
-    glUniformMatrix4fv(RPG_GAME->shader.model, 1, GL_FALSE, (GLfloat *) &r.model);                                                           \
+    glUniform4f(RPG_GAME->shader.color, r.color.x, r.color.y, r.color.z, r.color.w);                                                       \
+    glUniform4f(RPG_GAME->shader.tone, r.tone.x, r.tone.y, r.tone.z, r.tone.w);                                                            \
+    glUniform1f(RPG_GAME->shader.alpha, r.alpha);                                                                                          \
+    glUniform1f(RPG_GAME->shader.hue, r.hue);                                                                                              \
+    glUniform4f(RPG_GAME->shader.flash, r.flash.color.x, r.flash.color.y, r.flash.color.z, r.flash.color.w);                               \
+    glUniformMatrix4fv(RPG_GAME->shader.model, 1, GL_FALSE, (GLfloat *) &r.model);                                                         \
     glBlendEquation(r.blend.op);                                                                                                           \
     glBlendFunc(r.blend.src, r.blend.dst)
 

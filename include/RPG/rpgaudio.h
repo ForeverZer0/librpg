@@ -7,7 +7,7 @@ extern "C" {
 
 #include "rpg.h"
 
-#ifndef RPG_NO_AUDIO
+#ifndef RPG_WITHOUT_OPENAL
 
 typedef enum {
     RPG_SOUND_FORMAT_NONE  = 0x000000, /* Undefined/invalid */
@@ -506,7 +506,7 @@ RPG_RESULT RPG_Equalizer_SetHighGain(RPGaudiofx *fx, RPGfloat value);
 RPG_RESULT RPG_Equalizer_SetHighCutoff(RPGaudiofx *fx, RPGfloat value);
 
 #endif /* RPG_AUDIO_NO_EFFECTS */
-#endif /* RPG_NO_AUDIO */
+#endif /* RPG_WITHOUT_OPENAL */
 
 #ifdef __cplusplus
 }

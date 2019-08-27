@@ -33,8 +33,8 @@ RPG_RESULT RPG_Sprite_Free(RPGsprite *sprite) {
     if (sprite->base.parent) {
         RPG_Batch_DeleteItem(sprite->base.parent, &sprite->base);
     }
-    glDeleteBuffers(1, &sprite->vbo);
     glDeleteVertexArrays(1, &sprite->vao);
+    glDeleteBuffers(1, &sprite->vbo);
     RPG_FREE(sprite);
     return RPG_NO_ERROR;
 }

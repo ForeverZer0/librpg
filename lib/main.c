@@ -31,9 +31,11 @@ static void update(RPGint64 tick) {
     if ((tick % 40) == 0) {
         sec++;
         RPGint64 ms;
-        printf("%d\n", sec);
+        // printf("%d\n", sec);
     }
-
+    RPGint x, y;
+    RPG_Input_GetCursorLocation(&x, &y);
+    // printf("%d, %d\n", x, y);
     
 }
 
@@ -55,7 +57,7 @@ int main(int argc, char **argv) {
 
     // Get some random background color, and set an app icon
     // RPGcolor backColor = { .x=comp(), .y=comp(), .z=comp(), .w=1.0f };
-    RPGcolor backColor = { .x=1, .y=0, .z=0, .w=1.0f };
+    RPGcolor backColor = { .x=1, .y=1, .z=1, .w=1.0f };
     RPG_Game_SetBackColor(game, &backColor);
     RPG_Game_SetIconFromFile(game, "/home/eric/Pictures/books-512.png");
 
@@ -68,6 +70,7 @@ int main(int argc, char **argv) {
 
     RPGimage *character;
     RPG_Image_CreateFromFile("/home/eric/Pictures/character.png", &character);
+
 
 
 
@@ -99,13 +102,20 @@ RPG_Font_DrawText(font, image, "Heljo", NULL, RPG_ALIGN_DEFAULT);
     RPG_Sprite_SetImage(sprite1, image);
     RPG_Sprite_SetImage(sprite2, character);
 
+        RPGimage *fog;
+    RPG_Image_CreateFromFile("/home/eric/Pictures/RTP/XP/Graphics/Fogs/001-Fog01.png", &fog);
+
+    RPGplane *plane;
+    RPG_Plane_Create(NULL, &plane);
+    RPG_Plane_SetImage(plane, fog);
+
     // RPG_Sprite_SetSourceRectValues(sprite, 0, 0, w / 3, h / 4);
     RPG_Renderable_SetLocation((RPGrenderable*) sprite1, 128, 128);
     
     // Play some music
     const char *path = "/home/eric/Desktop/The Blackest Day.ogg";
     RPG_Audio_SetPlaybackCompleteCallback(audio_done, NULL);
-    RPG_Audio_Play(0, path, 1.0f, 1.0f, 3);
+    RPG_Audio_Play(0, path, 1.0f, 1.0f, 2);
     RPGaudiofx *e;
     RPG_Reverb_CreateFromType(RPG_REVERB_TYPE_BATHROOM, &e);
     RPG_Audio_AttachEffect(0, e);

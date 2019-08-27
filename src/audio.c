@@ -1,16 +1,16 @@
 #include "rpgaudio.h"
 
-#if !defined(RPG_NO_AUDIO)
+#ifndef RPG_WITHOUT_OPENAL
 
+#include "game.h"
 #include "internal.h"
 #include "platform.h"
 #include "sndfile.h"
-#include "game.h"
 #include <AL/al.h>
 #include <AL/alc.h>
 #include <AL/alext.h>
 
-#define RPG_VALID_CHANNEL(i) (i >= 0 && i < RPG_MAX_CHANNELS && CHANNELS[i] != NULL) 
+#define RPG_VALID_CHANNEL(i) (i >= 0 && i < RPG_MAX_CHANNELS && CHANNELS[i] != NULL)
 #define BUFFER_COUNT 3
 #define BUFFER_SIZE 32768
 #define CHANNELS (RPG_GAME->audio.channels)
@@ -97,15 +97,12 @@ RPG_RESULT RPG_Audio_Initialize(RPGgame *game) {
         return RPG_ERR_AUDIO_CONTEXT;
     }
 
-
-
     // game->audio.channels = RPG_MALLOC(sizeof(RPGchannel*) * RPG_MAX_CHANNELS);
     // memset(game->audio.channels, 0, sizeof(RPGchannel*) * RPG_MAX_CHANNELS);
 
-
 #if !defined(RPG_AUDIO_NO_EFFECTS)
 #define AL_LOAD_PROC(x, y)                                                                                                                 \
-    ((x) = (y)alGetProcAddress(#x));                                                                                                       \
+    ((x) = (y) alGetProcAddress(#x));                                                                                                      \
     if (x == NULL)                                                                                                                         \
     return RPG_ERR_AUDIO_EXT
 
@@ -136,7 +133,7 @@ RPG_RESULT RPG_Audio_Initialize(RPGgame *game) {
 #endif /* RPG_AUDIO_NO_EFFECTS */
 
     game->audio.context = context;
-    game->audio.device = device;
+    game->audio.device  = device;
     return RPG_NO_ERROR;
 }
 
@@ -215,7 +212,7 @@ static void RPG_Audio_SetALFormat(RPGsound *sound) {
             sound->func.sf.readfloat = sf_readf_float;
             break;
         default:
-            // TODO: 
+            // TODO:
             fprintf(stderr, "Unsupported audio format.\n");
             sound->al.format         = sound->info.channels == 1 ? AL_FORMAT_MONO_FLOAT32 : AL_FORMAT_STEREO_FLOAT32;
             sound->al.itemsize       = sizeof(ALfloat) * sound->info.channels;
@@ -265,7 +262,7 @@ static RPGbool RPG_Audio_TryGetSlot(RPGint index, RPGchannel **channel) {
         alGenSources(1, &s->source);
         alGenBuffers(BUFFER_COUNT, s->buffers);
         s->pcm          = RPG_MALLOC(BUFFER_SIZE);
-        s->index = index;
+        s->index        = index;
         CHANNELS[index] = s;
     }
     *channel = CHANNELS[index];
@@ -280,11 +277,12 @@ static RPGbool RPG_Channel_FillBuffer(RPGchannel *channel, ALuint buffer) {
     RPGsound *snd   = channel->sound;
     sf_count_t n    = BUFFER_SIZE / snd->al.itemsize;
     sf_count_t size = snd->func.readframes(snd->file, channel->pcm, n) * snd->al.itemsize;
-    alBufferData(buffer, snd->al.format, channel->pcm, (ALsizei)size, snd->info.samplerate);
+    alBufferData(buffer, snd->al.format, channel->pcm, (ALsizei) size, snd->info.samplerate);
     if (size == 0) {
         sf_seek(snd->file, 0, SF_SEEK_SET);
         pthread_mutex_unlock(&channel->sound->mutex);
         if (channel->loopCount != 0) {
+            channel->loopCount--;
             alSourceUnqueueBuffers(channel->source, 0, NULL);
             RPG_Channel_FillBuffer(channel, buffer);
             ALint state;
@@ -292,7 +290,6 @@ static RPGbool RPG_Channel_FillBuffer(RPGchannel *channel, ALuint buffer) {
             if (state != AL_PLAYING) {
                 alSourcePlay((channel->source));
             }
-            channel->loopCount--;
             return AL_FALSE;
         }
     } else {
@@ -378,7 +375,7 @@ RPG_RESULT RPG_Audio_Play(RPGint index, const char *filename, RPGfloat volume, R
 
     channel->loopCount = loopCount;
     alSourcef(channel->source, AL_GAIN, RPG_CLAMPF(volume, 0.0f, 1.0f));
-    alSourcef(channel->source, AL_PITCH, fmaxf(pitch, 0.0f)); // TODO: Greater than 0.0f ?
+    alSourcef(channel->source, AL_PITCH, fmaxf(pitch, 0.0f));  // TODO: Greater than 0.0f ?
     if (channel->sound == NULL) {
         RPG_RESULT result = RPG_Audio_CreateSound(filename, &channel->sound);
         if (result != RPG_NO_ERROR) {
@@ -486,7 +483,7 @@ RPG_RESULT RPG_Audio_GetType(RPGint channel, RPG_SOUND_TYPE *type) {
 RPG_RESULT RPG_Audio_GetDuration(RPGint channel, RPGint64 *milliseconds) {
     if (RPG_VALID_CHANNEL(channel) && CHANNELS[channel]->sound != NULL) {
         RPGsound *snd = CHANNELS[channel]->sound;
-        *milliseconds = (RPGint64)round((1000.0 / snd->info.samplerate) * snd->info.frames);
+        *milliseconds = (RPGint64) round((1000.0 / snd->info.samplerate) * snd->info.frames);
         return RPG_NO_ERROR;
     }
     *milliseconds = 0;
@@ -570,11 +567,11 @@ RPG_RESULT RPG_Audio_Pause(RPGint channel) {
 
 RPG_RESULT RPG_Audio_GetPosition(RPGint channel, RPGint64 *position) {
     RPG_RETURN_IF_NULL(position);
-    if (RPG_VALID_CHANNEL(channel) && CHANNELS[channel]->sound){
+    if (RPG_VALID_CHANNEL(channel) && CHANNELS[channel]->sound) {
         RPGchannel *s = CHANNELS[channel];
         pthread_mutex_lock(&s->sound->mutex);
         sf_count_t pos = sf_seek(s->sound->file, 0, SF_SEEK_CUR);
-        pthread_mutex_unlock(&s->sound->mutex); 
+        pthread_mutex_unlock(&s->sound->mutex);
         *position = (RPGint64) round(pos / (s->sound->info.samplerate / 1000.0));
         return RPG_NO_ERROR;
     }
@@ -584,8 +581,8 @@ RPG_RESULT RPG_Audio_GetPosition(RPGint channel, RPGint64 *position) {
 
 RPG_RESULT RPG_Audio_Seek(RPGint channel, RPGint64 ms) {
     if (RPG_VALID_CHANNEL(channel) && CHANNELS[channel]->sound) {
-        RPGchannel *s = CHANNELS[channel];
-        sf_count_t pos = (sf_count_t)round(ms * (s->sound->info.samplerate / 1000.0));
+        RPGchannel *s  = CHANNELS[channel];
+        sf_count_t pos = (sf_count_t) round(ms * (s->sound->info.samplerate / 1000.0));
 
         if (pos < 0 || pos > s->sound->info.frames) {
             return RPG_ERR_OUT_OF_RANGE;
@@ -641,9 +638,9 @@ static inline RPGbool RPG_Audio_IsAffectAttached_Inline(RPGchannel *c, RPGaudiof
 
 RPG_RESULT RPG_Audio_CreateEffect(RPG_AUDIOFX_TYPE type, RPGaudiofx **fx) {
     RPGaudiofx *f = RPG_ALLOC(RPGaudiofx);
-    f->type = type;
+    f->type       = type;
     alGenEffects(1, &f->effect);
-    alEffecti(f->effect, AL_EFFECT_TYPE, (ALenum)type);
+    alEffecti(f->effect, AL_EFFECT_TYPE, (ALenum) type);
     if (alGetError()) {
         RPG_FREE(f);
         return RPG_ERR_AUDIO_EXT;
@@ -710,7 +707,7 @@ RPG_RESULT RPG_Audio_DetachEffect(RPGint channel, RPGaudiofx *fx) {
         if (index > -1) {
             alSource3i(c->source, AL_AUXILIARY_SEND_FILTER, 0, index, AL_FILTER_NULL);
             alDeleteAuxiliaryEffectSlots(1, &c->aux.slots[index]);
-            for (int i = index; i < c->aux.num - 1; i++) { // TODO: Test
+            for (int i = index; i < c->aux.num - 1; i++) {  // TODO: Test
                 c->aux.effects[i] = c->aux.effects[i + 1];
                 c->aux.slots[i]   = c->aux.slots[i + 1];
             }
@@ -751,133 +748,133 @@ RPG_RESULT RPG_Audio_ReleaseEffect(RPGaudiofx *fx) {
 static RPGreverbpreset RPG_Reverb_GetPreset_S(RPG_REVERB_TYPE type) {
     switch (type) {
         /* General Presets */
-        case RPG_REVERB_TYPE_GENERIC: return (RPGreverbpreset)EFX_REVERB_PRESET_GENERIC;
-        case RPG_REVERB_TYPE_PADDEDCELL: return (RPGreverbpreset)EFX_REVERB_PRESET_PADDEDCELL;
-        case RPG_REVERB_TYPE_ROOM: return (RPGreverbpreset)EFX_REVERB_PRESET_ROOM;
-        case RPG_REVERB_TYPE_BATHROOM: return (RPGreverbpreset)EFX_REVERB_PRESET_BATHROOM;
-        case RPG_REVERB_TYPE_LIVINGROOM: return (RPGreverbpreset)EFX_REVERB_PRESET_LIVINGROOM;
-        case RPG_REVERB_TYPE_STONEROOM: return (RPGreverbpreset)EFX_REVERB_PRESET_STONEROOM;
-        case RPG_REVERB_TYPE_AUDITORIUM: return (RPGreverbpreset)EFX_REVERB_PRESET_AUDITORIUM;
-        case RPG_REVERB_TYPE_CONCERTHALL: return (RPGreverbpreset)EFX_REVERB_PRESET_CONCERTHALL;
-        case RPG_REVERB_TYPE_CAVE: return (RPGreverbpreset)EFX_REVERB_PRESET_CAVE;
-        case RPG_REVERB_TYPE_ARENA: return (RPGreverbpreset)EFX_REVERB_PRESET_ARENA;
-        case RPG_REVERB_TYPE_HANGAR: return (RPGreverbpreset)EFX_REVERB_PRESET_HANGAR;
-        case RPG_REVERB_TYPE_CARPETEDHALLWAY: return (RPGreverbpreset)EFX_REVERB_PRESET_CARPETEDHALLWAY;
-        case RPG_REVERB_TYPE_HALLWAY: return (RPGreverbpreset)EFX_REVERB_PRESET_HALLWAY;
-        case RPG_REVERB_TYPE_STONECORRIDOR: return (RPGreverbpreset)EFX_REVERB_PRESET_STONECORRIDOR;
-        case RPG_REVERB_TYPE_ALLEY: return (RPGreverbpreset)EFX_REVERB_PRESET_ALLEY;
-        case RPG_REVERB_TYPE_FOREST: return (RPGreverbpreset)EFX_REVERB_PRESET_FOREST;
-        case RPG_REVERB_TYPE_CITY: return (RPGreverbpreset)EFX_REVERB_PRESET_CITY;
-        case RPG_REVERB_TYPE_MOUNTAINS: return (RPGreverbpreset)EFX_REVERB_PRESET_MOUNTAINS;
-        case RPG_REVERB_TYPE_QUARRY: return (RPGreverbpreset)EFX_REVERB_PRESET_QUARRY;
-        case RPG_REVERB_TYPE_PLAIN: return (RPGreverbpreset)EFX_REVERB_PRESET_PLAIN;
-        case RPG_REVERB_TYPE_PARKINGLOT: return (RPGreverbpreset)EFX_REVERB_PRESET_PARKINGLOT;
-        case RPG_REVERB_TYPE_SEWERPIPE: return (RPGreverbpreset)EFX_REVERB_PRESET_SEWERPIPE;
-        case RPG_REVERB_TYPE_UNDERWATER: return (RPGreverbpreset)EFX_REVERB_PRESET_UNDERWATER;
-        case RPG_REVERB_TYPE_DRUGGED: return (RPGreverbpreset)EFX_REVERB_PRESET_DRUGGED;
-        case RPG_REVERB_TYPE_DIZZY: return (RPGreverbpreset)EFX_REVERB_PRESET_DIZZY;
-        case RPG_REVERB_TYPE_PSYCHOTIC: return (RPGreverbpreset)EFX_REVERB_PRESET_PSYCHOTIC;
+        case RPG_REVERB_TYPE_GENERIC: return (RPGreverbpreset) EFX_REVERB_PRESET_GENERIC;
+        case RPG_REVERB_TYPE_PADDEDCELL: return (RPGreverbpreset) EFX_REVERB_PRESET_PADDEDCELL;
+        case RPG_REVERB_TYPE_ROOM: return (RPGreverbpreset) EFX_REVERB_PRESET_ROOM;
+        case RPG_REVERB_TYPE_BATHROOM: return (RPGreverbpreset) EFX_REVERB_PRESET_BATHROOM;
+        case RPG_REVERB_TYPE_LIVINGROOM: return (RPGreverbpreset) EFX_REVERB_PRESET_LIVINGROOM;
+        case RPG_REVERB_TYPE_STONEROOM: return (RPGreverbpreset) EFX_REVERB_PRESET_STONEROOM;
+        case RPG_REVERB_TYPE_AUDITORIUM: return (RPGreverbpreset) EFX_REVERB_PRESET_AUDITORIUM;
+        case RPG_REVERB_TYPE_CONCERTHALL: return (RPGreverbpreset) EFX_REVERB_PRESET_CONCERTHALL;
+        case RPG_REVERB_TYPE_CAVE: return (RPGreverbpreset) EFX_REVERB_PRESET_CAVE;
+        case RPG_REVERB_TYPE_ARENA: return (RPGreverbpreset) EFX_REVERB_PRESET_ARENA;
+        case RPG_REVERB_TYPE_HANGAR: return (RPGreverbpreset) EFX_REVERB_PRESET_HANGAR;
+        case RPG_REVERB_TYPE_CARPETEDHALLWAY: return (RPGreverbpreset) EFX_REVERB_PRESET_CARPETEDHALLWAY;
+        case RPG_REVERB_TYPE_HALLWAY: return (RPGreverbpreset) EFX_REVERB_PRESET_HALLWAY;
+        case RPG_REVERB_TYPE_STONECORRIDOR: return (RPGreverbpreset) EFX_REVERB_PRESET_STONECORRIDOR;
+        case RPG_REVERB_TYPE_ALLEY: return (RPGreverbpreset) EFX_REVERB_PRESET_ALLEY;
+        case RPG_REVERB_TYPE_FOREST: return (RPGreverbpreset) EFX_REVERB_PRESET_FOREST;
+        case RPG_REVERB_TYPE_CITY: return (RPGreverbpreset) EFX_REVERB_PRESET_CITY;
+        case RPG_REVERB_TYPE_MOUNTAINS: return (RPGreverbpreset) EFX_REVERB_PRESET_MOUNTAINS;
+        case RPG_REVERB_TYPE_QUARRY: return (RPGreverbpreset) EFX_REVERB_PRESET_QUARRY;
+        case RPG_REVERB_TYPE_PLAIN: return (RPGreverbpreset) EFX_REVERB_PRESET_PLAIN;
+        case RPG_REVERB_TYPE_PARKINGLOT: return (RPGreverbpreset) EFX_REVERB_PRESET_PARKINGLOT;
+        case RPG_REVERB_TYPE_SEWERPIPE: return (RPGreverbpreset) EFX_REVERB_PRESET_SEWERPIPE;
+        case RPG_REVERB_TYPE_UNDERWATER: return (RPGreverbpreset) EFX_REVERB_PRESET_UNDERWATER;
+        case RPG_REVERB_TYPE_DRUGGED: return (RPGreverbpreset) EFX_REVERB_PRESET_DRUGGED;
+        case RPG_REVERB_TYPE_DIZZY: return (RPGreverbpreset) EFX_REVERB_PRESET_DIZZY;
+        case RPG_REVERB_TYPE_PSYCHOTIC: return (RPGreverbpreset) EFX_REVERB_PRESET_PSYCHOTIC;
         /* Castle Presets */
-        case RPG_REVERB_TYPE_CASTLE_SMALLROOM: return (RPGreverbpreset)EFX_REVERB_PRESET_CASTLE_SMALLROOM;
-        case RPG_REVERB_TYPE_CASTLE_SHORTPASSAGE: return (RPGreverbpreset)EFX_REVERB_PRESET_CASTLE_SHORTPASSAGE;
-        case RPG_REVERB_TYPE_CASTLE_MEDIUMROOM: return (RPGreverbpreset)EFX_REVERB_PRESET_CASTLE_MEDIUMROOM;
-        case RPG_REVERB_TYPE_CASTLE_LARGEROOM: return (RPGreverbpreset)EFX_REVERB_PRESET_CASTLE_LARGEROOM;
-        case RPG_REVERB_TYPE_CASTLE_LONGPASSAGE: return (RPGreverbpreset)EFX_REVERB_PRESET_CASTLE_LONGPASSAGE;
-        case RPG_REVERB_TYPE_CASTLE_HALL: return (RPGreverbpreset)EFX_REVERB_PRESET_CASTLE_HALL;
-        case RPG_REVERB_TYPE_CASTLE_CUPBOARD: return (RPGreverbpreset)EFX_REVERB_PRESET_CASTLE_CUPBOARD;
-        case RPG_REVERB_TYPE_CASTLE_COURTYARD: return (RPGreverbpreset)EFX_REVERB_PRESET_CASTLE_COURTYARD;
-        case RPG_REVERB_TYPE_CASTLE_ALCOVE: return (RPGreverbpreset)EFX_REVERB_PRESET_CASTLE_ALCOVE;
+        case RPG_REVERB_TYPE_CASTLE_SMALLROOM: return (RPGreverbpreset) EFX_REVERB_PRESET_CASTLE_SMALLROOM;
+        case RPG_REVERB_TYPE_CASTLE_SHORTPASSAGE: return (RPGreverbpreset) EFX_REVERB_PRESET_CASTLE_SHORTPASSAGE;
+        case RPG_REVERB_TYPE_CASTLE_MEDIUMROOM: return (RPGreverbpreset) EFX_REVERB_PRESET_CASTLE_MEDIUMROOM;
+        case RPG_REVERB_TYPE_CASTLE_LARGEROOM: return (RPGreverbpreset) EFX_REVERB_PRESET_CASTLE_LARGEROOM;
+        case RPG_REVERB_TYPE_CASTLE_LONGPASSAGE: return (RPGreverbpreset) EFX_REVERB_PRESET_CASTLE_LONGPASSAGE;
+        case RPG_REVERB_TYPE_CASTLE_HALL: return (RPGreverbpreset) EFX_REVERB_PRESET_CASTLE_HALL;
+        case RPG_REVERB_TYPE_CASTLE_CUPBOARD: return (RPGreverbpreset) EFX_REVERB_PRESET_CASTLE_CUPBOARD;
+        case RPG_REVERB_TYPE_CASTLE_COURTYARD: return (RPGreverbpreset) EFX_REVERB_PRESET_CASTLE_COURTYARD;
+        case RPG_REVERB_TYPE_CASTLE_ALCOVE: return (RPGreverbpreset) EFX_REVERB_PRESET_CASTLE_ALCOVE;
         /* Factory Presets */
-        case RPG_REVERB_TYPE_FACTORY_SMALLROOM: return (RPGreverbpreset)EFX_REVERB_PRESET_FACTORY_SMALLROOM;
-        case RPG_REVERB_TYPE_FACTORY_SHORTPASSAGE: return (RPGreverbpreset)EFX_REVERB_PRESET_FACTORY_SHORTPASSAGE;
-        case RPG_REVERB_TYPE_FACTORY_MEDIUMROOM: return (RPGreverbpreset)EFX_REVERB_PRESET_FACTORY_MEDIUMROOM;
-        case RPG_REVERB_TYPE_FACTORY_LARGEROOM: return (RPGreverbpreset)EFX_REVERB_PRESET_FACTORY_LARGEROOM;
-        case RPG_REVERB_TYPE_FACTORY_LONGPASSAGE: return (RPGreverbpreset)EFX_REVERB_PRESET_FACTORY_LONGPASSAGE;
-        case RPG_REVERB_TYPE_FACTORY_HALL: return (RPGreverbpreset)EFX_REVERB_PRESET_FACTORY_HALL;
-        case RPG_REVERB_TYPE_FACTORY_CUPBOARD: return (RPGreverbpreset)EFX_REVERB_PRESET_FACTORY_CUPBOARD;
-        case RPG_REVERB_TYPE_FACTORY_COURTYARD: return (RPGreverbpreset)EFX_REVERB_PRESET_FACTORY_COURTYARD;
-        case RPG_REVERB_TYPE_FACTORY_ALCOVE: return (RPGreverbpreset)EFX_REVERB_PRESET_FACTORY_ALCOVE;
+        case RPG_REVERB_TYPE_FACTORY_SMALLROOM: return (RPGreverbpreset) EFX_REVERB_PRESET_FACTORY_SMALLROOM;
+        case RPG_REVERB_TYPE_FACTORY_SHORTPASSAGE: return (RPGreverbpreset) EFX_REVERB_PRESET_FACTORY_SHORTPASSAGE;
+        case RPG_REVERB_TYPE_FACTORY_MEDIUMROOM: return (RPGreverbpreset) EFX_REVERB_PRESET_FACTORY_MEDIUMROOM;
+        case RPG_REVERB_TYPE_FACTORY_LARGEROOM: return (RPGreverbpreset) EFX_REVERB_PRESET_FACTORY_LARGEROOM;
+        case RPG_REVERB_TYPE_FACTORY_LONGPASSAGE: return (RPGreverbpreset) EFX_REVERB_PRESET_FACTORY_LONGPASSAGE;
+        case RPG_REVERB_TYPE_FACTORY_HALL: return (RPGreverbpreset) EFX_REVERB_PRESET_FACTORY_HALL;
+        case RPG_REVERB_TYPE_FACTORY_CUPBOARD: return (RPGreverbpreset) EFX_REVERB_PRESET_FACTORY_CUPBOARD;
+        case RPG_REVERB_TYPE_FACTORY_COURTYARD: return (RPGreverbpreset) EFX_REVERB_PRESET_FACTORY_COURTYARD;
+        case RPG_REVERB_TYPE_FACTORY_ALCOVE: return (RPGreverbpreset) EFX_REVERB_PRESET_FACTORY_ALCOVE;
         /* Ice Palace Presets */
-        case RPG_REVERB_TYPE_ICEPALACE_SMALLROOM: return (RPGreverbpreset)EFX_REVERB_PRESET_ICEPALACE_SMALLROOM;
-        case RPG_REVERB_TYPE_ICEPALACE_SHORTPASSAGE: return (RPGreverbpreset)EFX_REVERB_PRESET_ICEPALACE_SHORTPASSAGE;
-        case RPG_REVERB_TYPE_ICEPALACE_MEDIUMROOM: return (RPGreverbpreset)EFX_REVERB_PRESET_ICEPALACE_MEDIUMROOM;
-        case RPG_REVERB_TYPE_ICEPALACE_LARGEROOM: return (RPGreverbpreset)EFX_REVERB_PRESET_ICEPALACE_LARGEROOM;
-        case RPG_REVERB_TYPE_ICEPALACE_LONGPASSAGE: return (RPGreverbpreset)EFX_REVERB_PRESET_ICEPALACE_LONGPASSAGE;
-        case RPG_REVERB_TYPE_ICEPALACE_HALL: return (RPGreverbpreset)EFX_REVERB_PRESET_ICEPALACE_HALL;
-        case RPG_REVERB_TYPE_ICEPALACE_CUPBOARD: return (RPGreverbpreset)EFX_REVERB_PRESET_ICEPALACE_CUPBOARD;
-        case RPG_REVERB_TYPE_ICEPALACE_COURTYARD: return (RPGreverbpreset)EFX_REVERB_PRESET_ICEPALACE_COURTYARD;
-        case RPG_REVERB_TYPE_ICEPALACE_ALCOVE: return (RPGreverbpreset)EFX_REVERB_PRESET_ICEPALACE_ALCOVE;
+        case RPG_REVERB_TYPE_ICEPALACE_SMALLROOM: return (RPGreverbpreset) EFX_REVERB_PRESET_ICEPALACE_SMALLROOM;
+        case RPG_REVERB_TYPE_ICEPALACE_SHORTPASSAGE: return (RPGreverbpreset) EFX_REVERB_PRESET_ICEPALACE_SHORTPASSAGE;
+        case RPG_REVERB_TYPE_ICEPALACE_MEDIUMROOM: return (RPGreverbpreset) EFX_REVERB_PRESET_ICEPALACE_MEDIUMROOM;
+        case RPG_REVERB_TYPE_ICEPALACE_LARGEROOM: return (RPGreverbpreset) EFX_REVERB_PRESET_ICEPALACE_LARGEROOM;
+        case RPG_REVERB_TYPE_ICEPALACE_LONGPASSAGE: return (RPGreverbpreset) EFX_REVERB_PRESET_ICEPALACE_LONGPASSAGE;
+        case RPG_REVERB_TYPE_ICEPALACE_HALL: return (RPGreverbpreset) EFX_REVERB_PRESET_ICEPALACE_HALL;
+        case RPG_REVERB_TYPE_ICEPALACE_CUPBOARD: return (RPGreverbpreset) EFX_REVERB_PRESET_ICEPALACE_CUPBOARD;
+        case RPG_REVERB_TYPE_ICEPALACE_COURTYARD: return (RPGreverbpreset) EFX_REVERB_PRESET_ICEPALACE_COURTYARD;
+        case RPG_REVERB_TYPE_ICEPALACE_ALCOVE: return (RPGreverbpreset) EFX_REVERB_PRESET_ICEPALACE_ALCOVE;
         /* Space Station Presets */
-        case RPG_REVERB_TYPE_SPACESTATION_SMALLROOM: return (RPGreverbpreset)EFX_REVERB_PRESET_SPACESTATION_SMALLROOM;
-        case RPG_REVERB_TYPE_SPACESTATION_SHORTPASSAGE: return (RPGreverbpreset)EFX_REVERB_PRESET_SPACESTATION_SHORTPASSAGE;
-        case RPG_REVERB_TYPE_SPACESTATION_MEDIUMROOM: return (RPGreverbpreset)EFX_REVERB_PRESET_SPACESTATION_MEDIUMROOM;
-        case RPG_REVERB_TYPE_SPACESTATION_LARGEROOM: return (RPGreverbpreset)EFX_REVERB_PRESET_SPACESTATION_LARGEROOM;
-        case RPG_REVERB_TYPE_SPACESTATION_LONGPASSAGE: return (RPGreverbpreset)EFX_REVERB_PRESET_SPACESTATION_LONGPASSAGE;
-        case RPG_REVERB_TYPE_SPACESTATION_HALL: return (RPGreverbpreset)EFX_REVERB_PRESET_SPACESTATION_HALL;
-        case RPG_REVERB_TYPE_SPACESTATION_CUPBOARD: return (RPGreverbpreset)EFX_REVERB_PRESET_SPACESTATION_CUPBOARD;
-        case RPG_REVERB_TYPE_SPACESTATION_ALCOVE: return (RPGreverbpreset)EFX_REVERB_PRESET_SPACESTATION_ALCOVE;
+        case RPG_REVERB_TYPE_SPACESTATION_SMALLROOM: return (RPGreverbpreset) EFX_REVERB_PRESET_SPACESTATION_SMALLROOM;
+        case RPG_REVERB_TYPE_SPACESTATION_SHORTPASSAGE: return (RPGreverbpreset) EFX_REVERB_PRESET_SPACESTATION_SHORTPASSAGE;
+        case RPG_REVERB_TYPE_SPACESTATION_MEDIUMROOM: return (RPGreverbpreset) EFX_REVERB_PRESET_SPACESTATION_MEDIUMROOM;
+        case RPG_REVERB_TYPE_SPACESTATION_LARGEROOM: return (RPGreverbpreset) EFX_REVERB_PRESET_SPACESTATION_LARGEROOM;
+        case RPG_REVERB_TYPE_SPACESTATION_LONGPASSAGE: return (RPGreverbpreset) EFX_REVERB_PRESET_SPACESTATION_LONGPASSAGE;
+        case RPG_REVERB_TYPE_SPACESTATION_HALL: return (RPGreverbpreset) EFX_REVERB_PRESET_SPACESTATION_HALL;
+        case RPG_REVERB_TYPE_SPACESTATION_CUPBOARD: return (RPGreverbpreset) EFX_REVERB_PRESET_SPACESTATION_CUPBOARD;
+        case RPG_REVERB_TYPE_SPACESTATION_ALCOVE: return (RPGreverbpreset) EFX_REVERB_PRESET_SPACESTATION_ALCOVE;
         /* Wooden Galleon Presets */
-        case RPG_REVERB_TYPE_WOODEN_SMALLROOM: return (RPGreverbpreset)EFX_REVERB_PRESET_WOODEN_SMALLROOM;
-        case RPG_REVERB_TYPE_WOODEN_SHORTPASSAGE: return (RPGreverbpreset)EFX_REVERB_PRESET_WOODEN_SHORTPASSAGE;
-        case RPG_REVERB_TYPE_WOODEN_MEDIUMROOM: return (RPGreverbpreset)EFX_REVERB_PRESET_WOODEN_MEDIUMROOM;
-        case RPG_REVERB_TYPE_WOODEN_LARGEROOM: return (RPGreverbpreset)EFX_REVERB_PRESET_WOODEN_LARGEROOM;
-        case RPG_REVERB_TYPE_WOODEN_LONGPASSAGE: return (RPGreverbpreset)EFX_REVERB_PRESET_WOODEN_LONGPASSAGE;
-        case RPG_REVERB_TYPE_WOODEN_HALL: return (RPGreverbpreset)EFX_REVERB_PRESET_WOODEN_HALL;
-        case RPG_REVERB_TYPE_WOODEN_CUPBOARD: return (RPGreverbpreset)EFX_REVERB_PRESET_WOODEN_CUPBOARD;
-        case RPG_REVERB_TYPE_WOODEN_COURTYARD: return (RPGreverbpreset)EFX_REVERB_PRESET_WOODEN_COURTYARD;
-        case RPG_REVERB_TYPE_WOODEN_ALCOVE: return (RPGreverbpreset)EFX_REVERB_PRESET_WOODEN_ALCOVE;
+        case RPG_REVERB_TYPE_WOODEN_SMALLROOM: return (RPGreverbpreset) EFX_REVERB_PRESET_WOODEN_SMALLROOM;
+        case RPG_REVERB_TYPE_WOODEN_SHORTPASSAGE: return (RPGreverbpreset) EFX_REVERB_PRESET_WOODEN_SHORTPASSAGE;
+        case RPG_REVERB_TYPE_WOODEN_MEDIUMROOM: return (RPGreverbpreset) EFX_REVERB_PRESET_WOODEN_MEDIUMROOM;
+        case RPG_REVERB_TYPE_WOODEN_LARGEROOM: return (RPGreverbpreset) EFX_REVERB_PRESET_WOODEN_LARGEROOM;
+        case RPG_REVERB_TYPE_WOODEN_LONGPASSAGE: return (RPGreverbpreset) EFX_REVERB_PRESET_WOODEN_LONGPASSAGE;
+        case RPG_REVERB_TYPE_WOODEN_HALL: return (RPGreverbpreset) EFX_REVERB_PRESET_WOODEN_HALL;
+        case RPG_REVERB_TYPE_WOODEN_CUPBOARD: return (RPGreverbpreset) EFX_REVERB_PRESET_WOODEN_CUPBOARD;
+        case RPG_REVERB_TYPE_WOODEN_COURTYARD: return (RPGreverbpreset) EFX_REVERB_PRESET_WOODEN_COURTYARD;
+        case RPG_REVERB_TYPE_WOODEN_ALCOVE: return (RPGreverbpreset) EFX_REVERB_PRESET_WOODEN_ALCOVE;
         /* Sports Presets */
-        case RPG_REVERB_TYPE_SPORT_EMPTYSTADIUM: return (RPGreverbpreset)EFX_REVERB_PRESET_SPORT_EMPTYSTADIUM;
-        case RPG_REVERB_TYPE_SPORT_SQUASHCOURT: return (RPGreverbpreset)EFX_REVERB_PRESET_SPORT_SQUASHCOURT;
-        case RPG_REVERB_TYPE_SPORT_SMALLSWIMMINGPOOL: return (RPGreverbpreset)EFX_REVERB_PRESET_SPORT_SMALLSWIMMINGPOOL;
-        case RPG_REVERB_TYPE_SPORT_LARGESWIMMINGPOOL: return (RPGreverbpreset)EFX_REVERB_PRESET_SPORT_LARGESWIMMINGPOOL;
-        case RPG_REVERB_TYPE_SPORT_GYMNASIUM: return (RPGreverbpreset)EFX_REVERB_PRESET_SPORT_GYMNASIUM;
-        case RPG_REVERB_TYPE_SPORT_FULLSTADIUM: return (RPGreverbpreset)EFX_REVERB_PRESET_SPORT_FULLSTADIUM;
-        case RPG_REVERB_TYPE_SPORT_STADIUMTANNOY: return (RPGreverbpreset)EFX_REVERB_PRESET_SPORT_STADIUMTANNOY;
+        case RPG_REVERB_TYPE_SPORT_EMPTYSTADIUM: return (RPGreverbpreset) EFX_REVERB_PRESET_SPORT_EMPTYSTADIUM;
+        case RPG_REVERB_TYPE_SPORT_SQUASHCOURT: return (RPGreverbpreset) EFX_REVERB_PRESET_SPORT_SQUASHCOURT;
+        case RPG_REVERB_TYPE_SPORT_SMALLSWIMMINGPOOL: return (RPGreverbpreset) EFX_REVERB_PRESET_SPORT_SMALLSWIMMINGPOOL;
+        case RPG_REVERB_TYPE_SPORT_LARGESWIMMINGPOOL: return (RPGreverbpreset) EFX_REVERB_PRESET_SPORT_LARGESWIMMINGPOOL;
+        case RPG_REVERB_TYPE_SPORT_GYMNASIUM: return (RPGreverbpreset) EFX_REVERB_PRESET_SPORT_GYMNASIUM;
+        case RPG_REVERB_TYPE_SPORT_FULLSTADIUM: return (RPGreverbpreset) EFX_REVERB_PRESET_SPORT_FULLSTADIUM;
+        case RPG_REVERB_TYPE_SPORT_STADIUMTANNOY: return (RPGreverbpreset) EFX_REVERB_PRESET_SPORT_STADIUMTANNOY;
         /* Prefab Presets */
-        case RPG_REVERB_TYPE_PREFAB_WORKSHOP: return (RPGreverbpreset)EFX_REVERB_PRESET_PREFAB_WORKSHOP;
-        case RPG_REVERB_TYPE_PREFAB_SCHOOLROOM: return (RPGreverbpreset)EFX_REVERB_PRESET_PREFAB_SCHOOLROOM;
-        case RPG_REVERB_TYPE_PREFAB_PRACTISEROOM: return (RPGreverbpreset)EFX_REVERB_PRESET_PREFAB_PRACTISEROOM;
-        case RPG_REVERB_TYPE_PREFAB_OUTHOUSE: return (RPGreverbpreset)EFX_REVERB_PRESET_PREFAB_OUTHOUSE;
-        case RPG_REVERB_TYPE_PREFAB_CARAVAN: return (RPGreverbpreset)EFX_REVERB_PRESET_PREFAB_CARAVAN;
+        case RPG_REVERB_TYPE_PREFAB_WORKSHOP: return (RPGreverbpreset) EFX_REVERB_PRESET_PREFAB_WORKSHOP;
+        case RPG_REVERB_TYPE_PREFAB_SCHOOLROOM: return (RPGreverbpreset) EFX_REVERB_PRESET_PREFAB_SCHOOLROOM;
+        case RPG_REVERB_TYPE_PREFAB_PRACTISEROOM: return (RPGreverbpreset) EFX_REVERB_PRESET_PREFAB_PRACTISEROOM;
+        case RPG_REVERB_TYPE_PREFAB_OUTHOUSE: return (RPGreverbpreset) EFX_REVERB_PRESET_PREFAB_OUTHOUSE;
+        case RPG_REVERB_TYPE_PREFAB_CARAVAN: return (RPGreverbpreset) EFX_REVERB_PRESET_PREFAB_CARAVAN;
         /* Dome and Pipe Presets */
-        case RPG_REVERB_TYPE_DOME_TOMB: return (RPGreverbpreset)EFX_REVERB_PRESET_DOME_TOMB;
-        case RPG_REVERB_TYPE_PIPE_SMALL: return (RPGreverbpreset)EFX_REVERB_PRESET_PIPE_SMALL;
-        case RPG_REVERB_TYPE_DOME_SAINTPAULS: return (RPGreverbpreset)EFX_REVERB_PRESET_DOME_SAINTPAULS;
-        case RPG_REVERB_TYPE_PIPE_LONGTHIN: return (RPGreverbpreset)EFX_REVERB_PRESET_PIPE_LONGTHIN;
-        case RPG_REVERB_TYPE_PIPE_LARGE: return (RPGreverbpreset)EFX_REVERB_PRESET_PIPE_LARGE;
-        case RPG_REVERB_TYPE_PIPE_RESONANT: return (RPGreverbpreset)EFX_REVERB_PRESET_PIPE_RESONANT;
+        case RPG_REVERB_TYPE_DOME_TOMB: return (RPGreverbpreset) EFX_REVERB_PRESET_DOME_TOMB;
+        case RPG_REVERB_TYPE_PIPE_SMALL: return (RPGreverbpreset) EFX_REVERB_PRESET_PIPE_SMALL;
+        case RPG_REVERB_TYPE_DOME_SAINTPAULS: return (RPGreverbpreset) EFX_REVERB_PRESET_DOME_SAINTPAULS;
+        case RPG_REVERB_TYPE_PIPE_LONGTHIN: return (RPGreverbpreset) EFX_REVERB_PRESET_PIPE_LONGTHIN;
+        case RPG_REVERB_TYPE_PIPE_LARGE: return (RPGreverbpreset) EFX_REVERB_PRESET_PIPE_LARGE;
+        case RPG_REVERB_TYPE_PIPE_RESONANT: return (RPGreverbpreset) EFX_REVERB_PRESET_PIPE_RESONANT;
         /* Outdoors Presets */
-        case RPG_REVERB_TYPE_OUTDOORS_BACKYARD: return (RPGreverbpreset)EFX_REVERB_PRESET_OUTDOORS_BACKYARD;
-        case RPG_REVERB_TYPE_OUTDOORS_ROLLINGPLAINS: return (RPGreverbpreset)EFX_REVERB_PRESET_OUTDOORS_ROLLINGPLAINS;
-        case RPG_REVERB_TYPE_OUTDOORS_DEEPCANYON: return (RPGreverbpreset)EFX_REVERB_PRESET_OUTDOORS_DEEPCANYON;
-        case RPG_REVERB_TYPE_OUTDOORS_CREEK: return (RPGreverbpreset)EFX_REVERB_PRESET_OUTDOORS_CREEK;
-        case RPG_REVERB_TYPE_OUTDOORS_VALLEY: return (RPGreverbpreset)EFX_REVERB_PRESET_OUTDOORS_VALLEY;
+        case RPG_REVERB_TYPE_OUTDOORS_BACKYARD: return (RPGreverbpreset) EFX_REVERB_PRESET_OUTDOORS_BACKYARD;
+        case RPG_REVERB_TYPE_OUTDOORS_ROLLINGPLAINS: return (RPGreverbpreset) EFX_REVERB_PRESET_OUTDOORS_ROLLINGPLAINS;
+        case RPG_REVERB_TYPE_OUTDOORS_DEEPCANYON: return (RPGreverbpreset) EFX_REVERB_PRESET_OUTDOORS_DEEPCANYON;
+        case RPG_REVERB_TYPE_OUTDOORS_CREEK: return (RPGreverbpreset) EFX_REVERB_PRESET_OUTDOORS_CREEK;
+        case RPG_REVERB_TYPE_OUTDOORS_VALLEY: return (RPGreverbpreset) EFX_REVERB_PRESET_OUTDOORS_VALLEY;
         /* Mood Presets */
-        case RPG_REVERB_TYPE_MOOD_HEAVEN: return (RPGreverbpreset)EFX_REVERB_PRESET_MOOD_HEAVEN;
-        case RPG_REVERB_TYPE_MOOD_HELL: return (RPGreverbpreset)EFX_REVERB_PRESET_MOOD_HELL;
-        case RPG_REVERB_TYPE_MOOD_MEMORY: return (RPGreverbpreset)EFX_REVERB_PRESET_MOOD_MEMORY;
+        case RPG_REVERB_TYPE_MOOD_HEAVEN: return (RPGreverbpreset) EFX_REVERB_PRESET_MOOD_HEAVEN;
+        case RPG_REVERB_TYPE_MOOD_HELL: return (RPGreverbpreset) EFX_REVERB_PRESET_MOOD_HELL;
+        case RPG_REVERB_TYPE_MOOD_MEMORY: return (RPGreverbpreset) EFX_REVERB_PRESET_MOOD_MEMORY;
         /* Driving Presets */
-        case RPG_REVERB_TYPE_DRIVING_COMMENTATOR: return (RPGreverbpreset)EFX_REVERB_PRESET_DRIVING_COMMENTATOR;
-        case RPG_REVERB_TYPE_DRIVING_PITGARAGE: return (RPGreverbpreset)EFX_REVERB_PRESET_DRIVING_PITGARAGE;
-        case RPG_REVERB_TYPE_DRIVING_INCAR_RACER: return (RPGreverbpreset)EFX_REVERB_PRESET_DRIVING_INCAR_RACER;
-        case RPG_REVERB_TYPE_DRIVING_INCAR_SPORTS: return (RPGreverbpreset)EFX_REVERB_PRESET_DRIVING_INCAR_SPORTS;
-        case RPG_REVERB_TYPE_DRIVING_INCAR_LUXURY: return (RPGreverbpreset)EFX_REVERB_PRESET_DRIVING_INCAR_LUXURY;
-        case RPG_REVERB_TYPE_DRIVING_FULLGRANDSTAND: return (RPGreverbpreset)EFX_REVERB_PRESET_DRIVING_FULLGRANDSTAND;
-        case RPG_REVERB_TYPE_DRIVING_EMPTYGRANDSTAND: return (RPGreverbpreset)EFX_REVERB_PRESET_DRIVING_EMPTYGRANDSTAND;
-        case RPG_REVERB_TYPE_DRIVING_TUNNEL: return (RPGreverbpreset)EFX_REVERB_PRESET_DRIVING_TUNNEL;
+        case RPG_REVERB_TYPE_DRIVING_COMMENTATOR: return (RPGreverbpreset) EFX_REVERB_PRESET_DRIVING_COMMENTATOR;
+        case RPG_REVERB_TYPE_DRIVING_PITGARAGE: return (RPGreverbpreset) EFX_REVERB_PRESET_DRIVING_PITGARAGE;
+        case RPG_REVERB_TYPE_DRIVING_INCAR_RACER: return (RPGreverbpreset) EFX_REVERB_PRESET_DRIVING_INCAR_RACER;
+        case RPG_REVERB_TYPE_DRIVING_INCAR_SPORTS: return (RPGreverbpreset) EFX_REVERB_PRESET_DRIVING_INCAR_SPORTS;
+        case RPG_REVERB_TYPE_DRIVING_INCAR_LUXURY: return (RPGreverbpreset) EFX_REVERB_PRESET_DRIVING_INCAR_LUXURY;
+        case RPG_REVERB_TYPE_DRIVING_FULLGRANDSTAND: return (RPGreverbpreset) EFX_REVERB_PRESET_DRIVING_FULLGRANDSTAND;
+        case RPG_REVERB_TYPE_DRIVING_EMPTYGRANDSTAND: return (RPGreverbpreset) EFX_REVERB_PRESET_DRIVING_EMPTYGRANDSTAND;
+        case RPG_REVERB_TYPE_DRIVING_TUNNEL: return (RPGreverbpreset) EFX_REVERB_PRESET_DRIVING_TUNNEL;
         /* City Presets */
-        case RPG_REVERB_TYPE_CITY_STREETS: return (RPGreverbpreset)EFX_REVERB_PRESET_CITY_STREETS;
-        case RPG_REVERB_TYPE_CITY_SUBWAY: return (RPGreverbpreset)EFX_REVERB_PRESET_CITY_SUBWAY;
-        case RPG_REVERB_TYPE_CITY_MUSEUM: return (RPGreverbpreset)EFX_REVERB_PRESET_CITY_MUSEUM;
-        case RPG_REVERB_TYPE_CITY_LIBRARY: return (RPGreverbpreset)EFX_REVERB_PRESET_CITY_LIBRARY;
-        case RPG_REVERB_TYPE_CITY_UNDERPASS: return (RPGreverbpreset)EFX_REVERB_PRESET_CITY_UNDERPASS;
-        case RPG_REVERB_TYPE_CITY_ABANDONED: return (RPGreverbpreset)EFX_REVERB_PRESET_CITY_ABANDONED;
+        case RPG_REVERB_TYPE_CITY_STREETS: return (RPGreverbpreset) EFX_REVERB_PRESET_CITY_STREETS;
+        case RPG_REVERB_TYPE_CITY_SUBWAY: return (RPGreverbpreset) EFX_REVERB_PRESET_CITY_SUBWAY;
+        case RPG_REVERB_TYPE_CITY_MUSEUM: return (RPGreverbpreset) EFX_REVERB_PRESET_CITY_MUSEUM;
+        case RPG_REVERB_TYPE_CITY_LIBRARY: return (RPGreverbpreset) EFX_REVERB_PRESET_CITY_LIBRARY;
+        case RPG_REVERB_TYPE_CITY_UNDERPASS: return (RPGreverbpreset) EFX_REVERB_PRESET_CITY_UNDERPASS;
+        case RPG_REVERB_TYPE_CITY_ABANDONED: return (RPGreverbpreset) EFX_REVERB_PRESET_CITY_ABANDONED;
         /* Misc. Presets */
-        case RPG_REVERB_TYPE_DUSTYROOM: return (RPGreverbpreset)EFX_REVERB_PRESET_DUSTYROOM;
-        case RPG_REVERB_TYPE_CHAPEL: return (RPGreverbpreset)EFX_REVERB_PRESET_CHAPEL;
-        case RPG_REVERB_TYPE_SMALLWATERROOM: return (RPGreverbpreset)EFX_REVERB_PRESET_SMALLWATERROOM;
-        default: return (RPGreverbpreset)EFX_REVERB_PRESET_GENERIC;
+        case RPG_REVERB_TYPE_DUSTYROOM: return (RPGreverbpreset) EFX_REVERB_PRESET_DUSTYROOM;
+        case RPG_REVERB_TYPE_CHAPEL: return (RPGreverbpreset) EFX_REVERB_PRESET_CHAPEL;
+        case RPG_REVERB_TYPE_SMALLWATERROOM: return (RPGreverbpreset) EFX_REVERB_PRESET_SMALLWATERROOM;
+        default: return (RPGreverbpreset) EFX_REVERB_PRESET_GENERIC;
     }
 }
 
@@ -1230,4 +1227,4 @@ DEF_FX_PARAM_F(Equalizer, HighGain, AL_EQUALIZER_HIGH_GAIN, AL_EQUALIZER_MIN_HIG
 DEF_FX_PARAM_F(Equalizer, HighCutoff, AL_EQUALIZER_HIGH_CUTOFF, AL_EQUALIZER_MIN_HIGH_CUTOFF, AL_EQUALIZER_MAX_HIGH_CUTOFF)
 
 #endif /* RPG_AUDIO_NO_EFFECTS */
-#endif /* RPG_NO_AUDIO */
+#endif /* RPG_WITHOUT_OPENAL */

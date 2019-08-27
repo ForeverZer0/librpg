@@ -165,8 +165,8 @@ RPG_RESULT RPG_Viewport_Free(RPGviewport *viewport) {
     // Free batch
     RPG_Batch_Free(&viewport->batch);
     // Delete VAO/VBO
-    glDeleteBuffers(1, &viewport->vbo);
     glDeleteVertexArrays(1, &viewport->vao);
+    glDeleteBuffers(1, &viewport->vbo);
     // Delete texture and FBO
     glDeleteFramebuffers(1, &viewport->fbo);
     glDeleteTextures(1, &viewport->texture);

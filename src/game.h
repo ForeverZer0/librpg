@@ -5,9 +5,15 @@
 #include "GLFW/glfw3.h"
 #include "glad.h"
 #include "rpg.h"
+
+#ifndef RPG_WITHOUT_OPENAL
 #include <AL/alc.h>
+typedef struct RPGchannel RPGchannel;
+#endif
 
 #define BATCH_INIT_CAPACITY 4
+
+#define BYTES_PER_PIXEL 4
 
 #define UNIFORM_PROJECTION "projection"
 #define UNIFORM_MODEL "model"
@@ -16,7 +22,13 @@
 #define UNIFORM_ALPHA "alpha"
 #define UNIFORM_HUE "hue"
 
-typedef struct RPGchannel RPGchannel;
+typedef struct RPGimage {
+    RPGint width;
+    RPGint height;
+    GLuint texture;
+    GLuint fbo;
+    void *user;
+} RPGimage;
 
 /**
  * @brief Container for a rendering batch, with a quick-sort based on sprite's position on the z-axis.
@@ -58,12 +70,31 @@ typedef struct RPGgame {
         GLint alpha;
         GLint hue;
     } shader;
+#ifndef RPG_WITHOUT_OPENAL
     struct {
         ALCcontext *context;
         ALCdevice *device;
         RPGchannel *channels[RPG_MAX_CHANNELS];
         void *cb;
     } audio;
+#endif
+    struct {
+        RPGubyte keys[RPG_KEY_LAST + 1];
+        RPGubyte buttons[RPG_MBUTTON_LAST + 1];
+        double scrollX, scrollY;
+        GLFWcursor *cursor;
+        struct {
+            RPGkeyfunc key;
+            RPGmbuttonfunc mbtn;
+            RPGcursorfunc cursor;
+            RPGcursorfunc scroll;
+        } cb;
+        struct {
+            void *buffer;
+            RPGsize size;
+            RPGint pos;
+        } capture;
+    } input;
     struct {
         GLuint program;
         GLint projection;

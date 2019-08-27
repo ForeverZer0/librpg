@@ -50,13 +50,11 @@ typedef size_t RPGsize;     /** Platform specific (32/64 bit) unsigned integer *
 typedef struct RPGrenderable RPGrenderable;
 typedef struct RPGsprite RPGsprite;
 typedef struct RPGviewport RPGviewport;
+typedef struct RPGplane RPGplane;
 typedef struct RPGgame RPGgame;
 typedef struct RPGimage RPGimage;
 typedef struct RPGfont RPGfont;
 typedef struct RPGshader RPGshader;
-
-// Function protoypes
-typedef void (*RPGupdatefunc)(RPGint64 time);
 
 // Complete types
 
@@ -125,12 +123,10 @@ typedef struct {
 } RPGmat4;
 
 /**
- * @brief Represents a color, with each value 
+ * @brief Represents a color in the RGBA colorspace, where each component is in the range of 0.0 to 1.0
  */
 typedef RPGvec4 RPGcolor;
 typedef RPGvec4 RPGtone;
-
-
 
 typedef struct {
     RPGint width;
@@ -228,26 +224,196 @@ typedef enum {
 } RPG_PIXEL_FORMAT;
 
 typedef enum {
-    RPG_ALIGN_NONE = 0x00,
-    RPG_ALIGN_TOP = 0x01,
-    RPG_ALIGN_CENTER_V = 0x02,
-    RPG_ALIGN_BOTTOM = 0x04,
-    RPG_ALIGN_LEFT = 0x08,
-    RPG_ALIGN_CENTER_H = 0x10,
-    RPG_ALIGN_RIGHT = 0x20,
-    RPG_ALIGN_TOP_LEFT = RPG_ALIGN_TOP | RPG_ALIGN_LEFT,
-    RPG_ALIGN_TOP_RIGHT = RPG_ALIGN_TOP | RPG_ALIGN_RIGHT,
-    RPG_ALIGN_TOP_CENTER = RPG_ALIGN_TOP | RPG_ALIGN_CENTER_H,
-    RPG_ALIGN_BOTTOM_LEFT = RPG_ALIGN_BOTTOM | RPG_ALIGN_LEFT,
-    RPG_ALIGN_BOTTOM_RIGHT = RPG_ALIGN_BOTTOM | RPG_ALIGN_RIGHT,
+    RPG_ALIGN_NONE          = 0x00,
+    RPG_ALIGN_TOP           = 0x01,
+    RPG_ALIGN_CENTER_V      = 0x02,
+    RPG_ALIGN_BOTTOM        = 0x04,
+    RPG_ALIGN_LEFT          = 0x08,
+    RPG_ALIGN_CENTER_H      = 0x10,
+    RPG_ALIGN_RIGHT         = 0x20,
+    RPG_ALIGN_TOP_LEFT      = RPG_ALIGN_TOP | RPG_ALIGN_LEFT,
+    RPG_ALIGN_TOP_RIGHT     = RPG_ALIGN_TOP | RPG_ALIGN_RIGHT,
+    RPG_ALIGN_TOP_CENTER    = RPG_ALIGN_TOP | RPG_ALIGN_CENTER_H,
+    RPG_ALIGN_BOTTOM_LEFT   = RPG_ALIGN_BOTTOM | RPG_ALIGN_LEFT,
+    RPG_ALIGN_BOTTOM_RIGHT  = RPG_ALIGN_BOTTOM | RPG_ALIGN_RIGHT,
     RPG_ALIGN_BOTTOM_CENTER = RPG_ALIGN_BOTTOM | RPG_ALIGN_CENTER_H,
-    RPG_ALIGN_CENTER_LEFT = RPG_ALIGN_CENTER_V | RPG_ALIGN_LEFT,
-    RPG_ALIGN_CENTER_RIGHT = RPG_ALIGN_CENTER_V | RPG_ALIGN_RIGHT,
-    RPG_ALIGN_CENTER = RPG_ALIGN_CENTER_V | RPG_ALIGN_CENTER_H,
-    RPG_ALIGN_DEFAULT = RPG_ALIGN_CENTER_LEFT
+    RPG_ALIGN_CENTER_LEFT   = RPG_ALIGN_CENTER_V | RPG_ALIGN_LEFT,
+    RPG_ALIGN_CENTER_RIGHT  = RPG_ALIGN_CENTER_V | RPG_ALIGN_RIGHT,
+    RPG_ALIGN_CENTER        = RPG_ALIGN_CENTER_V | RPG_ALIGN_CENTER_H,
+    RPG_ALIGN_DEFAULT       = RPG_ALIGN_CENTER_LEFT
 } RPG_ALIGN;
 
 typedef enum { RPG_IMAGE_FORMAT_PNG, RPG_IMAGE_FORMAT_JPG, RPG_IMAGE_FORMAT_BMP } RPG_IMAGE_FORMAT;
+
+typedef enum {
+    RPG_KEY_UNKNOWN       = -1,
+    RPG_KEY_SPACE         = 32,
+    RPG_KEY_APOSTROPHE    = 39,
+    RPG_KEY_COMMA         = 44,
+    RPG_KEY_MINUS         = 45,
+    RPG_KEY_PERIOD        = 46,
+    RPG_KEY_SLASH         = 47,
+    RPG_KEY_0             = 48,
+    RPG_KEY_1             = 49,
+    RPG_KEY_2             = 50,
+    RPG_KEY_3             = 51,
+    RPG_KEY_4             = 52,
+    RPG_KEY_5             = 53,
+    RPG_KEY_6             = 54,
+    RPG_KEY_7             = 55,
+    RPG_KEY_8             = 56,
+    RPG_KEY_9             = 57,
+    RPG_KEY_SEMICOLON     = 59,
+    RPG_KEY_EQUAL         = 61,
+    RPG_KEY_A             = 65,
+    RPG_KEY_B             = 66,
+    RPG_KEY_C             = 67,
+    RPG_KEY_D             = 68,
+    RPG_KEY_E             = 69,
+    RPG_KEY_F             = 70,
+    RPG_KEY_G             = 71,
+    RPG_KEY_H             = 72,
+    RPG_KEY_I             = 73,
+    RPG_KEY_J             = 74,
+    RPG_KEY_K             = 75,
+    RPG_KEY_L             = 76,
+    RPG_KEY_M             = 77,
+    RPG_KEY_N             = 78,
+    RPG_KEY_O             = 79,
+    RPG_KEY_P             = 80,
+    RPG_KEY_Q             = 81,
+    RPG_KEY_R             = 82,
+    RPG_KEY_S             = 83,
+    RPG_KEY_T             = 84,
+    RPG_KEY_U             = 85,
+    RPG_KEY_V             = 86,
+    RPG_KEY_W             = 87,
+    RPG_KEY_X             = 88,
+    RPG_KEY_Y             = 89,
+    RPG_KEY_Z             = 90,
+    RPG_KEY_LEFT_BRACKET  = 91,
+    RPG_KEY_BACKSLASH     = 92,
+    RPG_KEY_RIGHT_BRACKET = 93,
+    RPG_KEY_GRAVE_ACCENT  = 96,
+    RPG_KEY_WORLD_1       = 161,
+    RPG_KEY_WORLD_2       = 162,
+    RPG_KEY_ESCAPE        = 256,
+    RPG_KEY_ENTER         = 257,
+    RPG_KEY_TAB           = 258,
+    RPG_KEY_BACKSPACE     = 259,
+    RPG_KEY_INSERT        = 260,
+    RPG_KEY_DELETE        = 261,
+    RPG_KEY_RIGHT         = 262,
+    RPG_KEY_LEFT          = 263,
+    RPG_KEY_DOWN          = 264,
+    RPG_KEY_UP            = 265,
+    RPG_KEY_PAGE_UP       = 266,
+    RPG_KEY_PAGE_DOWN     = 267,
+    RPG_KEY_HOME          = 268,
+    RPG_KEY_END           = 269,
+    RPG_KEY_CAPS_LOCK     = 280,
+    RPG_KEY_SCROLL_LOCK   = 281,
+    RPG_KEY_NUM_LOCK      = 282,
+    RPG_KEY_PRINT_SCREEN  = 283,
+    RPG_KEY_PAUSE         = 284,
+    RPG_KEY_F1            = 290,
+    RPG_KEY_F2            = 291,
+    RPG_KEY_F3            = 292,
+    RPG_KEY_F4            = 293,
+    RPG_KEY_F5            = 294,
+    RPG_KEY_F6            = 295,
+    RPG_KEY_F7            = 296,
+    RPG_KEY_F8            = 297,
+    RPG_KEY_F9            = 298,
+    RPG_KEY_F10           = 299,
+    RPG_KEY_F11           = 300,
+    RPG_KEY_F12           = 301,
+    RPG_KEY_F13           = 302,
+    RPG_KEY_F14           = 303,
+    RPG_KEY_F15           = 304,
+    RPG_KEY_F16           = 305,
+    RPG_KEY_F17           = 306,
+    RPG_KEY_F18           = 307,
+    RPG_KEY_F19           = 308,
+    RPG_KEY_F20           = 309,
+    RPG_KEY_F21           = 310,
+    RPG_KEY_F22           = 311,
+    RPG_KEY_F23           = 312,
+    RPG_KEY_F24           = 313,
+    RPG_KEY_F25           = 314,
+    RPG_KEY_KP_0          = 320,
+    RPG_KEY_KP_1          = 321,
+    RPG_KEY_KP_2          = 322,
+    RPG_KEY_KP_3          = 323,
+    RPG_KEY_KP_4          = 324,
+    RPG_KEY_KP_5          = 325,
+    RPG_KEY_KP_6          = 326,
+    RPG_KEY_KP_7          = 327,
+    RPG_KEY_KP_8          = 328,
+    RPG_KEY_KP_9          = 329,
+    RPG_KEY_KP_DECIMAL    = 330,
+    RPG_KEY_KP_DIVIDE     = 331,
+    RPG_KEY_KP_MULTIPLY   = 332,
+    RPG_KEY_KP_SUBTRACT   = 333,
+    RPG_KEY_KP_ADD        = 334,
+    RPG_KEY_KP_ENTER      = 335,
+    RPG_KEY_KP_EQUAL      = 336,
+    RPG_KEY_LEFT_SHIFT    = 340,
+    RPG_KEY_LEFT_CONTROL  = 341,
+    RPG_KEY_LEFT_ALT      = 342,
+    RPG_KEY_LEFT_SUPER    = 343,
+    RPG_KEY_RIGHT_SHIFT   = 344,
+    RPG_KEY_RIGHT_CONTROL = 345,
+    RPG_KEY_RIGHT_ALT     = 346,
+    RPG_KEY_RIGHT_SUPER   = 347,
+    RPG_KEY_MENU          = 348,
+    RPG_KEY_LAST          = RPG_KEY_MENU
+} RPG_KEY;
+
+typedef enum {
+    RPG_MODKEY_NONE      = 0x0000,
+    RPG_MODKEY_SHIFT     = 0x0001,
+    RPG_MODKEY_CONTROL   = 0x0002,
+    RPG_MODKEY_ALT       = 0x0004,
+    RPG_MODKEY_SUPER     = 0x0008,
+    RPG_MODKEY_CAPS_LOCK = 0x0010,
+    RPG_MODKEY_NUM_LOCK  = 0x0020
+} RPG_MODKEY;
+
+typedef enum {
+    RPG_MBUTTON_1      = 0,
+    RPG_MBUTTON_2      = 1,
+    RPG_MBUTTON_3      = 2,
+    RPG_MBUTTON_4      = 3,
+    RPG_MBUTTON_5      = 4,
+    RPG_MBUTTON_6      = 5,
+    RPG_MBUTTON_7      = 6,
+    RPG_MBUTTON_8      = 7,
+    RPG_MBUTTON_LAST   = RPG_MBUTTON_8,
+    RPG_MBUTTON_LEFT   = RPG_MBUTTON_1,
+    RPG_MBUTTON_RIGHT  = RPG_MBUTTON_2,
+    RPG_MBUTTON_MIDDLE = RPG_MBUTTON_3
+} RPG_MBUTTON;
+
+typedef enum {
+    RPG_CURSOR_ARROW,
+    RPG_CURSOR_IBEAM,
+    RPG_CURSOR_CROSSHAIR,
+    RPG_CURSOR_HAND,
+    RPG_CURSOR_HRESIZE,
+    RPG_CURSOR_VRESIZE,
+} RPG_CURSOR;
+
+typedef enum { RPG_INPUT_STATE_RELEASE, RPG_INPUT_STATE_PRESS, RPG_INPUT_STATE_REPEAT } RPG_INPUT_STATE;
+
+typedef enum { RPG_CURSOR_MODE_NORMAL, RPG_CURSOR_MODE_HIDDEN, RPG_CURSOR_MODE_DISABLED } RPG_CURSOR_MODE;
+
+// Function protoypes
+typedef void (*RPGupdatefunc)(RPGint64 time);
+typedef void (*RPGrenderfunc)(void *renderable);
+typedef void (*RPGkeyfunc)(RPGgame *game, RPG_KEY key, int scancode, RPG_INPUT_STATE state, RPG_MODKEY mods);
+typedef void (*RPGmbuttonfunc)(RPGgame *game, RPG_MBUTTON button, RPG_INPUT_STATE state, RPG_MODKEY mods);
+typedef void (*RPGcursorfunc)(RPGgame *game, RPGdouble x, RPGdouble y);
 
 // Game
 RPG_RESULT RPG_Game_Create(const char *title, RPGint width, RPGint height, RPG_INIT_FLAGS flags, RPGgame **game);
@@ -264,7 +430,7 @@ RPG_RESULT RPG_Game_SetIcon(RPGgame *game, RPGrawimage *image);
 RPG_RESULT RPG_Game_SetIconFromFile(RPGgame *game, const char *filename);
 RPG_RESULT RPG_Game_Snapshot(RPGimage **image);
 
-const char *RPG_GetErrorString(RPG_RESULT result); // FIXME: 
+const char *RPG_GetErrorString(RPG_RESULT result);  // FIXME:
 
 // Image
 RPG_RESULT RPG_Image_Create(RPGint width, RPGint height, const void *pixels, RPG_PIXEL_FORMAT format, RPGimage **image);
@@ -312,12 +478,13 @@ RPG_RESULT RPG_Renderable_GetBlendMode(RPGrenderable *renderable, RPG_BLEND *src
 RPG_RESULT RPG_Renderable_SetBlendMode(RPGrenderable *renderable, RPG_BLEND src, RPG_BLEND dst, RPG_BLEND_OP op);
 RPG_RESULT RPG_Renderable_GetFlash(RPGrenderable *renderable, RPGcolor *color, RPGubyte *duration);
 RPG_RESULT RPG_Renderable_SetFlash(RPGrenderable *renderable, RPGcolor *color, RPGubyte duration);
-RPG_RESULT RPG_Renderable_GetX(RPGrenderable *renderable, RPGint *x); 
+RPG_RESULT RPG_Renderable_GetX(RPGrenderable *renderable, RPGint *x);
 RPG_RESULT RPG_Renderable_GetY(RPGrenderable *renderable, RPGint *y);
-RPG_RESULT RPG_Renderable_SetX(RPGrenderable *renderable, RPGint x); 
+RPG_RESULT RPG_Renderable_SetX(RPGrenderable *renderable, RPGint x);
 RPG_RESULT RPG_Renderable_SetY(RPGrenderable *renderable, RPGint y);
 RPG_RESULT RPG_Renderable_GetLocation(RPGrenderable *renderable, RPGint *x, RPGint *y);
 RPG_RESULT RPG_Renderable_SetLocation(RPGrenderable *renderable, RPGint x, RPGint y);
+RPG_RESULT RPG_Renderable_SetRenderFunc(RPGrenderable *renderable, RPGrenderfunc func);
 
 // Sprite
 RPG_RESULT RPG_Sprite_Create(RPGviewport *viewport, RPGsprite **sprite);
@@ -330,8 +497,22 @@ RPG_RESULT RPG_Sprite_SetSourceRect(RPGsprite *sprite, RPGrect *rect);
 RPG_RESULT RPG_Sprite_SetSourceRectValues(RPGsprite *sprite, RPGint x, RPGint y, RPGint w, RPGint h);
 RPG_RESULT RPG_Sprite_GetVertexArray(RPGsprite *sprite, RPGuint *vao);
 RPG_RESULT RPG_Sprite_GetVertexBuffer(RPGsprite *sprite, RPGuint *vbo);
-RPG_RESULT RPG_Renderable_GetSprite(RPGsprite *sprite, RPGint *x, RPGint *y);
-RPG_RESULT RPG_Renderable_SetSprite(RPGsprite *sprite, RPGint x, RPGint y);
+// TODO: Get/Set Origin
+
+// Plane
+RPG_RESULT RPG_Plane_Create(RPGviewport *viewport, RPGplane **plane);
+RPG_RESULT RPG_Plane_Free(RPGplane *plane);
+RPG_RESULT RPG_Plane_GetViewport(RPGplane *plane, RPGviewport **viewport);
+RPG_RESULT RPG_Plane_GetRect(RPGplane *plane, RPGrect *rect);
+RPG_RESULT RPG_Plane_SetRect(RPGplane *plane, RPGrect *rect);
+RPG_RESULT RPG_Plane_GetBounds(RPGplane *plane, RPGint *x, RPGint *y, RPGint *width, RPGint *height);
+RPG_RESULT RPG_Plane_SetBounds(RPGplane *plane, RPGint x, RPGint y, RPGint width, RPGint height);
+RPG_RESULT RPG_Plane_GetOrigin(RPGplane *plane, RPGint *x, RPGint *y);
+RPG_RESULT RPG_Plane_SetOrigin(RPGplane *plane, RPGint x, RPGint y);
+RPG_RESULT RPG_Plane_GetZoom(RPGplane *plane, RPGfloat *x, RPGfloat *y);
+RPG_RESULT RPG_Plane_SetZoom(RPGplane *plane, RPGfloat x, RPGfloat y);
+RPG_RESULT RPG_Plane_GetImage(RPGplane *plane, RPGimage **image);
+RPG_RESULT RPG_Plane_SetImage(RPGplane *plane, RPGimage *image);
 
 // Viewport
 RPG_RESULT RPG_Viewport_Create(RPGint x, RPGint y, RPGint width, RPGint height, RPGviewport **viewport);
@@ -363,13 +544,32 @@ RPG_RESULT RPG_Shader_Create(const char *vertSrc, const char *fragSrc, const cha
 RPG_RESULT RPG_Shader_Begin(RPGshader *shader);
 RPG_RESULT RPG_Shader_Finish(RPGshader *shader);
 
+// Input
+RPG_RESULT RPG_Input_Initialize(RPGgame *game);
+RPG_RESULT RPG_Input_Update(void);
+RPG_RESULT RPG_Input_KeyTrigger(RPG_KEY key, RPGbool *state);
+RPG_RESULT RPG_Input_KeyPress(RPG_KEY key, RPGbool *state);
+RPG_RESULT RPG_Input_KeyRepeat(RPG_KEY key, RPGbool *state);
+RPG_RESULT RPG_Input_KeyRelease(RPG_KEY key, RPGbool *state);
+RPG_RESULT RPG_Input_ButtonTrigger(RPG_MBUTTON button, RPGbool *state);
+RPG_RESULT RPG_Input_ButtonPress(RPG_MBUTTON button, RPGbool *state);
+RPG_RESULT RPG_Input_ButtonRepeat(RPG_MBUTTON button, RPGbool *state);
+RPG_RESULT RPG_Input_ButtonRelease(RPG_MBUTTON button, RPGbool *state);
+RPG_RESULT RPG_Input_GetCursorLocation(RPGint *x, RPGint *y);
+RPG_RESULT RPG_Input_GetMouseScroll(RPGdouble *x, RPGdouble *y);
+RPG_RESULT RPG_Input_GetScancode(RPG_KEY key, RPGint *scancode);
+RPG_RESULT RPG_Input_SetCursorMode(RPG_CURSOR_MODE mode);
+RPG_RESULT RPG_Input_SetCursorType(RPG_CURSOR shape);
+RPG_RESULT RPG_Input_SetCursorImage(RPGimage *image, RPGint x, RPGint y);
+RPG_RESULT RPG_Input_BeginTextCapture(void *buffer, RPGsize sizeBuffer);
+RPG_RESULT RPG_Input_EndTextCapture(RPGsize *written);
 
 /**
  * @brief Pointer to the game whose context is current on the calling thread.
  */
 extern RPGgame *RPG_GAME;
 
-#ifndef RPG_NO_AUDIO
+#ifndef RPG_WITHOUT_OPENAL
 /** The maximum number of slots that can contain an active sound */
 #define RPG_MAX_CHANNELS 32
 #else

@@ -105,7 +105,7 @@ RPG_RESULT RPG_Image_LoadRaw(const char *filename, RPGrawimage **rawImage) {
         RPG_FREE(img);
         return RPG_ERR_IMAGE_LOAD;
     }
-    // FIXME: Require user allocated memory LoadRaw, get rid of raw image struct
+    // FIXME: Require user allocated memory LoadRaw, get rid of raw image struct? Or RPG_Image_FreeRaw
     *rawImage = img;
     return RPG_NO_ERROR;
 }
@@ -300,7 +300,6 @@ RPG_RESULT RPG_Image_Save(RPGimage *image, const char *filename, RPG_IMAGE_FORMA
     RPGsize size      = image->width * image->height * BYTES_PER_PIXEL;
     void *pixels      = RPG_MALLOC(size);
     RPG_RESULT result = RPG_Image_GetPixels(image, pixels, size);
-    // stbi_flip_vertically_on_write(RPG_TRUE);
     if (result == RPG_NO_ERROR) {
         int code = 0;
         switch (format) {
@@ -313,6 +312,7 @@ RPG_RESULT RPG_Image_Save(RPGimage *image, const char *filename, RPG_IMAGE_FORMA
                 break;
             }
             case RPG_IMAGE_FORMAT_BMP: code = stbi_write_bmp(filename, image->width, image->height, 4, pixels); break;
+            // TODO: TGA
             default: result = RPG_ERR_INVALID_VALUE; break;
         }
         if (code == 0) {

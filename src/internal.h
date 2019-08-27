@@ -168,8 +168,6 @@ static inline int imin(int i1, int i2) { return i1 < i2 ? i1 : i2; }
     glViewport(x, y, w, h);                                                                                                                \
     glScissor(x, y, w, h)
 
-#define BYTES_PER_PIXEL 4
-
 #define RPG_ENSURE_FBO(img)                                                                                                                \
     if (img->fbo == 0) {                                                                                                                   \
         glGenFramebuffers(1, &img->fbo);                                                                                                   \
