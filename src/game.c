@@ -286,8 +286,8 @@ RPG_RESULT RPG_Game_Main(RPGgame *game, RPGdouble tps, RPGupdatefunc updateCallb
     while (!glfwWindowShouldClose(game->window)) {
         while (delta < glfwGetTime()) {
             game->update.count++;
-            // TODO: Update input
             updateCallback(game->update.count);
+            RPG_Input_Update();
             delta += game->update.tick;
         }
         RPG_Game_Render(game);
@@ -654,5 +654,97 @@ RPG_RESULT RPG_Game_SetResizeCallback(RPGgame *game, RPGsizefunc func) {
 RPG_RESULT RPG_Game_GetWindowFrameSize(RPGgame *game, RPGint *left, RPGint *top, RPGint *right, RPGint *bottom) {
     RPG_RETURN_IF_NULL(game);
     glfwGetWindowFrameSize(game->window, left, top, right, bottom);
+    return RPG_NO_ERROR;
+}
+
+RPG_RESULT RPG_Game_Transition(RPGgame *game, RPGshader *shader, RPGint duration, RPGtransitionfunc func) {
+    RPG_RETURN_IF_NULL(game);
+    RPG_RETURN_IF_NULL(func);
+
+    if (shader == NULL || duration < 1) {
+        // Early out
+        func(game, shader);
+        return RPG_NO_ERROR;
+    }
+
+    // Take copy of current screen
+    RPGimage *from, *to;
+    RPG_Game_Snapshot(game, &from);
+    
+    // Enable transition shader and yield control back to change scene, set uniforms, etc,
+    glUseProgram(shader->program);
+    func(game, shader);
+
+    // Take copy of the target screen to transition to
+    glClear(GL_COLOR_BUFFER_BIT);
+    RPG_Game_Render(game);
+    RPG_Game_Snapshot(game, &to);
+
+    // Copy front buffer (current frame) to the back buffer (currently has target frame drawn on it).
+    // If not done, the first buffer swap will show the final frame for a single render, causing a flicker.
+    int w, h;
+    glfwGetFramebufferSize(game->window, &w, &h);
+    glReadBuffer(GL_FRONT);
+    glDrawBuffer(GL_BACK);
+    glBlitFramebuffer(0, 0, w, h, 0, 0, w, h, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+    glReadBuffer(GL_BACK);
+
+    // Bind the shader and set the locations to recieve the from/to textures
+    glUseProgram(shader->program);
+    GLint progress = glGetUniformLocation(shader->program, "progress");
+    glUniform1i(glGetUniformLocation(shader->program, "from"), 0); // TODO:
+    glUniform1i(glGetUniformLocation(shader->program, "to"), 1);
+
+    // Bind the "to" and "from" textures to the shader
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, from->texture);
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, to->texture);
+
+    // Create a VAO and VBO to use for the transition
+    GLuint vao, vbo;
+    glGenVertexArrays(1, &vao);
+    glGenBuffers(1, &vbo);
+    glBindBuffer(GL_ARRAY_BUFFER, vbo);
+    float vertices[VERTICES_COUNT] = {-1.0f, 1.0f, 0.0f, 1.0f, 1.0f, -1.0f, 1.0f, 0.0f, -1.0f, -1.0f, 0.0f, 0.0f,
+                                      -1.0f, 1.0f, 0.0f, 1.0f, 1.0f, 1.0f,  1.0f, 1.0f, 1.0f,  -1.0f, 1.0f, 0.0f};
+    glBufferData(GL_ARRAY_BUFFER, VERTICES_SIZE, vertices, GL_STATIC_DRAW);
+    glBindVertexArray(vao);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, VERTICES_STRIDE, NULL);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+    // Get time, and calculate length of transition
+    glBindVertexArray(vao);
+    double done = duration * game->update.tick;
+    GLdouble time = glfwGetTime();
+    GLdouble max = time + (duration * game->update.tick);
+    float percent;
+
+    // Loop through the defined amount of time, updating the "progress" uniform each draw
+    while (time < max && !glfwWindowShouldClose(game->window)) {
+        percent = RPG_CLAMPF((RPGfloat)(1.0 - ((max - time) / done)), 0.0f, 1.0f);
+        glUniform1f(progress, percent);
+        glDrawArrays(GL_TRIANGLES, 0, 6);
+        glfwPollEvents();
+        glfwSwapBuffers(game->window);
+        time = glfwGetTime();
+    }
+    
+    // Unbind the textures
+    RPG_RESET_BACK_COLOR();
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, 0);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, 0);
+    glBindVertexArray(0);
+    game->update.count += duration;
+
+    // Cleanup
+    RPG_Image_Free(from);
+    RPG_Image_Free(to);
+    glDeleteVertexArrays(1, &vao);
+    glDeleteBuffers(1, &vbo);
+
     return RPG_NO_ERROR;
 }

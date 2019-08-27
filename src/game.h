@@ -117,6 +117,11 @@ typedef struct RPGgame {
     void *user;
 } RPGgame;
 
+typedef struct RPGshader {
+    GLuint program;
+    void *user;
+} RPGshader;
+
 /**
  * @brief Base structure for objects that can be rendered.
  */

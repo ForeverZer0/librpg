@@ -17,9 +17,10 @@ add_library(rpg SHARED
         stb_image.h 
         stb_image_write.h 
         stb_truetype.h
+        transition.c
         utf8.h
         image.c
-        shaders.c uthash.h renderable.c sprite.c viewport.c renderable.h)
+        shaders.c uthash.h renderable.c sprite.c viewport.c)
 
 add_compile_definitions(RPG_DEBUG)
 

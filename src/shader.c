@@ -3,10 +3,6 @@
 #include "internal.h"
 #include <stdio.h>
 
-typedef struct RPGshader {
-    GLuint program;
-    void *user;
-} RPGshader;
 
 static RPGbool RPG_Shader_CreateShader(const char *source, GLenum type, GLuint *result) {
     GLuint shader = glCreateShader(type);

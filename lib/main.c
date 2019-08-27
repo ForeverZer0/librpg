@@ -44,7 +44,6 @@ static void update(RPGint64 tick) {
     if (trigger) {
         printf("TRIGGER\n");
     }
-    RPG_Input_Update();
 }
 
 static void focus_change(RPGgame *game, RPGbool focused) {
@@ -86,14 +85,14 @@ int main(int argc, char **argv) {
     RPG_Plane_Create(NULL, &plane);
     RPG_Plane_SetImage(plane, fog);
 
-  
+    RPG_Transition_Create(RPG_TRANSITION_ANGULAR, NULL);
     
     // Play some music
     const char *path = "/home/eric/Desktop/The Blackest Day.ogg";
     RPG_Audio_SetPlaybackCompleteCallback(audio_done, NULL);
     RPG_Audio_Play(0, path, 1.0f, 1.0f, 2);
     RPGaudiofx *e;
-    RPG_Reverb_CreateFromType(RPG_REVERB_TYPE_BATHROOM, &e);
+    RPG_Reverb_CreateFromType(RPG_REVERB_TYPE_AUDITORIUM, &e);
     RPG_Audio_AttachEffect(0, e);
 
     // Cleanup
