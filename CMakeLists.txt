@@ -22,9 +22,5 @@ add_subdirectory(${RPG_LIBS_DIR}/glfw)
 
 add_subdirectory(${RPG_LIBS_DIR}/tmx)
 
-find_package(Freetype REQUIRED)
-include_directories("${FREETYPE_INCLUDE_DIRS}")
-
-
 add_subdirectory(src)
 add_subdirectory(lib)
