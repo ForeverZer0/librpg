@@ -60,6 +60,24 @@ static inline int imin(int i1, int i2) { return i1 < i2 ? i1 : i2; }
         return RPG_NO_ERROR;                                                                                                               \
     }
 
+#define DEF_FX_PARAM_B(type, name, param, min, max)                                                                                        \
+    RPG_RESULT RPG_##type##_Get##name(RPGaudiofx *fx, RPGbool *value) {                                                                    \
+        RPG_RETURN_IF_NULL(fx);                                                                                                            \
+        RPG_RETURN_IF_NULL(value);                                                                                                         \
+        int i;                                                                                                                             \
+        alGetEffecti(fx->effect, param, &i);                                                                                               \
+        *value = i ? RPG_TRUE : RPG_FALSE;                                                                                                 \
+        return RPG_NO_ERROR;                                                                                                               \
+    }                                                                                                                                      \
+    RPG_RESULT RPG_##type##_Set##name(RPGaudiofx *fx, RPGbool value) {                                                                     \
+        RPG_RETURN_IF_NULL(fx);                                                                                                            \
+        alEffecti(fx->effect, param, RPG_CLAMPI(value, min, max));                                                                         \
+        if (alGetError())                                                                                                                  \
+            return RPG_ERR_INVALID_POINTER;                                                                                                \
+        RPG_Audio_UpdateEffectChange(fx);                                                                                                  \
+        return RPG_NO_ERROR;                                                                                                               \
+    }
+
 #define DEF_FX_PARAM_V(type, name, param)                                                                                                  \
     RPG_RESULT RPG_##type##_Get##name(RPGaudiofx *fx, RPGvec3 *value) {                                                                    \
         RPG_RETURN_IF_NULL(fx);                                                                                                            \

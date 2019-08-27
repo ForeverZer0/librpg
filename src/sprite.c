@@ -77,7 +77,7 @@ RPG_RESULT RPG_Sprite_SetImage(RPGsprite *sprite, RPGimage *image) {
     RPG_RETURN_IF_NULL(sprite);
     sprite->img = image;
     if (image) {
-        RPG_Sprite_SetSourceRectValues(sprite, 0, 0, image->width, image->height);
+        RPG_Sprite_SetSourceBounds(sprite, 0, 0, image->width, image->height);
     } else {
         sprite->rect = (RPGrect){0, 0, 0, 0};
     }
@@ -86,12 +86,30 @@ RPG_RESULT RPG_Sprite_SetImage(RPGsprite *sprite, RPGimage *image) {
 
 RPG_RESULT RPG_Sprite_GetSourceRect(RPGsprite *sprite, RPGrect *rect) {
     RPG_RETURN_IF_NULL(sprite);
-    RPG_RETURN_IF_NULL(rect);
-    memcpy(rect, &sprite->rect, sizeof(RPGrect));
+    if (rect != NULL) {
+        *rect = sprite->rect;
+    }
     return RPG_NO_ERROR;
 }
 
-RPG_RESULT RPG_Sprite_SetSourceRectValues(RPGsprite *sprite, RPGint x, RPGint y, RPGint w, RPGint h) {
+RPG_RESULT RPG_Sprite_GetSourceBounds(RPGsprite *sprite, RPGint *x, RPGint *y, RPGint *width, RPGint *height) {
+    RPG_RETURN_IF_NULL(sprite);
+    if (x != NULL) {
+        *x = sprite->rect.x;
+    }
+    if (y != NULL) {
+        *y = sprite->rect.y;
+    }
+    if (width != NULL) {
+        *width = sprite->rect.w;
+    }
+    if (height != NULL) {
+        *height = sprite->rect.h;
+    }
+    return RPG_NO_ERROR;
+}
+
+RPG_RESULT RPG_Sprite_SetSourceBounds(RPGsprite *sprite, RPGint x, RPGint y, RPGint w, RPGint h) {
     RPG_RETURN_IF_NULL(sprite);
     if (sprite->img == NULL) {
         return RPG_NO_ERROR;
@@ -108,7 +126,7 @@ RPG_RESULT RPG_Sprite_SetSourceRectValues(RPGsprite *sprite, RPGint x, RPGint y,
     GLfloat b = t + ((GLfloat)h / sprite->img->height);
 
     glBindBuffer(GL_ARRAY_BUFFER, sprite->vbo);
-    float vertices[VERTICES_COUNT] = {0.0f, 1.0f, l, b, 1.0f, 0.0f, r, t, 0.0f, 0.0f, l, t,
+    GLfloat vertices[VERTICES_COUNT] = {0.0f, 1.0f, l, b, 1.0f, 0.0f, r, t, 0.0f, 0.0f, l, t,
                                       0.0f, 1.0f, l, b, 1.0f, 1.0f, r, b, 1.0f, 0.0f, r, t};
     glBufferSubData(GL_ARRAY_BUFFER, 0, VERTICES_SIZE, vertices);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -119,23 +137,7 @@ RPG_RESULT RPG_Sprite_SetSourceRectValues(RPGsprite *sprite, RPGint x, RPGint y,
 
 RPG_RESULT RPG_Sprite_SetSourceRect(RPGsprite *sprite, RPGrect *rect) {
     RPG_RETURN_IF_NULL(rect);
-    return RPG_Sprite_SetSourceRectValues(sprite, rect->x, rect->y, rect->w, rect->h);
-}
-
-RPG_RESULT RPG_Sprite_GetVertexArray(RPGsprite *sprite, RPGuint *vao) {
-    RPG_RETURN_IF_NULL(sprite);
-    if (vao != NULL) {
-        *vao = sprite->vao;
-    }
-    return RPG_NO_ERROR;
-}
-
-RPG_RESULT RPG_Sprite_GetVertexBuffer(RPGsprite *sprite, RPGuint *vbo) {
-    RPG_RETURN_IF_NULL(sprite);
-    if (vbo != NULL) {
-        *vbo = sprite->vbo;
-    }
-    return RPG_NO_ERROR;
+    return RPG_Sprite_SetSourceBounds(sprite, rect->x, rect->y, rect->w, rect->h);
 }
 
 RPG_RESULT RPG_Sprite_GetOrigin(RPGsprite *sprite, RPGint *x, RPGint *y) {

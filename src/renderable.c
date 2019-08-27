@@ -28,8 +28,7 @@ RPG_RESULT RPG_Renderable_Update(RPGrenderable *renderable) {
     }
     return RPG_NO_ERROR;
 }
-DEF_GETTER(Renderable, X, RPGrenderable, RPGint, x)
-DEF_GETTER(Renderable, Y, RPGrenderable, RPGint, y)
+
 DEF_GETTER(Renderable, Z, RPGrenderable, RPGint, z)
 DEF_GETTER(Renderable, Alpha, RPGrenderable, RPGfloat, alpha)
 DEF_GETTER(Renderable, Hue, RPGrenderable, RPGfloat, hue)
@@ -187,24 +186,6 @@ RPG_RESULT RPG_Renderable_SetFlash(RPGrenderable *renderable, RPGcolor *color, R
     } else {
         memcpy(&renderable->flash.color, color, sizeof(RPGcolor));
         renderable->flash.duration = duration;
-    }
-    return RPG_NO_ERROR;
-}
-
-RPG_RESULT RPG_Renderable_SetX(RPGrenderable *renderable, RPGint x) {
-    RPG_RETURN_IF_NULL(renderable);
-    if (x != renderable->x) {
-        renderable->x            = x;
-        renderable->updated = RPG_TRUE;
-    }
-    return RPG_NO_ERROR;
-}
-
-RPG_RESULT RPG_Renderable_SetY(RPGrenderable *renderable, RPGint y) {
-    RPG_RETURN_IF_NULL(renderable);
-    if (y != renderable->y) {
-        renderable->x            = y;
-        renderable->updated = RPG_TRUE;
     }
     return RPG_NO_ERROR;
 }

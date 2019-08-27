@@ -109,7 +109,7 @@ RPG_Font_DrawText(font, image, "Heljo", NULL, RPG_ALIGN_DEFAULT);
     RPG_Plane_Create(NULL, &plane);
     RPG_Plane_SetImage(plane, fog);
 
-    // RPG_Sprite_SetSourceRectValues(sprite, 0, 0, w / 3, h / 4);
+    // RPG_Sprite_SetSourceBounds(sprite, 0, 0, w / 3, h / 4);
     RPG_Renderable_SetLocation((RPGrenderable*) sprite1, 128, 128);
     
     // Play some music

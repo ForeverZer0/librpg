@@ -119,15 +119,6 @@ RPG_RESULT RPG_Game_SetResolution(RPGgame *game, RPGint width, RPGint height) {
     return RPG_NO_ERROR;
 }
 
-const char *RPG_GetErrorString(RPG_RESULT result) {
-    switch (result) {  // TODO:
-        case RPG_NO_ERROR: return "No error.";
-        case RPG_ERR_AUDIO_DEVICE: return "Failed to open audio device.";
-        case RPG_ERR_AUDIO_CONTEXT: return "An error occurred creating or setting the audio context.";
-        default: return "Unknown error.";
-    }
-}
-
 RPG_RESULT RPG_Game_Destroy(RPGgame *game) {
     glfwTerminate();
 #ifndef RPG_WITHOUT_OPENAL

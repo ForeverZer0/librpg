@@ -32,7 +32,7 @@ extern "C" {
 
 // Primitive types // TODO: Group for types, sub-group for primitives, function protypes, enums, incomplete, complete, etc
 
-typedef int32_t RPGbool;    /** A boolean type (32-bits), zero is false, otherwise non-zero is true */
+typedef uint8_t RPGbool;    /** A boolean type (32-bits), zero is false, otherwise non-zero is true */
 typedef int8_t RPGbyte;     /** Signed 8-bit integer (-128 to 127) */
 typedef int16_t RPGshort;   /** Signed 16-bit integer (-32,768 to 32,7677) */
 typedef int32_t RPGint;     /** Signed 32-bit integer (-2,147,483,648 to 2,147,483,647) */
@@ -430,8 +430,6 @@ RPG_RESULT RPG_Game_SetIcon(RPGgame *game, RPGrawimage *image);
 RPG_RESULT RPG_Game_SetIconFromFile(RPGgame *game, const char *filename);
 RPG_RESULT RPG_Game_Snapshot(RPGimage **image);
 
-const char *RPG_GetErrorString(RPG_RESULT result);  // FIXME:
-
 // Image
 RPG_RESULT RPG_Image_Create(RPGint width, RPGint height, const void *pixels, RPG_PIXEL_FORMAT format, RPGimage **image);
 RPG_RESULT RPG_Image_CreateEmpty(RPGint width, RPGint height, RPGimage **image);
@@ -478,10 +476,6 @@ RPG_RESULT RPG_Renderable_GetBlendMode(RPGrenderable *renderable, RPG_BLEND *src
 RPG_RESULT RPG_Renderable_SetBlendMode(RPGrenderable *renderable, RPG_BLEND src, RPG_BLEND dst, RPG_BLEND_OP op);
 RPG_RESULT RPG_Renderable_GetFlash(RPGrenderable *renderable, RPGcolor *color, RPGubyte *duration);
 RPG_RESULT RPG_Renderable_SetFlash(RPGrenderable *renderable, RPGcolor *color, RPGubyte duration);
-RPG_RESULT RPG_Renderable_GetX(RPGrenderable *renderable, RPGint *x);
-RPG_RESULT RPG_Renderable_GetY(RPGrenderable *renderable, RPGint *y);
-RPG_RESULT RPG_Renderable_SetX(RPGrenderable *renderable, RPGint x);
-RPG_RESULT RPG_Renderable_SetY(RPGrenderable *renderable, RPGint y);
 RPG_RESULT RPG_Renderable_GetLocation(RPGrenderable *renderable, RPGint *x, RPGint *y);
 RPG_RESULT RPG_Renderable_SetLocation(RPGrenderable *renderable, RPGint x, RPGint y);
 RPG_RESULT RPG_Renderable_SetRenderFunc(RPGrenderable *renderable, RPGrenderfunc func);
@@ -494,10 +488,10 @@ RPG_RESULT RPG_Sprite_GetImage(RPGsprite *sprite, RPGimage **image);
 RPG_RESULT RPG_Sprite_SetImage(RPGsprite *sprite, RPGimage *image);
 RPG_RESULT RPG_Sprite_GetSourceRect(RPGsprite *sprite, RPGrect *rect);
 RPG_RESULT RPG_Sprite_SetSourceRect(RPGsprite *sprite, RPGrect *rect);
-RPG_RESULT RPG_Sprite_SetSourceRectValues(RPGsprite *sprite, RPGint x, RPGint y, RPGint w, RPGint h);
-RPG_RESULT RPG_Sprite_GetVertexArray(RPGsprite *sprite, RPGuint *vao);
-RPG_RESULT RPG_Sprite_GetVertexBuffer(RPGsprite *sprite, RPGuint *vbo);
-// TODO: Get/Set Origin
+RPG_RESULT RPG_Sprite_GetSourceBounds(RPGsprite *sprite, RPGint *x, RPGint *y, RPGint *width, RPGint *height);
+RPG_RESULT RPG_Sprite_SetSourceBounds(RPGsprite *sprite, RPGint x, RPGint y, RPGint width, RPGint height);
+RPG_RESULT RPG_Sprite_GetOrigin(RPGsprite *sprite, RPGint *x, RPGint *y);
+RPG_RESULT RPG_Sprite_SetOrigin(RPGsprite *sprite, RPGint x, RPGint y);
 
 // Plane
 RPG_RESULT RPG_Plane_Create(RPGviewport *viewport, RPGplane **plane);
@@ -538,11 +532,13 @@ RPG_RESULT RPG_Font_GetDefaultColor(RPGcolor *color);
 RPG_RESULT RPG_Font_SetDefaultColor(RPGcolor *color);
 RPG_RESULT RPG_Font_SetDefaultSize(RPGint size);
 RPG_RESULT RPG_Font_MeasureText(RPGfont *font, const char *text, RPGint *width, RPGint *height);
+// TODO: User pointer
 
 // Shader
 RPG_RESULT RPG_Shader_Create(const char *vertSrc, const char *fragSrc, const char *geoSrc, RPGshader **shader);
 RPG_RESULT RPG_Shader_Begin(RPGshader *shader);
 RPG_RESULT RPG_Shader_Finish(RPGshader *shader);
+// TODO: User pointer
 
 // Input
 RPG_RESULT RPG_Input_Initialize(RPGgame *game);
