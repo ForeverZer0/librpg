@@ -3,7 +3,7 @@
 add_library(rpg SHARED
         ${PROJECT_SOURCE_DIR}/include/RPG/rpg.h
         ${PROJECT_SOURCE_DIR}/include/RPG/rpgaudio.h
-        ${PROJECT_SOURCE_DIR}/include/RPG/rpgcolors.h
+        ${PROJECT_SOURCE_DIR}/include/RPG/rpgext.h
         include/platform.h
         internal.h
         glad.c
@@ -17,7 +17,7 @@ add_library(rpg SHARED
         stb_image.h 
         stb_image_write.h 
         stb_truetype.h
-        transition.c
+        assets.c
         utf8.h
         image.c
         shaders.c uthash.h renderable.c sprite.c viewport.c)

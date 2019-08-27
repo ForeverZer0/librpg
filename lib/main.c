@@ -1,6 +1,7 @@
 
 #include "rpg.h"
 #include "rpgaudio.h"
+#include "rpgext.h"
 #include "stdio.h"
 #include <time.h>
 
@@ -69,14 +70,13 @@ void audio_done(RPGint channel) {
 int main(int argc, char **argv) {
     srand(time(NULL));
 
+    RPGcolor white = RPG_COLOR_WHITE;
+
     // Let's create a game object, and make a window for it
     RPGgame *game;
     RPG_RESULT r = RPG_Game_Create("OpenRPG", 800, 600, RPG_INIT_DEFAULT | RPG_INIT_RESIZABLE, &game);
     RPG_Game_SetIconFromFile(game, "/home/eric/Pictures/books-512.png");
     RPG_Game_SetFileDropCallback(game, filedrop);
-
-
-
 
 
     RPGimage *fog;
@@ -85,7 +85,10 @@ int main(int argc, char **argv) {
     RPG_Plane_Create(NULL, &plane);
     RPG_Plane_SetImage(plane, fog);
 
-    RPG_Transition_Create(RPG_TRANSITION_ANGULAR, NULL);
+    RPGshader *shader;
+    r = RPG_Shader_CreateTransition(RPG_TRANSITION_TYPE_ANGULAR, &shader);
+
+    RPG_Shader_SetUniformVec4(shader, 0, &white);
     
     // Play some music
     const char *path = "/home/eric/Desktop/The Blackest Day.ogg";

@@ -1,5 +1,5 @@
-#ifndef OPEN_RPG_COLORS_H
-#define OPEN_RPG_COLORS_H 1
+#ifndef OPEN_RPG_PRESETS_H
+#define OPEN_RPG_PRESETS_H 1
 
 #define RPG_COLOR_NONE                                         { 0.0000f, 0.0000f, 0.0000f, 0.0000f }
 #define RPG_COLOR_TRANSPARENT                                  { 1.0000f, 1.0000f, 1.0000f, 0.0000f }
@@ -144,4 +144,7 @@
 #define RPG_COLOR_YELLOW                                       { 1.0000f, 1.0000f, 0.0000f, 1.0000f }
 #define RPG_COLOR_YELLOW_GREEN                                 { 0.6039f, 0.8039f, 0.1961f, 1.0000f }
 
-#endif /* OPEN_RPG_COLORS_H */
+
+
+
+#endif /* OPEN_RPG_PRESETS_H */
