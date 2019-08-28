@@ -649,6 +649,7 @@ RPG_RESULT RPG_Shader_Begin(RPGshader *shader);
 RPG_RESULT RPG_Shader_Finish(RPGshader *shader);
 RPG_RESULT RPG_Shader_GetIsActive(RPGshader *shader, RPGbool *active);
 RPG_RESULT RPG_Shader_GetUniformLocation(RPGshader *shader, const char *name, RPGint *location);
+RPG_RESULT RPG_Shader_Free(RPGshader *shader);
 // TODO: User pointer, Free
 RPG_RESULT RPG_Shader_GetUniformf(RPGshader *shader, RPGint location, RPGfloat *buffer);
 RPG_RESULT RPG_Shader_GetUniformi(RPGshader *shader, RPGint location, RPGint *buffer);

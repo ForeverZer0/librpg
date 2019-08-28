@@ -160,6 +160,14 @@ RPG_RESULT RPG_Shader_CreateTransition(RPG_TRANSITION_TYPE type, RPGshader **sha
     return RPG_Shader_Create(RPG_TRANSITION_BASE_VERTEX, buffer, NULL, shader);
 }
 
+RPG_RESULT RPG_Shader_Free(RPGshader *shader) {
+    if (shader != NULL) {
+        glDeleteProgram(shader->program);
+        RPG_FREE(shader);
+    }
+    return RPG_NO_ERROR;
+}
+
 RPG_RESULT RPG_Shader_Begin(RPGshader *shader) {
     RPG_RETURN_IF_NULL(shader);
     glUseProgram(shader->program);
