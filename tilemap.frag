@@ -6,5 +6,5 @@ out vec4 result;
 uniform sampler2D image;
 
 void main() {
-    result = vec4(1.0, 1.0, 1.0, 1.0);
+    result =  texture(image, coords);
 }

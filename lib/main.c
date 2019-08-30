@@ -61,19 +61,17 @@ int main(int argc, char **argv) {
     RPG_Viewport_CreateDefault(&viewport);
 
 
-    RPGimage *fog;
-    RPG_Image_CreateFromFile("/home/eric/Pictures/RTP/XP/Graphics/Fogs/001-Fog01.png", &fog);
+    // RPGimage *fog;
+    // RPG_Image_CreateFromFile("/home/eric/Pictures/RTP/XP/Graphics/Fogs/001-Fog01.png", &fog);
+    // RPG_Plane_Create(NULL, &plane);
+    // RPG_Plane_SetImage(plane, fog);
+    // RPG_Renderable_SetAlpha((RPGrenderable*) plane, 0.3);
 
-
-    RPG_Plane_Create(NULL, &plane);
-    RPG_Plane_SetImage(plane, fog);
-    RPG_Renderable_SetAlpha((RPGrenderable*) plane, 0.3);
-
-    RPGsprite *sprite;
-    RPG_Sprite_Create(NULL, &sprite);
-    RPG_Sprite_SetImage(sprite, fog);
-    RPG_Renderable_SetLocation((RPGrenderable*) sprite, 128, 128);
-    RPG_Renderable_SetAlpha((RPGrenderable*) viewport, 0.5f);
+    // RPGsprite *sprite;
+    // RPG_Sprite_Create(NULL, &sprite);
+    // RPG_Sprite_SetImage(sprite, fog);
+    // RPG_Renderable_SetLocation((RPGrenderable*) sprite, 128, 128);
+    // RPG_Renderable_SetAlpha((RPGrenderable*) viewport, 0.5f);
 
     RPGtilemap *tilemap;
     RPG_Tilemap_CreateFromFile("/home/eric/Desktop/sample/island.tmx", viewport, &tilemap);
