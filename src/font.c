@@ -36,7 +36,7 @@ typedef struct RPGfont {
     void *user;
 } RPGfont;
 
-RPG_RESULT RPG_ReadFile(const char *filename, void **buffer, size_t *size) {
+RPG_RESULT RPG_ReadFile(const char *filename, char **buffer, size_t *size) {
     RPG_ENSURE_FILE(filename);
     char *source = NULL;
     FILE *fp     = fopen(filename, "rb");
@@ -51,7 +51,10 @@ RPG_RESULT RPG_ReadFile(const char *filename, void **buffer, size_t *size) {
                 return RPG_ERR_FILE_READ_ERROR;
             }
             source = RPG_MALLOC(len + 1);
-            *size  = fread(source, sizeof(char), (size_t) len, fp);
+            size_t sz = fread(source, sizeof(char), (size_t) len, fp);
+            if (size != NULL) {
+                *size = sz;
+            }
             source[len] = '\0';
             if (ferror(fp) != 0) {
                 RPG_FREE(source);
@@ -135,7 +138,7 @@ RPG_RESULT RPG_Font_Create(void *buffer, RPGsize sizeBuffer, RPGfont **font) {
 
 RPG_RESULT RPG_Font_CreateFromFile(const char *filename, RPGfont **font) {
     size_t size;
-    void *buffer;
+    char *buffer;
     RPG_RESULT result = RPG_ReadFile(filename, &buffer, &size);
     if (result == RPG_NO_ERROR) {
         result = RPG_Font_Create(buffer, size, font);

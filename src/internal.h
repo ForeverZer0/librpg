@@ -547,6 +547,6 @@ void RPG_Batch_Delete(RPGbatch *batch, int index);
 void RPG_Batch_DeleteItem(RPGbatch *batch, RPGrenderable *item);
 void RPG_Batch_Sort(RPGbatch *batch, int first, int last);
 void RPG_Renderable_Init(RPGrenderable *renderable, RPGrenderfunc renderfunc, RPGbatch *batch);
-RPG_RESULT RPG_ReadFile(const char *filename, void **buffer, size_t *size);
+RPG_RESULT RPG_ReadFile(const char *filename, char **buffer, size_t *size);
 
 #endif /* OPEN_RPG_INTERNAL_H */
