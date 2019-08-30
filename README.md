@@ -10,6 +10,7 @@ gameplay, and not be concerned with performance.
 
 (All object types meet and exceed the basic implementation found in RPG Maker series)
 
+
 [x] Base "Game" class, that is a combination of the RPG Maker "Graphics" module and an interface to the application
 [x] Audio (OpenAL backend), with audio effects, "fire-and-forget" sounds, many audio formats
 [x] Input (keyboard and mouse)(gamepad support is planned for the future)
