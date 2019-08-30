@@ -9,7 +9,7 @@ gameplay and design, without being concerned over low-level rendering, audio, in
 
 ## Implemented
 
-(All object types meet and exceed the basic functionality/implementation found in RPG Maker series)
+All data types meet and exceed the basic functionality/implementation found in RPG Maker series.
 
 - [x] Base "Game" class, that is a combination of the RPG Maker "Graphics" module and an interface to the application
 - [x] Audio (OpenAL backend), with audio effects, "fire-and-forget" sounds, many audio formats
