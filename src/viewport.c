@@ -1,4 +1,4 @@
-#include "game.h"
+
 #include "internal.h"
 
 static void RPG_Viewport_Render(void *viewport) {
@@ -48,7 +48,7 @@ static void RPG_Viewport_Render(void *viewport) {
 
 RPG_RESULT RPG_Viewport_Create(RPGint x, RPGint y, RPGint width, RPGint height, RPGviewport **viewport) {
     // Obligatory argument checking
-    RPG_RETURN_IF_NULL(*viewport);
+    RPG_RETURN_IF_NULL(viewport);
     RPG_CHECK_DIMENSIONS(width, height);
 
     // Allocate a new viewport object, and initialize fields

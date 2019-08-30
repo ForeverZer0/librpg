@@ -1,6 +1,6 @@
 
 
-#include "game.h"
+#include "internal.h"
 
 // stb_image.h macros
 #define STB_IMAGE_IMPLEMENTATION
@@ -17,13 +17,13 @@
 #define STBIW_FREE RPG_FREE
 
 #include "glad.h"
-#include "internal.h"
 #include "stb_image.h"
 #include "stb_image_write.h"
+#include <threads.h>
 
 GLuint blitVBO;
 GLuint blitVAO;
-pthread_mutex_t vaoMutex;
+mtx_t vaoMutex;
 
 RPG_RESULT RPG_Image_Create(RPGint width, RPGint height, const void *pixels, RPG_PIXEL_FORMAT format, RPGimage **image) {
     RPG_CHECK_DIMENSIONS(width, height);
@@ -121,7 +121,7 @@ RPG_RESULT RPG_Image_GetSize(RPGimage *image, RPGint *width, RPGint *height) {
 }
 
 RPG_RESULT RPG_Image_GetUserPointer(RPGimage *image, void **pointer) {
-    RPG_RETURN_IF_NULL(*pointer);
+    RPG_RETURN_IF_NULL(pointer);
     RPG_RETURN_IF_NULL(image);
     *pointer = image->user;
     return RPG_NO_ERROR;
@@ -203,7 +203,7 @@ RPG_RESULT RPG_Image_Blit(RPGimage *dst, RPGrect *dstRect, RPGimage *src, RPGrec
         glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, VERTICES_STRIDE, NULL);
         glBindBuffer(GL_ARRAY_BUFFER, 0);
         glBindVertexArray(0);
-        pthread_mutex_init(&vaoMutex, NULL);
+        mtx_init(&vaoMutex, mtx_plain);
     }
 
     // Calculate model matrix
@@ -211,7 +211,7 @@ RPG_RESULT RPG_Image_Blit(RPGimage *dst, RPGrect *dstRect, RPGimage *src, RPGrec
     GLfloat scale_y = (d.h / (GLfloat) s.h) * s.h;
     RPGmat4 model;
     RPG_MAT4_SET(model, scale_x, 0.0f, 0.0f, 0.0f, 0.0f, scale_y, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, d.x, d.y, 0.0f, 1.0f);
-    pthread_mutex_lock(&vaoMutex);
+    mtx_lock(&vaoMutex);
 
     // Set shader uniforms for opacity and ortho, default for all others
     glBlendEquation(GL_FUNC_ADD);
@@ -247,7 +247,7 @@ RPG_RESULT RPG_Image_Blit(RPGimage *dst, RPGrect *dstRect, RPGimage *src, RPGrec
     glDrawArrays(GL_TRIANGLES, 0, 6);
     glBindVertexArray(0);
     RPG_UNBIND_FBO(dst);
-    pthread_mutex_unlock(&vaoMutex);
+    mtx_unlock(&vaoMutex);
 
     return RPG_NO_ERROR;
 }
@@ -255,7 +255,7 @@ RPG_RESULT RPG_Image_Blit(RPGimage *dst, RPGrect *dstRect, RPGimage *src, RPGrec
 RPG_RESULT RPG_Image_GetPixel(RPGimage *image, RPGint x, RPGint y, RPGcolor *color) {
     RPG_RETURN_IF_NULL(image);
     if (color != NULL) {
-        if (x < 0 | x >= image->width || y < 0 || y > image->height) {
+        if (x < 0 || x >= image->width || y < 0 || y > image->height) {
             memset(color, 0, sizeof(RPGcolor));
             return RPG_ERR_OUT_OF_RANGE;
         }
@@ -273,7 +273,7 @@ RPG_RESULT RPG_Image_GetPixel(RPGimage *image, RPGint x, RPGint y, RPGcolor *col
 
 RPG_RESULT RPG_Image_SetPixel(RPGimage *image, RPGint x, RPGint y, RPGcolor *color) {
     RPG_RETURN_IF_NULL(image);
-    if (x < 0 | x >= image->width || y < 0 || y > image->height) {
+    if (x < 0 || x >= image->width || y < 0 || y > image->height) {
         return RPG_ERR_OUT_OF_RANGE;
     }
     return RPG_Image_Fill(image, color, x, y, 1, 1);

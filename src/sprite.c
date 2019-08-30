@@ -1,4 +1,3 @@
-#include "game.h"
 #include "internal.h"
 
 static void RPG_Sprite_Render(void *sprite) {
@@ -60,15 +59,17 @@ RPG_RESULT RPG_Sprite_Create(RPGviewport *viewport, RPGsprite **sprite) {
 
 RPG_RESULT RPG_Sprite_GetViewport(RPGsprite *sprite, RPGviewport **viewport) {
     RPG_RETURN_IF_NULL(sprite);
-    RPG_RETURN_IF_NULL(*viewport);
-    *viewport = sprite->viewport;
+    if (viewport != NULL) {
+        *viewport = sprite->viewport;
+    }
     return RPG_NO_ERROR;
 }
 
 RPG_RESULT RPG_Sprite_GetImage(RPGsprite *sprite, RPGimage **image) {
     RPG_RETURN_IF_NULL(sprite);
-    RPG_RETURN_IF_NULL(*image);
-    *image = sprite->image;
+    if (image != NULL) {
+        *image = sprite->image;
+    }
     return RPG_NO_ERROR;
 }
 

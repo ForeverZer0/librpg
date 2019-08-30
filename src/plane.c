@@ -1,4 +1,3 @@
-#include "game.h"
 #include "internal.h"
 
 static void RPG_Plane_Render(void *plane) {
@@ -109,7 +108,7 @@ RPG_RESULT RPG_Plane_Free(RPGplane *plane) {
 
 RPG_RESULT RPG_Plane_GetViewport(RPGplane *plane, RPGviewport **viewport) {
     RPG_RETURN_IF_NULL(plane);
-    RPG_RETURN_IF_NULL(*viewport);
+    RPG_RETURN_IF_NULL(viewport);
     *viewport = plane->viewport;
     return RPG_NO_ERROR;
 }
@@ -208,8 +207,9 @@ RPG_RESULT RPG_Plane_SetZoom(RPGplane *plane, RPGfloat x, RPGfloat y) {
 
 RPG_RESULT RPG_Plane_GetImage(RPGplane *plane, RPGimage **image) {
     RPG_RETURN_IF_NULL(plane);
-    RPG_RETURN_IF_NULL(*image);
-    *image = plane->image;
+    if (image != NULL) {
+        *image = plane->image;
+    }
     return RPG_NO_ERROR;
 }
 

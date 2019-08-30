@@ -11,7 +11,9 @@
         "alext.h": "c",
         "typeinfo": "c",
         "renderable.h": "c",
-        "functional": "c"
+        "functional": "c",
+        "platform.h": "c",
+        "threads.h": "c"
     },
     "clang-format.style": "file"
 }

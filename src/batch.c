@@ -1,4 +1,3 @@
-#include "game.h"
 #include "internal.h"
 
 void RPG_Batch_Init(RPGbatch *v) {

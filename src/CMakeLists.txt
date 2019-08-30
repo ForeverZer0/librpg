@@ -1,7 +1,6 @@
-set(libs m glfw pthread openal sndfile) # TODO: pthread 
+set(libs glfw openal sndfile) 
 
 # zlib
-add_definitions(-DWANT_ZLIB)
 include(FindZLIB)
 find_package(ZLIB REQUIRED)
 include_directories(${ZLIB_INCLUDE_DIR})
@@ -13,22 +12,20 @@ find_package(LibXml2 REQUIRED)
 include_directories(${LIBXML2_INCLUDE_DIR})
 list(APPEND libs ${LIBXML2_LIBRARIES})
 
-
 set(RPG_HEADERS
         ${PROJECT_SOURCE_DIR}/include/RPG/rpg.h
         ${PROJECT_SOURCE_DIR}/include/RPG/rpgaudio.h
-        ${PROJECT_SOURCE_DIR}/include/RPG/rpgext.h
-        include/platform.h)
+        ${PROJECT_SOURCE_DIR}/include/RPG/rpgext.h)
 
 set(RPG_SOURCES
-        "tmx/tmx.h"
-        "tmx/tmx.c"
-        "tmx/tmx_utils.c"
-        "tmx/tmx_err.c"
-        "tmx/tmx_xml.c"
-        "tmx/tmx_mem.c"
-        "tmx/tmx_hash.c"
-        "internal.h"
+        tmx/tmx.h
+        tmx/tmx.c
+        tmx/tmx_utils.c
+        tmx/tmx_err.c
+        tmx/tmx_xml.c
+        tmx/tmx_mem.c
+        tmx/tmx_hash.c
+        internal.h
         glad.c
         audio.c
         batch.c
@@ -44,15 +41,12 @@ set(RPG_SOURCES
         utf8.h
         image.c
         tilemap.c
-        shaders.c 
         uthash.h 
         renderable.c 
         sprite.c 
         viewport.c)
 
 add_library(rpg SHARED ${RPG_HEADERS} ${RPG_SOURCES})
-
-add_compile_definitions(RPG_DEBUG)
 
 set_target_properties(rpg PROPERTIES VERSION ${PROJECT_VERSION})
 set_target_properties(rpg PROPERTIES SOVERSION 1)

@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h> /* is */
+#include <zlib.h>
 
 #include "tmx_utils.h"
 
@@ -139,9 +140,6 @@ cleanup:
 	ZLib
 */
 
-#ifdef WANT_ZLIB
-#include <zlib.h>
-
 void* z_alloc(void *opaque UNUSED, unsigned int items, unsigned int size) {
 	return tmx_alloc_func(NULL, items *size);
 }
@@ -203,14 +201,6 @@ cleanup:
 	return NULL;
 }
 
-#else
-
-char* zlib_decompress(const char *source, unsigned int slength, unsigned int rlength) {
-	tmx_err(E_FONCT, "This library was not built with the zlib/gzip support");
-	return NULL;
-}
-
-#endif /* WANT_ZLIB */
 
 /*
 	Layer data decoders

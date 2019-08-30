@@ -1,4 +1,7 @@
 cmake_minimum_required(VERSION 3.15)
+
+add_definitions("-Wall -DRPG_DEBUG")
+
 project(open-rpg
         VERSION 0.1
         DESCRIPTION "Hello"
@@ -6,9 +9,7 @@ project(open-rpg
 
 set(CMAKE_C_STANDARD 11)
 
-set(RPG_INCLUDE_DIRS
-        ${CMAKE_CURRENT_SOURCE_DIR}/include/RPG
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/include)
+set(RPG_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/include/RPG)
 set(RPG_LIBS_DIR "${CMAKE_CURRENT_SOURCE_DIR}/libs")
 
 include_directories(${RPG_INCLUDE_DIRS})

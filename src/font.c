@@ -1,5 +1,4 @@
 
-#include "game.h"
 #include "internal.h"
 #include "utf8.h"
 #include "uthash.h"
@@ -34,9 +33,10 @@ typedef struct RPGfont {
     RPGint size;
     stbtt_fontinfo font;
     RPGfontsize *sizes;
+    void *user;
 } RPGfont;
 
-static RPG_RESULT RPG_ReadFile(const char *filename, void **buffer, size_t *size) {
+RPG_RESULT RPG_ReadFile(const char *filename, void **buffer, size_t *size) {
     RPG_ENSURE_FILE(filename);
     void *source = NULL;
     FILE *fp     = fopen(filename, "rb");
@@ -94,6 +94,7 @@ static void RPG_Font_GetGlyph(RPGfont *font, int codepoint, RPGglyph **glyph) {
 static void RPG_Font_Initialize(RPGgame *game) {
     RPGshader *shader;
     RPG_RESULT s = RPG_Shader_Create(RPG_FONT_VERTEX, RPG_FONT_FRAGMENT, NULL, &shader);
+    RPG_ASSERT(s == RPG_NO_ERROR);
 
     game->font.program      = *((GLuint *) shader);
     game->font.projection   = glGetUniformLocation(game->font.program, "projection");
@@ -258,7 +259,6 @@ static void RPG_Font_AlignAdjust(RPGrect *rect, RPG_ALIGN align, RPGint dimX, RP
             break;
         }
     }
-
 }
 
 RPG_RESULT RPG_Font_DrawText(RPGfont *font, RPGimage *image, const char *text, RPGrect *dstRect, RPG_ALIGN align) {
@@ -345,6 +345,8 @@ RPG_RESULT RPG_Font_DrawText(RPGfont *font, RPGimage *image, const char *text, R
     glUseProgram(RPG_GAME->shader.program);
     RPG_RESET_PROJECTION();
     RPG_RESET_VIEWPORT();
+    
+    return RPG_NO_ERROR;
 }
 
 RPG_RESULT RPG_Font_GetDefaultSize(RPGint *size) {
@@ -389,7 +391,7 @@ RPG_RESULT RPG_Font_MeasureText(RPGfont *font, const char *text, RPGint *width, 
     RPGfontsize *fs;
     HASH_FIND(hh, font->sizes, &font->size, sizeof(RPGint), fs);
 
-    RPGfloat w, h = 0.0f, temp;
+    RPGfloat w, h = 0.0f;
     RPGglyph *glyph = NULL;
     utf8_int32_t cp, next;
     void *str = utf8codepoint(text, &cp);
@@ -406,4 +408,18 @@ RPG_RESULT RPG_Font_MeasureText(RPGfont *font, const char *text, RPGint *width, 
     *width = (RPGint) roundf(w);
     *height = (RPGint) roundf(h);
     return RPG_NO_ERROR;
+}
+
+RPG_RESULT RPG_Font_GetUserPointer(RPGfont *font, void **user) {
+    RPG_RETURN_IF_NULL(font);
+    if (user != NULL) {
+        *user = font->user;
+    }
+    return RPG_NO_ERROR;
+}
+
+RPG_RESULT RPG_Font_SetUserPointer(RPGfont *font, void *user) {
+    RPG_RETURN_IF_NULL(font);
+    font->user = user;
+    return RPG_NO_ERROR; 
 }

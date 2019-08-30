@@ -32,7 +32,7 @@ static void update(RPGint64 tick) {
 
     if ((tick % 40) == 0) {
         sec++;
-        RPGint64 ms;
+        // RPGint64 ms;
         // printf("%d\n", sec);
     }
     RPGint x, y;
@@ -47,10 +47,6 @@ static void update(RPGint64 tick) {
     }
 }
 
-static void focus_change(RPGgame *game, RPGbool focused) {
-    printf("%s", focused ? "Focused\n" : "Focus Lost\n");
-}
-
 static inline float comp(void) {
     return (float) rand() / (float) RAND_MAX ;
 }
@@ -63,18 +59,16 @@ static void filedrop(RPGgame *game, RPGint count, const char **files) {
 }
 
 void audio_done(RPGint channel) {
-    printf("Channel %d is done playing.\n");
+    printf("Channel %d is done playing.\n", channel);
 }
 
 
 int main(int argc, char **argv) {
     srand(time(NULL));
 
-    RPGcolor white = RPG_COLOR_WHITE;
-
     // Let's create a game object, and make a window for it
     RPGgame *game;
-    RPG_RESULT r = RPG_Game_Create("OpenRPG", 800, 600, RPG_INIT_DEFAULT | RPG_INIT_RESIZABLE, &game);
+    RPG_Game_Create("OpenRPG", 800, 600, RPG_INIT_DEFAULT | RPG_INIT_RESIZABLE, &game);
     RPG_Game_SetIconFromFile(game, "/home/eric/Pictures/books-512.png");
     RPG_Game_SetFileDropCallback(game, filedrop);
 
@@ -84,18 +78,25 @@ int main(int argc, char **argv) {
 
     RPG_Plane_Create(NULL, &plane);
     RPG_Plane_SetImage(plane, fog);
+    RPG_Renderable_SetAlpha((RPGrenderable*) plane, 0.3);
+    // RPG_Plane_SetImage(plane, NULL);
 
     RPGshader *shader;
-    r = RPG_Shader_CreateTransition(RPG_TRANSITION_TYPE_ANGULAR, &shader);
+    RPG_Shader_CreateTransition(RPG_TRANSITION_TYPE_ANGULAR, &shader);
 
-    RPG_Shader_SetUniformVec4(shader, 0, &white);
+
+
+    RPGtilemap *tilemap;
+    RPG_Tilemap_CreateFromFile("/home/eric/Desktop/sample/island.tmx", NULL, &tilemap);
+
     
     // Play some music
-    const char *path = "/home/eric/Desktop/The Blackest Day.ogg";
+    // const char *path = "/home/eric/Desktop/The Blackest Day.ogg";
+    const char *path = "/home/eric/Soulseek Downloads/complete/sposker/Press/03 I Wasted You.flac";
     RPG_Audio_SetPlaybackCompleteCallback(audio_done, NULL);
     RPG_Audio_Play(0, path, 1.0f, 1.0f, 2);
     RPGaudiofx *e;
-    RPG_Reverb_CreateFromType(RPG_REVERB_TYPE_AUDITORIUM, &e);
+    RPG_Reverb_CreateFromType(RPG_REVERB_TYPE_BATHROOM, &e);
     RPG_Audio_AttachEffect(0, e);
 
     // Cleanup

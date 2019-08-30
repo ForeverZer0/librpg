@@ -115,7 +115,7 @@ RPG_RESULT RPG_Audio_Pause(RPGint channel);
 RPG_RESULT RPG_Audio_GetPosition(RPGint channel, RPGint64 *ms);
 RPG_RESULT RPG_Audio_Seek(RPGint channel, RPGint64 ms);
 
-#if !defined(RPG_AUDIO_NO_EFFECTS)
+#ifndef RPG_WITHOUT_OPENAL_FX
 
 typedef struct RPGaudiofx RPGaudiofx;
 
@@ -504,7 +504,7 @@ RPG_RESULT RPG_Equalizer_SetMid2Width(RPGaudiofx *fx, RPGfloat value);
 RPG_RESULT RPG_Equalizer_SetHighGain(RPGaudiofx *fx, RPGfloat value);
 RPG_RESULT RPG_Equalizer_SetHighCutoff(RPGaudiofx *fx, RPGfloat value);
 
-#endif /* RPG_AUDIO_NO_EFFECTS */
+#endif /* RPG_WITHOUT_OPENAL_FX */
 #endif /* RPG_WITHOUT_OPENAL */
 
 #ifdef __cplusplus

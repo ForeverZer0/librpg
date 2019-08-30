@@ -1,4 +1,3 @@
-#include "game.h"
 #include "internal.h"
 #include "rpgaudio.h"
 
@@ -196,6 +195,8 @@ RPG_RESULT RPG_Game_Create(const char *title, RPGint width, RPGint height, RPG_I
 #ifndef RPG_WITHOUT_OPENAL
     result = RPG_Audio_Initialize(g);
     if (result) {
+        alcDestroyContext(g->audio.context);
+        alcCloseDevice(g->audio.device);
         RPG_FREE(g);
         return result;
     }
@@ -208,6 +209,9 @@ RPG_RESULT RPG_Game_Create(const char *title, RPGint width, RPGint height, RPG_I
         glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
         glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
         glfwWindowHint(GLFW_DOUBLEBUFFER, GLFW_TRUE);
+#ifdef __APPLE__
+        glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GLFW_TRUE);
+#endif
     } else {
         *game = NULL;
         RPG_FREE(g);
@@ -231,6 +235,7 @@ RPG_RESULT RPG_Game_Create(const char *title, RPGint width, RPGint height, RPG_I
     glfwWindowHint(GLFW_VISIBLE, (flags & RPG_INIT_HIDDEN) == 0);
     GLFWmonitor *monitor = ((flags & RPG_INIT_FULLSCREEN) != 0) ? glfwGetPrimaryMonitor() : NULL;
 
+    glfwSwapInterval(0);
     // Create graphics context
     g->window = glfwCreateWindow(width, height, title, monitor, NULL);
     if (g->window == NULL) {
@@ -294,6 +299,8 @@ RPG_RESULT RPG_Game_Main(RPGgame *game, RPGdouble tps, RPGupdatefunc updateCallb
         glfwPollEvents();
         glfwSwapBuffers(game->window);
     }
+
+    return RPG_NO_ERROR;
 }
 
 RPG_RESULT RPG_Game_GetFrameRate(RPGgame *game, RPGdouble *rate) {
@@ -670,7 +677,7 @@ RPG_RESULT RPG_Game_Transition(RPGgame *game, RPGshader *shader, RPGint duration
     // Take copy of current screen
     RPGimage *from, *to;
     RPG_Game_Snapshot(game, &from);
-    
+
     // Enable transition shader and yield control back to change scene, set uniforms, etc,
     glUseProgram(shader->program);
     func(game, shader);
@@ -692,7 +699,7 @@ RPG_RESULT RPG_Game_Transition(RPGgame *game, RPGshader *shader, RPGint duration
     // Bind the shader and set the locations to recieve the from/to textures
     glUseProgram(shader->program);
     GLint progress = glGetUniformLocation(shader->program, "progress");
-    glUniform1i(glGetUniformLocation(shader->program, "from"), 0); // TODO:
+    glUniform1i(glGetUniformLocation(shader->program, "from"), 0);  // TODO:
     glUniform1i(glGetUniformLocation(shader->program, "to"), 1);
 
     // Bind the "to" and "from" textures to the shader
@@ -716,9 +723,9 @@ RPG_RESULT RPG_Game_Transition(RPGgame *game, RPGshader *shader, RPGint duration
 
     // Get time, and calculate length of transition
     glBindVertexArray(vao);
-    double done = duration * game->update.tick;
+    double done   = duration * game->update.tick;
     GLdouble time = glfwGetTime();
-    GLdouble max = time + (duration * game->update.tick);
+    GLdouble max  = time + (duration * game->update.tick);
     float percent;
 
     // Loop through the defined amount of time, updating the "progress" uniform each draw
@@ -730,7 +737,7 @@ RPG_RESULT RPG_Game_Transition(RPGgame *game, RPGshader *shader, RPGint duration
         glfwSwapBuffers(game->window);
         time = glfwGetTime();
     }
-    
+
     // Unbind the textures
     RPG_RESET_BACK_COLOR();
     glActiveTexture(GL_TEXTURE1);

@@ -1,5 +1,4 @@
 
-#include "game.h"
 #include "internal.h"
 #include <stdio.h>
 
@@ -90,10 +89,12 @@ static RPGbool RPG_Shader_CreateShader(const char *source, GLenum type, GLuint *
     glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
     if (success != GL_TRUE) {
         *result = 0;
+        #ifdef RPG_DEBUG
         char msg[512];
         glGetShaderInfoLog(shader, 512, NULL, msg);
-        glDeleteShader(shader);
         fprintf(stderr, "%s", msg);
+        #endif
+        glDeleteShader(shader);
         return RPG_TRUE;
     }
     *result = shader;
@@ -101,9 +102,7 @@ static RPGbool RPG_Shader_CreateShader(const char *source, GLenum type, GLuint *
 }
 
 RPG_RESULT RPG_Shader_Create(const char *vertSrc, const char *fragSrc, const char *geoSrc, RPGshader **shader) {
-    if (shader == NULL) {
-        return RPG_ERR_INVALID_POINTER;
-    }
+    RPG_RETURN_IF_NULL(shader);
     RPG_RETURN_IF_NULL(vertSrc);
     RPG_RETURN_IF_NULL(fragSrc);
 
@@ -316,4 +315,18 @@ RPG_RESULT RPG_Shader_GetIsActive(RPGshader *shader, RPGbool *active) {
         *active = shader->program == id;
     } 
     return RPG_NO_ERROR;
+}
+
+RPG_RESULT RPG_Shader_GetUserPointer(RPGshader *shader, void **user) {
+    RPG_RETURN_IF_NULL(shader);
+    if (user != NULL) {
+        *user = shader->user;
+    }
+    return RPG_NO_ERROR;
+}
+
+RPG_RESULT RPG_Shader_SetUserPointer(RPGshader *shader, void *user) {
+    RPG_RETURN_IF_NULL(shader);
+    shader->user = user;
+    return RPG_NO_ERROR; 
 }

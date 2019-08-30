@@ -43,7 +43,7 @@ typedef uint32_t RPGuint;   /** Unsigned 32-bit integer (0 to 4,294,967,295) */
 typedef uint64_t RPGuint64; /** Unsigned 64-bit integer (0 to 18,446,744,073,709,551,615) */
 typedef float RPGfloat;     /** Single-precision 32-bit floating point number with 6 decimal places of precision (1.2E-38 to 3.4E+38) */
 typedef double RPGdouble;   /** Double-precision 64-bit floating point number with 15 decimal places of precision (2.3E-308 to 1.7E+308) */
-typedef size_t RPGsize;     /** Platform specific (32/64 bit) unsigned integer */
+typedef uint32_t RPGsize;     /** Unsigned 32-bit integer (0 to 4,294,967,295) */
 
 // Incomplete types
 
@@ -55,6 +55,7 @@ typedef struct RPGgame RPGgame;
 typedef struct RPGimage RPGimage;
 typedef struct RPGfont RPGfont;
 typedef struct RPGshader RPGshader;
+typedef struct RPGtilemap RPGtilemap;
 
 // Complete types
 
@@ -208,7 +209,7 @@ typedef enum {
     RPG_INIT_NONE        = 0x0000, /* No flags */
     RPG_INIT_AUTO_ASPECT = 0x0001, /* A resized window resizes graphics, but applies pillars/letterbox to maintain internal resolution */
     RPG_INIT_LOCK_ASPECT = 0x0002, /* A resized window resizes graphics, but only to dimensions that match the graphics aspect ratio */
-    RPG_INIT_RESIZABLE   = 0x0004, /* WIndow will be resizable by user, graphics will fill client area of the window */
+    RPG_INIT_RESIZABLE   = 0x0004, /* Window will be resizable by user, graphics will fill client area of the window */
     RPG_INIT_DECORATED   = 0x0008, /* Window will have border, titlebar, widgets for close, minimize, etc */
     RPG_INIT_FULLSCREEN  = 0x0010, /* Start window in fullscreen mode */
     RPG_INIT_HIDDEN      = 0x0020, /* Do not display newly created window initially */
@@ -630,6 +631,8 @@ RPG_RESULT RPG_Viewport_SetOrigin(RPGviewport *viewport, RPGint x, RPGint y);
 RPG_RESULT RPG_Font_Create(void *buffer, RPGsize sizeBuffer, RPGfont **font);
 RPG_RESULT RPG_Font_CreateFromFile(const char *filename, RPGfont **font);
 RPG_RESULT RPG_Font_Free(RPGfont *font);
+RPG_RESULT RPG_Font_GetUserPointer(RPGfont *font, void **user);
+RPG_RESULT RPG_Font_SetUserPointer(RPGfont *font, void *user);
 RPG_RESULT RPG_Font_DrawText(RPGfont *font, RPGimage *img, const char *text, RPGrect *dstRect, RPG_ALIGN align);
 RPG_RESULT RPG_Font_GetSize(RPGfont *font, RPGint *size);
 RPG_RESULT RPG_Font_SetSize(RPGfont *font, RPGint size);
@@ -640,7 +643,6 @@ RPG_RESULT RPG_Font_GetDefaultColor(RPGcolor *color);
 RPG_RESULT RPG_Font_SetDefaultColor(RPGcolor *color);
 RPG_RESULT RPG_Font_SetDefaultSize(RPGint size);
 RPG_RESULT RPG_Font_MeasureText(RPGfont *font, const char *text, RPGint *width, RPGint *height);
-// TODO: User pointer
 
 // Shader
 RPG_RESULT RPG_Shader_Create(const char *vertSrc, const char *fragSrc, const char *geoSrc, RPGshader **shader);
@@ -650,7 +652,8 @@ RPG_RESULT RPG_Shader_Finish(RPGshader *shader);
 RPG_RESULT RPG_Shader_GetIsActive(RPGshader *shader, RPGbool *active);
 RPG_RESULT RPG_Shader_GetUniformLocation(RPGshader *shader, const char *name, RPGint *location);
 RPG_RESULT RPG_Shader_Free(RPGshader *shader);
-// TODO: User pointer, Free
+RPG_RESULT RPG_Shader_GetUserPointer(RPGshader *shader, void **user);
+RPG_RESULT RPG_Shader_SetUserPointer(RPGshader *shader, void *user);
 RPG_RESULT RPG_Shader_GetUniformf(RPGshader *shader, RPGint location, RPGfloat *buffer);
 RPG_RESULT RPG_Shader_GetUniformi(RPGshader *shader, RPGint location, RPGint *buffer);
 RPG_RESULT RPG_Shader_SetUniform1f(RPGshader *shader, RPGint location, RPGfloat v1);
@@ -688,6 +691,15 @@ RPG_RESULT RPG_Input_SetCursorType(RPG_CURSOR shape);
 RPG_RESULT RPG_Input_SetCursorImage(RPGimage *image, RPGint x, RPGint y);
 RPG_RESULT RPG_Input_BeginTextCapture(void *buffer, RPGsize sizeBuffer);
 RPG_RESULT RPG_Input_EndTextCapture(RPGsize *written);
+
+// Tilemap
+RPG_RESULT RPG_Tilemap_ClearCache(void);
+RPG_RESULT RPG_Tilemap_Create(const void *buffer, RPGsize size, RPGviewport *viewport, RPGtilemap **tilemap);
+RPG_RESULT RPG_Tilemap_CreateFromFile(const char *path, RPGviewport *viewport, RPGtilemap **tilemap);
+RPG_RESULT RPG_Tilemap_Free(RPGtilemap *tilemap);
+RPG_RESULT RPG_Tilemap_GetSize(RPGtilemap *tilemap, RPGint *width, RPGint *height);
+RPG_RESULT RPG_Tilemap_GetTileSize(RPGtilemap *tilemap, RPGint *width, RPGint *height);
+
 
 /**
  * @brief Pointer to the game whose context is current.

@@ -1,4 +1,4 @@
-#include "game.h"
+#include "internal.h"
 #include <math.h>
 #include <string.h>
 
@@ -56,6 +56,7 @@ static void RPG_Input_CB_MouseButton(GLFWwindow *window, int button, int action,
 }
 
 RPG_RESULT RPG_Input_Initialize(RPGgame *game) {
+    
     glfwSetKeyCallback(game->window, RPG_Input_CB_Key);
     glfwSetMouseButtonCallback(game->window, RPG_Input_CB_MouseButton);
     glfwSetCursorPosCallback(game->window, RPG_Input_CB_MouseMove);
@@ -64,6 +65,8 @@ RPG_RESULT RPG_Input_Initialize(RPGgame *game) {
 
 
     // TODO: Gamepad support
+
+    return RPG_NO_ERROR;
 }
 
 RPG_RESULT RPG_Input_Update(void) {
