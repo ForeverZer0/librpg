@@ -21,7 +21,6 @@ static void RPG_Viewport_Render(void *viewport) {
         r = v->batch.items[i];
         r->render(r);
     }
-
     // Unbind the viewport's FBO, changing the render target back to the screen
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     RPG_RESET_VIEWPORT();

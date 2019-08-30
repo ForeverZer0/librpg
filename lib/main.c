@@ -61,7 +61,7 @@ static void filedrop(RPGgame *game, RPGint count, const char **files) {
 void audio_done(RPGint channel) {
     printf("Channel %d is done playing.\n", channel);
 }
-
+#include <math.h>
 
 int main(int argc, char **argv) {
     srand(time(NULL));
@@ -79,11 +79,6 @@ int main(int argc, char **argv) {
     RPG_Plane_Create(NULL, &plane);
     RPG_Plane_SetImage(plane, fog);
     RPG_Renderable_SetAlpha((RPGrenderable*) plane, 0.3);
-    // RPG_Plane_SetImage(plane, NULL);
-
-    RPGshader *shader;
-    RPG_Shader_CreateTransition(RPG_TRANSITION_TYPE_ANGULAR, &shader);
-
 
 
     RPGtilemap *tilemap;

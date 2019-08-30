@@ -133,6 +133,7 @@ static RPG_RESULT RPG_Game_CreateShaderProgram(RPGgame *game) {
     game->shader.tone       = glGetUniformLocation(game->shader.program, UNIFORM_TONE);
     game->shader.alpha      = glGetUniformLocation(game->shader.program, UNIFORM_ALPHA);
     game->shader.hue        = glGetUniformLocation(game->shader.program, UNIFORM_HUE);
+    game->shader.flash      = glGetUniformLocation(game->shader.program, UNIFORM_FLASH);
 
     return RPG_NO_ERROR;
 }
@@ -286,7 +287,6 @@ RPG_RESULT RPG_Game_Main(RPGgame *game, RPGdouble tps, RPGupdatefunc updateCallb
     if (result != RPG_NO_ERROR) {
         return result;
     }
-
     double delta = glfwGetTime();
     while (!glfwWindowShouldClose(game->window)) {
         while (delta < glfwGetTime()) {

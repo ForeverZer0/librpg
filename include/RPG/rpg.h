@@ -21,6 +21,16 @@ extern "C" {
 #ifndef RPG_ASSERT
 #include <assert.h>
 #define RPG_ASSERT assert
+
+#include <stdio.h> // FIXME: internal.h
+#define RPG_CHECK_GL_ERROR()                                                                                                               \
+    do {                                                                                                                                   \
+        GLenum error = glGetError();                                                                                                       \
+        if (error) {                                                                                                                       \
+            printf("%x\n", error);                                                                                                           \
+            RPG_ASSERT(!error);                                                                                                             \
+        }                                                                                                                                  \
+    } while (0)
 #endif
 #else
 #define RPG_ASSERT(expr)
@@ -43,7 +53,7 @@ typedef uint32_t RPGuint;   /** Unsigned 32-bit integer (0 to 4,294,967,295) */
 typedef uint64_t RPGuint64; /** Unsigned 64-bit integer (0 to 18,446,744,073,709,551,615) */
 typedef float RPGfloat;     /** Single-precision 32-bit floating point number with 6 decimal places of precision (1.2E-38 to 3.4E+38) */
 typedef double RPGdouble;   /** Double-precision 64-bit floating point number with 15 decimal places of precision (2.3E-308 to 1.7E+308) */
-typedef uint32_t RPGsize;     /** Unsigned 32-bit integer (0 to 4,294,967,295) */
+typedef uint32_t RPGsize;   /** Unsigned 32-bit integer (0 to 4,294,967,295) */
 
 // Incomplete types
 
@@ -699,7 +709,6 @@ RPG_RESULT RPG_Tilemap_CreateFromFile(const char *path, RPGviewport *viewport, R
 RPG_RESULT RPG_Tilemap_Free(RPGtilemap *tilemap);
 RPG_RESULT RPG_Tilemap_GetSize(RPGtilemap *tilemap, RPGint *width, RPGint *height);
 RPG_RESULT RPG_Tilemap_GetTileSize(RPGtilemap *tilemap, RPGint *width, RPGint *height);
-
 
 /**
  * @brief Pointer to the game whose context is current.

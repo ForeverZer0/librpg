@@ -47,7 +47,7 @@ typedef struct RPGchannel RPGchannel;
 #define UNIFORM_TONE "tone"
 #define UNIFORM_ALPHA "alpha"
 #define UNIFORM_HUE "hue"
-
+#define UNIFORM_FLASH "flash"
 
 #define VERTICES_COUNT 24
 #define VERTICES_SIZE (sizeof(RPGfloat) * VERTICES_COUNT)
@@ -187,7 +187,7 @@ typedef struct RPGchannel RPGchannel;
     mat4.m42 = _m42;                                                                                                                       \
     mat4.m43 = _m43;                                                                                                                       \
     mat4.m44 = _m44
-
+// FIXME: Remove array unbind
 // Renders a texture to the currently bound framebuffer
 #define RPG_RENDER_TEXTURE(TEXTURE, VAO)                                                                                                   \
     glActiveTexture(GL_TEXTURE0);                                                                                                          \
@@ -214,7 +214,7 @@ typedef struct RPGchannel RPGchannel;
         return RPG_NO_ERROR;                                                                                                               \
     }
 
-// Defines a pair of basic get/set functions 
+// Defines a pair of basic get/set functions
 #define DEF_PARAM(name, param, objtype, paramtype, field)                                                                                  \
     DEF_GETTER(name, param, objtype, paramtype, field)                                                                                     \
     DEF_SETTER(name, param, objtype, paramtype, field)
@@ -270,7 +270,7 @@ typedef struct RPGchannel RPGchannel;
 
 /**
  * @brief Returns the maximum of two integer values.
- * 
+ *
  * @param i1 First value
  * @param i2 Second value
  * @return int The greater of the two values.
@@ -279,13 +279,12 @@ static inline int imax(int i1, int i2) { return i1 > i2 ? i1 : i2; }
 
 /**
  * @brief Returns the minimum of two integer values.
- * 
+ *
  * @param i1 First value
  * @param i2 Second value
  * @return int The lesser of the two values.
  */
 static inline int imin(int i1, int i2) { return i1 < i2 ? i1 : i2; }
-
 
 typedef struct RPGimage {
     RPGint width;
@@ -428,7 +427,7 @@ typedef struct RPGrenderable {
  */
 typedef struct RPGsprite {
     RPGrenderable base;    /** The base renderable object, MUST BE FIRST FIELD IN THE STRUCTURE! */
-    RPGimage *image;         /** A pointer ot the sprite's image, or NULL. */
+    RPGimage *image;       /** A pointer ot the sprite's image, or NULL. */
     RPGviewport *viewport; /** A pointer to the sprite's viewport, or NULL. */
     RPGrect rect;          /** The source rectangle of the sprite's image. */
     GLuint vbo;            /** The Vertex Buffer Object bound to this sprite. */

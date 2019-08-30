@@ -1,13 +1,13 @@
 #version 330 core
 
-out vec2 coords;
-
 layout(location = 0) in vec4 vertex;
+layout(location = 1) in mat4 model;
 
 uniform mat4 projection;
 
-void main() 
-{
-    coords = vertex.xy;
-    gl_Position = projection * vec4(vertex.xy, 0.0, 1.0);
+out vec2 coords;
+
+void main() {
+    coords      = vec2(vertex.zw);
+    gl_Position = projection * model * vec4(vertex.xy, 0.0, 1.0);
 }
