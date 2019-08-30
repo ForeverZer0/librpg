@@ -81,7 +81,7 @@ static const char *RPG_Shader_GetTransitionSource(RPG_TRANSITION_TYPE type) {
 
 static RPGbool RPG_Shader_CreateShader(const char *source, GLenum type, GLuint *result) {
     GLuint shader = glCreateShader(type);
-    GLint length  = (GLint) strlen(source);
+    GLint length  = (GLint) strlen(source) + 1;
     glShaderSource(shader, 1, &source, &length);
     glCompileShader(shader);
 

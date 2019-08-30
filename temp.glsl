@@ -8,6 +8,6 @@ uniform mat4 projection;
 out vec2 coords;
 
 void main() {
-    coords      = vec2(vertex.zw);
+    coords      = vertex.zw;
     gl_Position = projection * model * vec4(vertex.xy, 0.0, 1.0);
 }

@@ -47,20 +47,6 @@ static void update(RPGint64 tick) {
     }
 }
 
-static inline float comp(void) {
-    return (float) rand() / (float) RAND_MAX ;
-}
-
-static void filedrop(RPGgame *game, RPGint count, const char **files) {
-
-    for (int i = 0; i < count; i++) {
-        printf("%s\n", files[i]);
-    }
-}
-
-void audio_done(RPGint channel) {
-    printf("Channel %d is done playing.\n", channel);
-}
 #include <math.h>
 
 int main(int argc, char **argv) {
@@ -70,25 +56,32 @@ int main(int argc, char **argv) {
     RPGgame *game;
     RPG_Game_Create("OpenRPG", 800, 600, RPG_INIT_DEFAULT | RPG_INIT_RESIZABLE, &game);
     RPG_Game_SetIconFromFile(game, "/home/eric/Pictures/books-512.png");
-    RPG_Game_SetFileDropCallback(game, filedrop);
+
+    RPGviewport *viewport;
+    RPG_Viewport_CreateDefault(&viewport);
 
 
     RPGimage *fog;
     RPG_Image_CreateFromFile("/home/eric/Pictures/RTP/XP/Graphics/Fogs/001-Fog01.png", &fog);
 
+
     RPG_Plane_Create(NULL, &plane);
     RPG_Plane_SetImage(plane, fog);
     RPG_Renderable_SetAlpha((RPGrenderable*) plane, 0.3);
 
+    RPGsprite *sprite;
+    RPG_Sprite_Create(NULL, &sprite);
+    RPG_Sprite_SetImage(sprite, fog);
+    RPG_Renderable_SetLocation((RPGrenderable*) sprite, 128, 128);
+    RPG_Renderable_SetAlpha((RPGrenderable*) viewport, 0.5f);
 
     RPGtilemap *tilemap;
-    RPG_Tilemap_CreateFromFile("/home/eric/Desktop/sample/island.tmx", NULL, &tilemap);
+    RPG_Tilemap_CreateFromFile("/home/eric/Desktop/sample/island.tmx", viewport, &tilemap);
 
     
     // Play some music
     // const char *path = "/home/eric/Desktop/The Blackest Day.ogg";
     const char *path = "/home/eric/Soulseek Downloads/complete/sposker/Press/03 I Wasted You.flac";
-    RPG_Audio_SetPlaybackCompleteCallback(audio_done, NULL);
     RPG_Audio_Play(0, path, 1.0f, 1.0f, 2);
     RPGaudiofx *e;
     RPG_Reverb_CreateFromType(RPG_REVERB_TYPE_BATHROOM, &e);

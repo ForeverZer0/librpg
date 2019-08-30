@@ -9,8 +9,7 @@ tmx_resource_manager *cache;
 // Tile Layer
 typedef struct {
     GLuint vao;
-    GLuint modelVBO;
-    GLuint vertexVBO;
+    GLuint vbo;
     RPGimage *image;
     RPGuint tileCount;
 } RPGtilelayer;
@@ -53,18 +52,26 @@ typedef struct RPGtilemap {
     void *user;
 } RPGtilemap;
 
+
+char *tempv, *tempf;
+
 static void RPG_Tilemap_CreateShader(RPGtilemap *tilemap) {
 
     RPGshader *shader;
 
     size_t s;
-    void *v, *f;
-    RPG_ReadFile("/home/eric/Desktop/rpg/temp.glsl", &v, &s);
-    RPG_ReadFile("/home/eric/Desktop/rpg/temp.frag", &f, &s);
+    
+    RPG_ReadFile("/home/eric/Desktop/rpg/temp.glsl", &tempv, &s);
+    RPG_ReadFile("/home/eric/Desktop/rpg/temp.frag", &tempf, &s);
 
-    RPG_RESULT r = RPG_Shader_Create(v, RPG_FRAGMENT_SHADER, NULL, &shader);
+    RPG_RESULT r = RPG_Shader_Create(tempv, tempf, NULL, &shader);
+
+
     RPG_ASSERT(r == RPG_NO_ERROR);
-    tilemap->shader.program = shader->program;  // TODO: Free
+    tilemap->shader.program = shader->program; 
+    RPG_FREE(shader);
+    if (tempf != NULL) RPG_FREE(tempf); 
+    if (tempv != NULL) RPG_FREE(tempv); 
 }
 
 static void RPG_Tilemap_Render(void *tilemap) {
@@ -94,6 +101,7 @@ static void RPG_Tilemap_Render(void *tilemap) {
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, l->image->texture);
         glBindVertexArray(l->vao);
+        glBindBuffer(GL_ARRAY_BUFFER, l->vbo);
         glDrawArraysInstanced(GL_TRIANGLES, 0, 6, l->tileCount);
     }
     glUseProgram(RPG_GAME->shader.program);
@@ -163,29 +171,27 @@ static RPGtilelayer *RPG_Tilemap_CreateTileLayer(RPGtilemap *tilemap, tmx_map *m
     
     glGenVertexArrays(1, &l->vao);
     glBindVertexArray(l->vao);  
-    // Vertices
-    GLint vertexLocation = glGetAttribLocation(tilemap->shader.program, "vertex");
-    glGenBuffers(1, &l->vertexVBO);
-    glBindBuffer(GL_ARRAY_BUFFER, l->vertexVBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), &vertices[0][0], GL_STATIC_DRAW); 
-    glVertexAttribPointer(vertexLocation, 4, GL_FLOAT, GL_FALSE, VERTICES_STRIDE, NULL);
-    glEnableVertexAttribArray(vertexLocation);
-    glVertexAttribDivisor(vertexLocation, 1);
 
-    // Models
-    GLint matLocation = glGetAttribLocation(tilemap->shader.program, "model");
-    RPG_ASSERT(matLocation != - 1);
-    glGenBuffers(1, &l->modelVBO);
-    glBindBuffer(GL_ARRAY_BUFFER, l->modelVBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(models), &models[0], GL_STATIC_DRAW);
-    glEnableVertexAttribArray(matLocation);
+    GLint vertexLocation = glGetAttribLocation(tilemap->shader.program, "vertex");
+    GLint modelLocation = glGetAttribLocation(tilemap->shader.program, "model");
+
+    glGenBuffers(1, &l->vbo);
+    glBindBuffer(GL_ARRAY_BUFFER, l->vbo);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices) + sizeof(models), NULL, GL_STATIC_DRAW);
+
+    glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), vertices);
+    glBufferSubData(GL_ARRAY_BUFFER, sizeof(vertices), sizeof(models), models);
+
+    glEnableVertexAttribArray(vertexLocation);
+    glVertexAttribPointer(vertexLocation, 4, GL_FLOAT, GL_FALSE, VERTICES_STRIDE, NULL);
+    glVertexAttribDivisor(vertexLocation, 6);
+
+
+    glEnableVertexAttribArray(modelLocation);
     for (int i = 0; i < 4; i++) {
-        // Set up the vertex attribute
-        glVertexAttribPointer(matLocation + i, 4, GL_FLOAT, GL_FALSE, sizeof(RPGmat4), (void *)(sizeof(RPGvec4) * i));
-        // Enable it
-        glEnableVertexAttribArray(matLocation + i);
-        // Make it instanced
-        glVertexAttribDivisor(matLocation + i, 1);
+        glEnableVertexAttribArray(modelLocation + i);
+        glVertexAttribPointer(modelLocation + i, 4, GL_FLOAT, GL_FALSE, sizeof(RPGmat4), (void *)(sizeof(RPGvec4) * i));
+        glVertexAttribDivisor(modelLocation + i, 1);
     }
     return l;
 }
