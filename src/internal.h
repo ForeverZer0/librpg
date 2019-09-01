@@ -187,14 +187,14 @@ typedef struct RPGchannel RPGchannel;
     mat4.m42 = _m42;                                                                                                                       \
     mat4.m43 = _m43;                                                                                                                       \
     mat4.m44 = _m44
-// FIXME: Remove array unbind
+
+// FIXME: Remove setting active texture, only bind if necessary, track in global?
 // Renders a texture to the currently bound framebuffer
 #define RPG_RENDER_TEXTURE(TEXTURE, VAO)                                                                                                   \
     glActiveTexture(GL_TEXTURE0);                                                                                                          \
     glBindTexture(GL_TEXTURE_2D, TEXTURE);                                                                                                 \
     glBindVertexArray(VAO);                                                                                                                \
-    glDrawArrays(GL_TRIANGLES, 0, 6);                                                                                                      \
-    glBindVertexArray(0)
+    glDrawArrays(GL_TRIANGLES, 0, 6)
 
 // Defines a basic get function
 #define DEF_GETTER(name, param, objtype, paramtype, field)                                                                                 \
@@ -548,5 +548,6 @@ void RPG_Batch_DeleteItem(RPGbatch *batch, RPGrenderable *item);
 void RPG_Batch_Sort(RPGbatch *batch, int first, int last);
 void RPG_Renderable_Init(RPGrenderable *renderable, RPGrenderfunc renderfunc, RPGbatch *batch);
 RPG_RESULT RPG_ReadFile(const char *filename, char **buffer, size_t *size);
+
 
 #endif /* OPEN_RPG_INTERNAL_H */

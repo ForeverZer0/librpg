@@ -709,6 +709,7 @@ RPG_RESULT RPG_Tilemap_CreateFromFile(const char *path, RPGviewport *viewport, R
 RPG_RESULT RPG_Tilemap_Free(RPGtilemap *tilemap);
 RPG_RESULT RPG_Tilemap_GetSize(RPGtilemap *tilemap, RPGint *width, RPGint *height);
 RPG_RESULT RPG_Tilemap_GetTileSize(RPGtilemap *tilemap, RPGint *width, RPGint *height);
+RPG_RESULT RPG_Tilemap_Update(RPGtilemap *tilemap);
 
 /**
  * @brief Pointer to the game whose context is current.

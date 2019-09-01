@@ -27,6 +27,7 @@
 
 int sec;
 RPGplane *plane;
+RPGtilemap *tilemap;
 
 static void update(RPGint64 tick) {
 
@@ -45,6 +46,8 @@ static void update(RPGint64 tick) {
     if (trigger) {
         printf("TRIGGER\n");
     }
+
+    RPG_Tilemap_Update(tilemap);
 }
 
 #include <math.h>
@@ -73,7 +76,6 @@ int main(int argc, char **argv) {
     // RPG_Renderable_SetLocation((RPGrenderable*) sprite, 128, 128);
     // RPG_Renderable_SetAlpha((RPGrenderable*) viewport, 0.5f);
 
-    RPGtilemap *tilemap;
     RPG_Tilemap_CreateFromFile("/home/eric/Desktop/sample/island.tmx", viewport, &tilemap);
 
     

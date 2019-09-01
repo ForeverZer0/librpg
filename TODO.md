@@ -2,17 +2,16 @@
 
 ## High-Priority
 
-- [ ] Tilemap, single dray call, buffer all data onto GPU
+- [x] Tilemap rendering
 - [ ] Maintain track of current bound texture, only switch when needed (texture handles instead?)
 - [ ] Maintain track of current blend factors, only switch when needed (or only switch if changed, then switch back?)
 
 ## Normal-Priority
 
-- [ ] Use uniform block for projection matrix?
+- [ ] Use VBO for all model matrices, use glBufferSubData
 - [ ] Remove all the redundant "unbindings" of buffers and vertex arrays
 - [ ] Remove NULL checks in every API call
 - [ ] Use callback driven error reporting instead of return value?
-- [ ] Explicit uniform layout, do not store and reference from RPGgame struct
 
 ## Before-Release
 
