@@ -15,6 +15,7 @@ tmx_resource_manager *cache;
 typedef struct {
     GLuint vao;
     GLuint vbo;
+    // TODO: Track update
 } RPGtile;
 
 // Tile Layer
@@ -60,6 +61,7 @@ typedef struct RPGtilemap {
         RPGint projection;
         RPGint model;
     } shader;
+    RPGvec2 size;
     void *user;
 } RPGtilemap;
 
@@ -92,13 +94,24 @@ static void RPG_Tilemap_Render(void *tilemap) {
     }
 
     glUseProgram(t->shader.program);
+
+    if (t->base.updated) {
+
+        RPG_MAT4_ORTHO(t->base.model, 0.0f, RPG_GAME->resolution.width, RPG_GAME->resolution.height, 0.0f, -1.0f, 1.0f);
+        glUniformMatrix4fv(glGetUniformLocation(t->shader.program, "projection"), 1, GL_FALSE, (GLfloat *) &t->base.model);
+
+        t->base.updated = RPG_FALSE;
+    }
     // glUniform4f(glGetUniformLocation(t->shader.program, "color"), 0.0f, 0.0f, 0.0f, 0.0f);
     // glUniform4f(glGetUniformLocation(t->shader.program, "tone"), 0.0f, 0.0f, 0.0f, 0.0f);
     // glUniform1f(glGetUniformLocation(t->shader.program, "alpha"), 1.0f);
     // glUniform1f(glGetUniformLocation(t->shader.program, "hue"), 0.0f);
     // glUniform4f(glGetUniformLocation(t->shader.program, "flash"), 0.0f, 0.0f, 0.0f, 0.0f);
+
+   
+
     
-    glUniformMatrix4fv(glGetUniformLocation(t->shader.program, "projection"), 1, GL_FALSE, (GLfloat *) &RPG_GAME->projection);
+
     glBlendEquation(t->base.blend.op);
     glBlendFunc(t->base.blend.src, t->base.blend.dst);
 
@@ -118,10 +131,8 @@ static void RPG_Tilemap_Render(void *tilemap) {
         for (RPGuint ti = 0; ti < l->tileCount; ti++) {
             if (l->tiles[ti].vao) {
                 glBindVertexArray(l->tiles[ti].vao);
-                glDrawArraysInstanced(GL_TRIANGLES, 0, 6, l->tileCount);
+                glDrawArrays(GL_TRIANGLES, 0, 6);
             }
-                // glBindVertexArray(l->tiles[ti].vao);
-                // glDrawArraysInstanced(GL_TRIANGLES, 0, 6, l->tileCount);
         }
     }
     glUseProgram(RPG_GAME->shader.program);
@@ -195,7 +206,7 @@ static RPGtilelayer *RPG_Tilemap_CreateTileLayer(RPGtilemap *tilemap, tmx_map *m
 
             for (int i = 0; i < 4; i++) {
                 glEnableVertexAttribArray(mLoc + i);
-                glVertexAttribPointer(mLoc + i, 4, GL_FLOAT, GL_FALSE, sizeof(RPGmat4), (void*)(VERTICES_SIZE + sizeof(RPGvec4) * i));
+                glVertexAttribPointer(mLoc + i, 4, GL_FLOAT, GL_FALSE, sizeof(RPGmat4), (void*)(sizeof(vertices) + sizeof(RPGvec4) * i));
                 glVertexAttribDivisor(mLoc + i, 1);
             }
 
@@ -263,7 +274,6 @@ static void RPG_Tilemap_Initialize(tmx_map *map, RPGviewport *viewport, RPGtilem
             }
         }
     }
-    RPG_MAT4_ORTHO(tm->projection, 0.0f, map->width * map->tile_width, map->height * map->tile_height,  0.0f, -1.0f, 1.0f);
     // tm->projection = RPG_GAME->projection;
     *tilemap = tm;
 }

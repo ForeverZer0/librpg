@@ -4,6 +4,7 @@
 
 - [ ] Tilemap, single dray call, buffer all data onto GPU
 - [ ] Maintain track of current bound texture, only switch when needed (texture handles instead?)
+- [ ] Maintain track of current blend factors, only switch when needed (or only switch if changed, then switch back?)
 
 ## Normal-Priority
 
