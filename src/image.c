@@ -32,13 +32,12 @@ RPG_RESULT RPG_Image_Create(RPGint width, RPGint height, const void *pixels, RPG
     img->height = height;
 
     glGenTextures(1, &img->texture);
-    glBindTexture(GL_TEXTURE_2D, img->texture);
+    RPG_Drawing_BindTexture(img->texture, GL_TEXTURE0);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, format, GL_UNSIGNED_BYTE, pixels);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glBindTexture(GL_TEXTURE_2D, 0);
 
     *image = img;
     return RPG_NO_ERROR;
@@ -214,8 +213,7 @@ RPG_RESULT RPG_Image_Blit(RPGimage *dst, RPGrect *dstRect, RPGimage *src, RPGrec
     mtx_lock(&vaoMutex);
 
     // Set shader uniforms for opacity and ortho, default for all others
-    glBlendEquation(GL_FUNC_ADD);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    RPG_Drawing_SetBlending(GL_FUNC_ADD, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glUniformMatrix4fv(RPG_GAME->shader.model, 1, GL_FALSE, (GLfloat *) &model);
     glUniform1f(RPG_GAME->shader.alpha, alpha);
     glUniform4f(RPG_GAME->shader.color, 0.0f, 0.0f, 0.0f, 0.0f);
@@ -243,7 +241,7 @@ RPG_RESULT RPG_Image_Blit(RPGimage *dst, RPGrect *dstRect, RPGimage *src, RPGrec
     RPG_VIEWPORT(0, 0, dst->width, dst->height);
 
     // Render the source image to the destination's framebuffer
-    glBindTexture(GL_TEXTURE_2D, src->texture);
+    RPG_Drawing_BindTexture(src->texture, GL_TEXTURE0);
     glDrawArrays(GL_TRIANGLES, 0, 6);
     glBindVertexArray(0);
     RPG_UNBIND_FBO(dst);

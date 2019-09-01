@@ -69,8 +69,7 @@ typedef struct RPGchannel RPGchannel;
     glUniform1f(RPG_GAME->shader.hue, r.hue);                                                                                              \
     glUniform4f(RPG_GAME->shader.flash, r.flash.color.x, r.flash.color.y, r.flash.color.z, r.flash.color.w);                               \
     glUniformMatrix4fv(RPG_GAME->shader.model, 1, GL_FALSE, (GLfloat *) &r.model);                                                         \
-    glBlendEquation(r.blend.op);                                                                                                           \
-    glBlendFunc(r.blend.src, r.blend.dst)
+    RPG_Drawing_SetBlending(r.blend.op, r.blend.src, r.blend.dst)
 
 #define RPG_CLAMPF(v, min, max) (fmaxf(min, fminf(max, v)))
 
@@ -188,11 +187,9 @@ typedef struct RPGchannel RPGchannel;
     mat4.m43 = _m43;                                                                                                                       \
     mat4.m44 = _m44
 
-// FIXME: Remove setting active texture, only bind if necessary, track in global?
 // Renders a texture to the currently bound framebuffer
 #define RPG_RENDER_TEXTURE(TEXTURE, VAO)                                                                                                   \
-    glActiveTexture(GL_TEXTURE0);                                                                                                          \
-    glBindTexture(GL_TEXTURE_2D, TEXTURE);                                                                                                 \
+    RPG_Drawing_BindTexture(TEXTURE, GL_TEXTURE0); \
     glBindVertexArray(VAO);                                                                                                                \
     glDrawArrays(GL_TRIANGLES, 0, 6)
 
@@ -549,5 +546,34 @@ void RPG_Batch_Sort(RPGbatch *batch, int first, int last);
 void RPG_Renderable_Init(RPGrenderable *renderable, RPGrenderfunc renderfunc, RPGbatch *batch);
 RPG_RESULT RPG_ReadFile(const char *filename, char **buffer, size_t *size);
 
+
+GLuint _texture[32];
+GLenum _unit;
+GLenum _op;
+GLenum _srcFactor;
+GLenum _dstFactor;
+
+static inline void RPG_Drawing_BindTexture(GLuint texture, GLenum unit) {
+    if (unit != _unit) {
+        glActiveTexture(unit);
+        _unit = unit;
+    }
+    if (texture != _texture[unit - GL_TEXTURE0]) {
+        glBindTexture(GL_TEXTURE_2D, texture);
+        _texture[unit - GL_TEXTURE0] = texture;
+    }
+}
+
+static inline void RPG_Drawing_SetBlending(GLenum op, GLenum srcFactor, GLenum dstFactor) {
+    if (op != _op) {
+        glBlendEquation(op);
+        _op = op;
+    }
+    if (srcFactor != _srcFactor || dstFactor != _dstFactor) {
+        glBlendFunc(srcFactor, dstFactor);
+        _srcFactor = srcFactor;
+        _dstFactor = dstFactor;
+    }
+}
 
 #endif /* OPEN_RPG_INTERNAL_H */

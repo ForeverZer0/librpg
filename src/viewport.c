@@ -80,11 +80,10 @@ RPG_RESULT RPG_Viewport_Create(RPGint x, RPGint y, RPGint width, RPGint height, 
 
     // Texture
     glGenTextures(1, &v->texture);
-    glBindTexture(GL_TEXTURE_2D, v->texture);
+    RPG_Drawing_BindTexture(v->texture, GL_TEXTURE0);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glBindTexture(GL_TEXTURE_2D, 0);
 
     // Bind texture to FBO and creat a projection matrix for this viewport
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, v->texture, 0);

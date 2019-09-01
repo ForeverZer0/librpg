@@ -577,7 +577,7 @@ RPG_RESULT RPG_Game_Snapshot(RPGgame *game, RPGimage **image) {
 
     // Create texture the same size as the internal resolution
     glGenTextures(1, &img->texture);
-    glBindTexture(GL_TEXTURE_2D, img->texture);
+    RPG_Drawing_BindTexture(img->texture, GL_TEXTURE0);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, game->resolution.width, game->resolution.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
@@ -703,10 +703,13 @@ RPG_RESULT RPG_Game_Transition(RPGgame *game, RPGshader *shader, RPGint duration
     glUniform1i(glGetUniformLocation(shader->program, "to"), 1);
 
     // Bind the "to" and "from" textures to the shader
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, from->texture);
-    glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D, to->texture);
+    // glActiveTexture(GL_TEXTURE0);
+    // glBindTexture(GL_TEXTURE_2D, from->texture);
+    // glActiveTexture(GL_TEXTURE1);
+    // glBindTexture(GL_TEXTURE_2D, to->texture);
+
+    RPG_Drawing_BindTexture(from->texture, GL_TEXTURE0);
+    RPG_Drawing_BindTexture(to->texture, GL_TEXTURE1);
 
     // Create a VAO and VBO to use for the transition
     GLuint vao, vbo;
@@ -740,11 +743,14 @@ RPG_RESULT RPG_Game_Transition(RPGgame *game, RPGshader *shader, RPGint duration
 
     // Unbind the textures
     RPG_RESET_BACK_COLOR();
-    glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D, 0);
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, 0);
-    glBindVertexArray(0);
+
+    RPG_Drawing_BindTexture(0, GL_TEXTURE0);
+    RPG_Drawing_BindTexture(0, GL_TEXTURE1);
+    // glActiveTexture(GL_TEXTURE1); // FIXME:
+    // glBindTexture(GL_TEXTURE_2D, 0);
+    // glActiveTexture(GL_TEXTURE0);
+    // glBindTexture(GL_TEXTURE_2D, 0);
+    // glBindVertexArray(0);
     game->update.count += duration;
 
     // Cleanup

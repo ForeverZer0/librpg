@@ -703,7 +703,6 @@ RPG_RESULT RPG_Input_BeginTextCapture(void *buffer, RPGsize sizeBuffer);
 RPG_RESULT RPG_Input_EndTextCapture(RPGsize *written);
 
 // Tilemap
-RPG_RESULT RPG_Tilemap_ClearCache(void);
 RPG_RESULT RPG_Tilemap_Create(const void *buffer, RPGsize size, RPGviewport *viewport, RPGtilemap **tilemap);
 RPG_RESULT RPG_Tilemap_CreateFromFile(const char *path, RPGviewport *viewport, RPGtilemap **tilemap);
 RPG_RESULT RPG_Tilemap_Free(RPGtilemap *tilemap);

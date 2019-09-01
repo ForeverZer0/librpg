@@ -83,7 +83,7 @@ static void RPG_Font_GetGlyph(RPGfont *font, int codepoint, RPGglyph **glyph) {
         g->advance = fs->scale * advance;
 
         glGenTextures(1, &g->tex);
-        glBindTexture(GL_TEXTURE_2D, g->tex);
+        RPG_Drawing_BindTexture(g->tex, GL_TEXTURE0);
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, g->w, g->h, 0, GL_RED, GL_UNSIGNED_BYTE, bmp);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
@@ -303,8 +303,7 @@ RPG_RESULT RPG_Font_DrawText(RPGfont *font, RPGimage *image, const char *text, R
     glActiveTexture(GL_TEXTURE0);
     glBindVertexArray(RPG_GAME->font.vao);
     glBindBuffer(GL_ARRAY_BUFFER, RPG_GAME->font.vbo);
-    glBlendEquation(GL_FUNC_ADD);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    RPG_Drawing_SetBlending(GL_FUNC_ADD, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
 
     // Declare variable storage
@@ -324,7 +323,7 @@ RPG_RESULT RPG_Font_DrawText(RPGfont *font, RPGimage *image, const char *text, R
         h = glyph->h;
 
         // Buffer glyph vertices
-        glBindTexture(GL_TEXTURE_2D, glyph->tex);
+        RPG_Drawing_BindTexture(glyph->tex, GL_TEXTURE0);
         GLfloat vertices[VERTICES_COUNT] = {x, y + h, 0.0f, 1.0f, x + w, y,     1.0f, 0.0f, x,     y, 0.0f, 0.0f,
                                             x, y + h, 0.0f, 1.0f, x + w, y + h, 1.0f, 1.0f, x + w, y, 1.0f, 0.0f};
         glBufferSubData(GL_ARRAY_BUFFER, 0, VERTICES_SIZE, vertices);
@@ -339,10 +338,9 @@ RPG_RESULT RPG_Font_DrawText(RPGfont *font, RPGimage *image, const char *text, R
         cp = next;
     }
 
-    // Unbind attachments
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glBindVertexArray(0);
-    glBindTexture(GL_TEXTURE_2D, 0);
+    // // Unbind attachments
+    // glBindBuffer(GL_ARRAY_BUFFER, 0);
+    // glBindVertexArray(0);
 
     // Restore projection to the primary framebuffer
     glBindFramebuffer(GL_FRAMEBUFFER, 0);

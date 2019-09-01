@@ -287,15 +287,13 @@ RPG_RESULT RPG_Shader_SetUniformMat4(RPGshader *shader, RPGint location, RPGmat4
 RPG_RESULT RPG_Shader_BindImage(RPGshader *shader, RPGint location, RPGint unit, RPGimage *image) {
     RPG_SHADER_ENSURE_ACTIVE(shader);
     glUniform1i(location, unit);
-    glActiveTexture(GL_TEXTURE0 + unit);
-    glBindTexture(GL_TEXTURE_2D, image != NULL ? image->texture : 0);
+    RPG_Drawing_BindTexture(image != NULL ? image->texture : 0, GL_TEXTURE0 + unit);
     return RPG_NO_ERROR;
 }
 
 RPG_RESULT RPG_Shader_UnbindImage(RPGshader *shader, RPGint unit) {
     RPG_SHADER_ENSURE_ACTIVE(shader);
-    glActiveTexture(GL_TEXTURE0 + unit);
-    glBindTexture(GL_TEXTURE_2D, 0);
+    RPG_Drawing_BindTexture(0, GL_TEXTURE0 + unit);
     return RPG_NO_ERROR;
 }
 

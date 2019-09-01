@@ -76,7 +76,10 @@ int main(int argc, char **argv) {
     // RPG_Renderable_SetLocation((RPGrenderable*) sprite, 128, 128);
     // RPG_Renderable_SetAlpha((RPGrenderable*) viewport, 0.5f);
 
-    RPG_Tilemap_CreateFromFile("/home/eric/Desktop/sample/island.tmx", viewport, &tilemap);
+    // const char *mapPath = "/home/eric/Desktop/sample/island.tmx";
+    const char *mapPath = "/home/eric/Desktop/sample/xpbigmap.tmx";
+
+    RPG_Tilemap_CreateFromFile(mapPath, viewport, &tilemap);
 
     
     // Play some music
