@@ -80,7 +80,7 @@ int main(int argc, char **argv) {
     const char *mapPath = "/home/eric/Desktop/sample/xpbigmap.tmx";
 
     RPG_Tilemap_CreateFromFile(mapPath, viewport, &tilemap);
-
+    RPG_Tilemap_SetOrigin(tilemap, 64, 330);
     
     // Play some music
     // const char *path = "/home/eric/Desktop/The Blackest Day.ogg";
