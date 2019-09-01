@@ -20,9 +20,10 @@ typedef struct {
     GLuint vao;
     GLuint vbo;
     RPGint gid;
+    tmx_tile *tmx;
     struct {
-        RPGint count;
         RPGubyte index;
+        RPGdouble delta;
     } anime;
 } RPGtile;
 
@@ -56,6 +57,7 @@ typedef struct {
         RPGobjectlayer *object;
         RPGgrouplayer *group;
     } layer;
+    tmx_layer *tmx;
 } RPGlayer;
 
 typedef struct RPGtilemap {
@@ -69,7 +71,10 @@ typedef struct RPGtilemap {
 } RPGtilemap;
 
 
-static void RPG_Tilemap_SetVertices(float l, float t, float r, float b, RPGint gid, GLuint vbo) {
+static void RPG_Tilemap_SetVertices(float l, float t, float r, float b, RPGint gid, GLuint vbo, RPGbool bind) {
+    if (bind) {
+        glBindBuffer(GL_ARRAY_BUFFER, vbo);
+    }
     // Determine placement of vertices based on flag set in GID
     if ((gid & TMX_FLIPPED_VERTICALLY) != 0 && (gid & TMX_FLIPPED_HORIZONTALLY) != 0) {
         RPGvec4 elements[6] = {
@@ -233,7 +238,7 @@ static RPGtilelayer *RPG_Tilemap_CreateTileLayer(RPGtilemap *tilemap, tmx_map *m
             GLfloat tt = tmxtile->ul_y / (GLfloat) tilelayer->image->height;
             GLfloat tr = tl + (tmxtile->tileset->tile_width / (GLfloat) tilelayer->image->width);
             GLfloat tb = tt + (tmxtile->tileset->tile_height / (GLfloat) tilelayer->image->height);
-            RPG_Tilemap_SetVertices(tl, tt, tr, tb, gid, vbo);
+            RPG_Tilemap_SetVertices(tl, tt, tr, tb, gid, vbo, RPG_FALSE);
 
 
             RPGmat4 model;
@@ -261,9 +266,7 @@ static RPGtilelayer *RPG_Tilemap_CreateTileLayer(RPGtilemap *tilemap, tmx_map *m
             tilelayer->tiles[index].vao = vao;
             tilelayer->tiles[index].vbo = vbo;
             tilelayer->tiles[index].gid = gid;
-            if (tmxtile->animation_len != 0) {
-                tilelayer->tiles[index].anime.count = -1;
-            }
+            tilelayer->tiles[index].tmx = tmxtile;
         }
     }
 
@@ -302,6 +305,7 @@ static void RPG_Tilemap_Initialize(tmx_map *map, RPGviewport *viewport, RPGtilem
     for (tmx_layer *layer = map->ly_head; layer != NULL; layer = layer->next, index++) {
         RPGlayer *base = &tm->layers[index];
         base->type     = layer->type;
+        base->tmx = layer;
 
         switch (layer->type) {
             case L_LAYER: {
@@ -326,7 +330,7 @@ static void RPG_Tilemap_Initialize(tmx_map *map, RPGviewport *viewport, RPGtilem
             }
         }
     }
-    // tm->projection = RPG_GAME->projection;
+
     *tilemap = tm;
 }
 
@@ -385,9 +389,55 @@ RPG_RESULT RPG_Tilemap_Free(RPGtilemap *tilemap) {
     return RPG_NO_ERROR;
 }
 
+void RPG_Tilemap_UpdateTileLayer(RPGtilemap *map, RPGtilelayer *layer, tmx_layer *tmx) {
+    
+    // Declare variable storage;
+    tmx_tile *next;
+    tmx_anim_frame *frame;
+    RPGtile *tile;
+
+    // Get the current time
+    RPGdouble time = glfwGetTime();
+
+    // Enumerate through tiles of layer
+    for (RPGuint i = 0; i < layer->tileCount; i++) {
+        tile = &layer->tiles[i];
+
+        // If tile is defined and is time has been reached for a tile change
+        if (tile->tmx && tile->tmx->animation_len > 0 && tile->anime.delta < time) {
+            
+            // Increment the current index, and get the next frame
+            tile->anime.index = (tile->anime.index + 1) % tile->tmx->animation_len;
+            frame = &tile->tmx->animation[tile->anime.index];
+            // Set the next target time for an animation
+            tile->anime.delta = time + (frame->duration * 0.001);
+            
+            // Get the GID for the next tile in the animation
+            next = &tile->tmx->tileset->tiles[frame->tile_id];
+
+            // left/top/right/bottom in normalized texture coordinates
+            GLfloat l = next->ul_x / (GLfloat) layer->image->width;
+            GLfloat t = next->ul_y / (GLfloat) layer->image->height;
+            GLfloat r = l + (next->tileset->tile_width / (GLfloat)  layer->image->width);
+            GLfloat b = t + (next->tileset->tile_height / (GLfloat) layer->image->height);
+
+            // Buffer the new data
+            RPG_Tilemap_SetVertices(l, t, r, b, next->id, tile->vbo, RPG_TRUE);
+        }
+    }
+}
+
 RPG_RESULT RPG_Tilemap_Update(RPGtilemap *tilemap) {
     RPG_RETURN_IF_NULL(tilemap);
-    
+
+    RPGlayer *layer;
+    for (RPGuint i = 0; i < tilemap->layerCount; i++) {
+        layer = &tilemap->layers[i];
+        if (layer->type == L_LAYER) {
+            RPG_Tilemap_UpdateTileLayer(tilemap, layer->layer.tile, layer->tmx);
+        }
+
+    }
 
     return RPG_NO_ERROR;
 }
