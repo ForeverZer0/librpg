@@ -3,9 +3,11 @@
 ## High-Priority
 
 - [x] Tilemap rendering
-- [ ] Only render visible tilemap, or draw instanced
+- [x] Only render visible tilemap, or draw instanced
 - [x] Maintain track of current bound texture, only switch when needed (texture handles instead?)
 - [x] Maintain track of current blend factors, only switch when needed (or only switch if changed, then switch back?)
+- [ ] Use MSAA in viewport/image FBOs
+- [ ] Fix inverted viewport projection
 
 ## Normal-Priority
 

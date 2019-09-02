@@ -8,8 +8,6 @@ static inline float getUV(float t, float dim) {
 }
 
 typedef struct {
-    GLuint vao;
-    GLuint vbo;
     RPGint gid;
     tmx_tile *tmx;
     struct {
@@ -90,15 +88,24 @@ static void RPG_Tilemap_SetVertices(float l, float t, float r, float b, RPGint g
     // Determine placement of vertices based on flag set in GID
     if ((gid & TMX_FLIPPED_VERTICALLY) != 0 && (gid & TMX_FLIPPED_HORIZONTALLY) != 0) {
         RPGvec2 v[] = {{r, t}, {l, b}, {r, b}, {r, t}, {l, t}, {l, b}};
+        
         memcpy(vertices, v, sizeof(v));
     } else if ((gid & TMX_FLIPPED_HORIZONTALLY) != 0) {
-        RPGvec2 v[] = {{r, b}, {l, t}, {r, t}, {r, b}, {l, b}, {l, t}};
-        memcpy(vertices, v, sizeof(v));
+        if ((gid & TMX_FLIPPED_DIAGONALLY) != 0) {
+            RPGvec2 v[] = {{r, b}, {l, t}, {l, b}, {r, b}, {r, t}, {l, t}};
+            memcpy(vertices, v, sizeof(v));
+        } else {
+            RPGvec2 v[] = {{r, b}, {l, t}, {r, t}, {r, b}, {l, b}, {l, t}};
+            memcpy(vertices, v, sizeof(v));
+        }
     } else if ((gid & TMX_FLIPPED_VERTICALLY) != 0) {
-        RPGvec2 v[] = {{l, t}, {r, b}, {l, b}, {l, t}, {r, t}, {r, b}};
-        memcpy(vertices, v, sizeof(v));
-    } else if ((gid & TMX_FLIPPED_DIAGONALLY) != 0) {
-        // TODO: Implement diagonal?
+        if ((gid & TMX_FLIPPED_DIAGONALLY) != 0) {
+            RPGvec2 v[] = {{l, t}, {r, b}, {r, t}, {l, t}, {l, b}, {r, b}};
+            memcpy(vertices, v, sizeof(v));
+        } else {
+            RPGvec2 v[] = {{l, t}, {r, b}, {l, b}, {l, t}, {r, t}, {r, b}};
+            memcpy(vertices, v, sizeof(v));
+        }
     } else {
         RPGvec2 v[] = {{l, b}, {r, t}, {l, t}, {l, b}, {r, b}, {r, t}};
         memcpy(vertices, v, sizeof(v));
@@ -247,6 +254,7 @@ static RPGtilelayer *RPG_Tilemap_CreateTileLayer(RPGtilemap *tilemap, tmx_map *m
                 fprintf(stderr, "only one tileset per layer is supported");
             }
 
+       
         
             GLfloat tl = getUV(tmxtile->ul_x, tilelayer->image->width);
             GLfloat tt = getUV(tmxtile->ul_y, tilelayer->image->height);
