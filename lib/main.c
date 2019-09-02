@@ -23,8 +23,6 @@
 //     }
 // }
 
-
-
 int sec;
 RPGplane *plane;
 RPGtilemap *tilemap;
@@ -79,8 +77,8 @@ int main(int argc, char **argv) {
     // const char *mapPath = "/home/eric/Desktop/sample/island.tmx";
     const char *mapPath = "/home/eric/Desktop/sample/xpbigmap.tmx";
 
-    RPG_Tilemap_CreateFromFile(mapPath, viewport, &tilemap);
-    RPG_Tilemap_SetOrigin(tilemap, 96, 128);
+    RPG_Tilemap_CreateFromFile(mapPath, NULL, &tilemap);
+    // RPG_Tilemap_SetOrigin(tilemap, 96, 128);
     
     // Play some music
     // const char *path = "/home/eric/Desktop/The Blackest Day.ogg";

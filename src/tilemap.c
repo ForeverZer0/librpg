@@ -3,6 +3,10 @@
 #include "tmx/tmx.h"
 #include <stdio.h>
 
+static inline float getUV(float t, float dim) {
+    return (t + 0.5f) / dim; // FIXME:
+}
+
 typedef struct {
     GLuint vao;
     GLuint vbo;
@@ -19,6 +23,9 @@ typedef struct {
     RPGimage *image;
     RPGuint tileCount;
     RPGtile *tiles;
+
+    GLuint vao;
+    GLuint vbo;
 } RPGtilelayer;
 
 // Image Layer
@@ -52,6 +59,8 @@ typedef struct RPGtilemap {
     tmx_map *map;
     RPGuint layerCount;
     RPGlayer *layers;
+    RPGfloat pxWidth;
+    RPGfloat pxHeight;
     struct {
         GLuint program;
         GLint color;
@@ -62,12 +71,6 @@ typedef struct RPGtilemap {
         GLint hue;
         GLint origin;
     } shader;
-    struct {
-        RPGint left;
-        RPGint top;
-        RPGint right;
-        RPGint bottom;
-    } visible;
     void *user;
 } RPGtilemap;
 
@@ -135,20 +138,10 @@ static void RPG_Tilemap_CreateShader(RPGtilemap *tilemap) {
 }
 
 static void RPG_Tilemap_RenderTileLayer(RPGtilemap *tilemap, RPGtilelayer *layer) {
-
     // Bind tileset texture
     RPG_Drawing_BindTexture(layer->image->texture, GL_TEXTURE0);
-
-    // Iterate through visible tiles
-    for (RPGuint mapY = tilemap->visible.top; mapY < tilemap->visible.top + tilemap->visible.bottom + 2; mapY++) {
-        for (RPGuint mapX = tilemap->visible.left; mapX < tilemap->visible.left + tilemap->visible.right + 2; mapX++) {
-            RPGuint tileIndex = mapX + (mapY * tilemap->map->width);
-            if (layer->tiles[tileIndex].vao) {
-                glBindVertexArray(layer->tiles[tileIndex].vao);
-                glDrawArrays(GL_TRIANGLES, 0, 6);
-            }
-        }
-    }
+    glBindVertexArray(layer->vao);
+    glDrawArraysInstanced(GL_TRIANGLES, 0, 6, layer->tileCount * 6);
 }
 
 static void RPG_Tilemap_Render(void *tilemap) {
@@ -163,16 +156,11 @@ static void RPG_Tilemap_Render(void *tilemap) {
 
     // Update tilemap model matrix and uniforms if changed since last render
     if (t->base.updated) {
-
-        // Calculate visible tiles
-        t->visible.left   = t->base.ox / t->map->tile_width;
-        t->visible.top    = t->base.oy / t->map->tile_height;  // FIXME: Account for when negative
-        t->visible.right  = t->visible.left + (RPG_GAME->resolution.width / t->map->tile_width);
-        t->visible.bottom = t->visible.top + (RPG_GAME->resolution.height / t->map->tile_height);
-
         // Set model matrix for tilemap, which is actually a projection matrix for the layers
-        RPG_MAT4_ORTHO(t->base.model, -t->base.x, RPG_GAME->resolution.width, RPG_GAME->resolution.height, -t->base.y, -1.0f, 1.0f);
-        glUniformMatrix4fv(t->shader.projection, 1, GL_FALSE, (GLfloat *) &t->base.model);
+        RPG_MAT4_ORTHO(t->base.model, 0.0f, RPG_GAME->resolution.width, RPG_GAME->resolution.height, 0.0f, -1.0f, 1.0f);
+        // RPG_MAT4_ORTHO(t->base.model, 0.0f, w, h, 0.0f, -1.0f, 1.0f);
+        // glUniformMatrix4fv(t->shader.projection, 1, GL_FALSE, (GLfloat *) &t->base.model);
+        glUniformMatrix4fv(t->shader.projection, 1, GL_FALSE, (GLfloat *) &RPG_GAME->projection);
 
         // Update any changes to the origin point and clear "dirty" flag
         glUniform2f(t->shader.origin, (float) t->base.ox, (float) t->base.oy);
@@ -216,8 +204,12 @@ static void RPG_Tilemap_Render(void *tilemap) {
     glUseProgram(RPG_GAME->shader.program);
 }
 
+typedef struct {
+    RPGvec2 vertices[6];
+    RPGmat4 model;
+} TILE;
+
 static RPGtilelayer *RPG_Tilemap_CreateTileLayer(RPGtilemap *tilemap, tmx_map *map, tmx_layer *layer) {
-    double end, start = glfwGetTime();
 
     // Initialize tile layer struct and storage for tiles
     RPGtilelayer *tilelayer = RPG_ALLOC(RPGtilelayer);
@@ -230,33 +222,26 @@ static RPGtilelayer *RPG_Tilemap_CreateTileLayer(RPGtilemap *tilemap, tmx_map *m
     GLint vLoc = glGetAttribLocation(tilemap->shader.program, "vertex");
     GLint mLoc = glGetAttribLocation(tilemap->shader.program, "model");
 
-    GLuint vaos[tilelayer->tileCount];
-    GLuint vbos[tilelayer->tileCount];
+    glGenVertexArrays(1, &tilelayer->vao);
+    glGenBuffers(1, &tilelayer->vbo);
 
-    glGenVertexArrays(tilelayer->tileCount, vaos);
-    glGenBuffers(tilelayer->tileCount, vbos);
-
-
-RPGmat4 model;
-GLfloat tl;
-GLfloat tt;
-GLfloat tr;
-GLfloat tb;
-RPGint gid;
-tmx_tile *tmxtile;
+    glBindBuffer(GL_ARRAY_BUFFER, tilelayer->vbo);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(TILE) * tilelayer->tileCount, NULL, GL_STATIC_DRAW);
+    TILE *ptr = glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
 
     // Enumerate throught each tile coordinate in the map for this layer
     RPGuint index = 0;
     for (RPGuint mapY = 0; mapY < map->height; mapY++) {
-        for (RPGuint mapX = 0; mapX < map->width; mapX++, index++) {
+        for (RPGuint mapX = 0; mapX < map->width; mapX++) {
+
+            index = mapX + (mapY * map->width);
 
             // Get the current tile for this location
-            gid        = layer->content.gids[index];
-            tmxtile = map->tiles[gid & TMX_FLIP_BITS_REMOVAL];
+            RPGint gid        = layer->content.gids[index];
+            tmx_tile *tmxtile = map->tiles[gid & TMX_FLIP_BITS_REMOVAL];
 
             if (gid == 0) {
-                glDeleteBuffers(1, &vbos[index]);
-                glDeleteVertexArrays(1, &vaos[index]);
+                memset(&ptr[index], 0, sizeof(TILE));
                 // Skip if there is no tile here
                 continue;
             }
@@ -268,45 +253,58 @@ tmx_tile *tmxtile;
                 fprintf(stderr, "only one tileset per layer is supported");
             }
 
-            // Generate a buffer and vertex array for this tile
-            glBindBuffer(GL_ARRAY_BUFFER, vbos[index]);
-            glBufferData(GL_ARRAY_BUFFER, VERTICES_SIZE + sizeof(RPGmat4), NULL, GL_STATIC_DRAW);
-
+        
+            GLfloat tl = getUV(tmxtile->ul_x, tilelayer->image->width);
+            GLfloat tt = getUV(tmxtile->ul_y, tilelayer->image->height);
+            GLfloat tr = getUV(tmxtile->ul_x + tmxtile->tileset->tile_width - 1, tilelayer->image->width);
+            GLfloat tb = getUV(tmxtile->ul_y + tmxtile->tileset->tile_height - 1, tilelayer->image->height);
+        
+        
             // Calculate the left/top/right/bottom of tile source in normalized coordinates
-            tl = tmxtile->ul_x / (GLfloat) tilelayer->image->width;
-            tt = tmxtile->ul_y / (GLfloat) tilelayer->image->height;
-            tr = tl + (tmxtile->tileset->tile_width / (GLfloat) tilelayer->image->width);
-            tb = tt + (tmxtile->tileset->tile_height / (GLfloat) tilelayer->image->height);
-            RPG_Tilemap_SetVertices(tl, tt, tr, tb, gid, vbos[index], RPG_FALSE);
+            // GLfloat tl = tmxtile->ul_x / (GLfloat) tilelayer->image->width;
+            // GLfloat tt = tmxtile->ul_y / (GLfloat) tilelayer->image->height;
+            // GLfloat tr = tl + (tmxtile->tileset->tile_width / (GLfloat) tilelayer->image->width);
+            // GLfloat tb = tt + (tmxtile->tileset->tile_height / (GLfloat) tilelayer->image->height);
 
-            //  Set a model matrix for the tile map coordinates
-            
-            RPG_MAT4_SET(model, map->tile_width, 0.0f, 0.0f, 0.0f, 0.0f, map->tile_height, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f,
-                         mapX * map->tile_width, mapY * map->tile_height, 0.0f, 1.0f);
-            glBufferSubData(GL_ARRAY_BUFFER, VERTICES_SIZE, sizeof(RPGmat4), &model);
+            RPGvec2 vertices[6] = 
+            {
+                {tl, tb}, 
+                {tr, tt}, 
+                {tl, tt},
+                {tl, tb}, 
+                {tr, tb}, 
+                {tr, tt}
+            };
+            memcpy(&ptr[index].vertices, vertices, sizeof(vertices));
+            RPG_MAT4_SET(ptr[index].model, 
+                map->tile_width, 0.0f, 0.0f, 0.0f, 
+                0.0f, map->tile_height, 0.0f, 0.0f, 
+                0.0f, 0.0f, 1.0f, 0.0f,
+                mapX * map->tile_width, mapY * map->tile_height, 0.0f, 1.0f
+            );
 
-            // Define how the data and vertices should be interpreted in the vertex shader
-            glBindVertexArray(vaos[index]);
-            glEnableVertexAttribArray(vLoc);
-            glVertexAttribPointer(vLoc, 4, GL_FLOAT, GL_FALSE, VERTICES_STRIDE, NULL);
-
-            // Set four vec4 attribute locations to store as a 4x4 matrix
-            for (int i = 0; i < 4; i++) {
-                glEnableVertexAttribArray(mLoc + i);
-                glVertexAttribPointer(mLoc + i, 4, GL_FLOAT, GL_FALSE, sizeof(RPGmat4), (void *) (VERTICES_SIZE + sizeof(RPGvec4) * i));
-                glVertexAttribDivisor(mLoc + i, 1);
-            }
 
             // Store the info in the tile
-            tilelayer->tiles[index].vao = vaos[index];
-            tilelayer->tiles[index].vbo = vbos[index];
             tilelayer->tiles[index].gid = gid;
             tilelayer->tiles[index].tmx = tmxtile;
         }
     }
+    glUnmapBuffer(GL_ARRAY_BUFFER);
 
-    end = glfwGetTime();
-    printf("Elapsed: %f\n", end - start);
+    glBindVertexArray(tilelayer->vao);
+
+    for (int i = 0; i < 6; i++) {
+        glEnableVertexAttribArray(vLoc + i);
+        glVertexAttribPointer(vLoc + i, 4, GL_FLOAT, GL_TRUE, 0, (void *) (sizeof(RPGvec2) * i));
+        glVertexAttribDivisor(vLoc + i, 1);
+    }
+
+    // Set four vec4 attribute locations to store as a 4x4 matrix
+    for (int i = 0; i < 4; i++) {
+        glEnableVertexAttribArray(mLoc + i);
+        glVertexAttribPointer(mLoc + i, 4, GL_FLOAT, GL_TRUE, 0, (void *) ((sizeof(RPGvec2) * 6) + (sizeof(RPGvec4) * i)));
+        glVertexAttribDivisor(mLoc + i, 1);
+    }
     return tilelayer;
 }
 
@@ -325,6 +323,8 @@ static void RPG_Tilemap_Initialize(tmx_map *map, RPGviewport *viewport, RPGtilem
 
     // Store the map, count the layers, and allocate memory for them
     tm->map = map;
+    tm->pxWidth = map->width * map->tile_width;
+    tm->pxHeight = map->height * map->tile_height;
     for (tmx_layer *layer = map->ly_head; layer != NULL; layer = layer->next, tm->layerCount++) {
     }
     tm->layers = RPG_ALLOC_N(RPGlayer, tm->layerCount);

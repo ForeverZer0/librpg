@@ -206,6 +206,7 @@ RPG_RESULT RPG_Game_Create(const char *title, RPGint width, RPGint height, RPG_I
     glfwSetErrorCallback(RPG_Game_CB_Error);
     if (glfwInit()) {
         glfwDefaultWindowHints();
+        glfwWindowHint(GLFW_SAMPLES, 4); // FIXME: If can't fix texture bleeding in tilemap
         glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
         glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
         glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
@@ -265,6 +266,7 @@ RPG_RESULT RPG_Game_Create(const char *title, RPGint width, RPGint height, RPG_I
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
     glEnable(GL_SCISSOR_TEST);
     glEnable(GL_BLEND);
+    glEnable(GL_MULTISAMPLE); // FIXME: ?
 
     result = RPG_Game_CreateShaderProgram(g);
     if (result) {
