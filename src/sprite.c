@@ -1,15 +1,19 @@
 #include "internal.h"
 
-static void RPG_Sprite_Render(void *sprite) {
+static void RPG_Sprite_Render(void *sprite)
+{
     RPGsprite *s = sprite;
-    if (!s->base.visible || s->base.alpha < __FLT_EPSILON__ || s->image == NULL) {
+    if (!s->base.visible || s->base.alpha < __FLT_EPSILON__ || s->image == NULL)
+    {
         // No-op if sprite won't be visible
         return;
     }
-    if (s->base.updated) {
+    if (s->base.updated)
+    {
         GLint x = s->base.x + s->base.ox;
         GLint y = s->base.y + s->base.oy;
-        if (s->viewport != NULL) {
+        if (s->viewport != NULL)
+        {
             x += s->viewport->base.ox;
             y += s->viewport->base.oy;
         }
@@ -26,9 +30,11 @@ static void RPG_Sprite_Render(void *sprite) {
     RPG_RENDER_TEXTURE(s->image->texture, s->vao);
 }
 
-RPG_RESULT RPG_Sprite_Free(RPGsprite *sprite) {
+RPG_RESULT RPG_Sprite_Free(RPGsprite *sprite)
+{
     RPG_RETURN_IF_NULL(sprite);
-    if (sprite->base.parent) {
+    if (sprite->base.parent)
+    {
         RPG_Batch_DeleteItem(sprite->base.parent, &sprite->base);
     }
     glDeleteVertexArrays(1, &sprite->vao);
@@ -37,7 +43,8 @@ RPG_RESULT RPG_Sprite_Free(RPGsprite *sprite) {
     return RPG_NO_ERROR;
 }
 
-RPG_RESULT RPG_Sprite_Create(RPGviewport *viewport, RPGsprite **sprite) {
+RPG_RESULT RPG_Sprite_Create(RPGviewport *viewport, RPGsprite **sprite)
+{
     RPG_ALLOC_ZERO(s, RPGsprite);
     RPGbatch *batch = viewport ? &viewport->batch : &RPG_GAME->batch;
     RPG_Renderable_Init(&s->base, RPG_Sprite_Render, batch);
@@ -57,61 +64,78 @@ RPG_RESULT RPG_Sprite_Create(RPGviewport *viewport, RPGsprite **sprite) {
     return RPG_NO_ERROR;
 }
 
-RPG_RESULT RPG_Sprite_GetViewport(RPGsprite *sprite, RPGviewport **viewport) {
+RPG_RESULT RPG_Sprite_GetViewport(RPGsprite *sprite, RPGviewport **viewport)
+{
     RPG_RETURN_IF_NULL(sprite);
-    if (viewport != NULL) {
+    if (viewport != NULL)
+    {
         *viewport = sprite->viewport;
     }
     return RPG_NO_ERROR;
 }
 
-RPG_RESULT RPG_Sprite_GetImage(RPGsprite *sprite, RPGimage **image) {
+RPG_RESULT RPG_Sprite_GetImage(RPGsprite *sprite, RPGimage **image)
+{
     RPG_RETURN_IF_NULL(sprite);
-    if (image != NULL) {
+    if (image != NULL)
+    {
         *image = sprite->image;
     }
     return RPG_NO_ERROR;
 }
 
-RPG_RESULT RPG_Sprite_SetImage(RPGsprite *sprite, RPGimage *image) {
+RPG_RESULT RPG_Sprite_SetImage(RPGsprite *sprite, RPGimage *image)
+{
     RPG_RETURN_IF_NULL(sprite);
     sprite->image = image;
-    if (image) {
+    if (image)
+    {
         RPG_Sprite_SetSourceBounds(sprite, 0, 0, image->width, image->height);
-    } else {
+    }
+    else
+    {
         sprite->rect = (RPGrect){0, 0, 0, 0};
     }
     return RPG_NO_ERROR;
 }
 
-RPG_RESULT RPG_Sprite_GetSourceRect(RPGsprite *sprite, RPGrect *rect) {
+RPG_RESULT RPG_Sprite_GetSourceRect(RPGsprite *sprite, RPGrect *rect)
+{
     RPG_RETURN_IF_NULL(sprite);
-    if (rect != NULL) {
+    if (rect != NULL)
+    {
         *rect = sprite->rect;
     }
     return RPG_NO_ERROR;
 }
 
-RPG_RESULT RPG_Sprite_GetSourceBounds(RPGsprite *sprite, RPGint *x, RPGint *y, RPGint *width, RPGint *height) {
+RPG_RESULT RPG_Sprite_GetSourceBounds(RPGsprite *sprite, RPGint *x, RPGint *y, RPGint *width, RPGint *height)
+{
     RPG_RETURN_IF_NULL(sprite);
-    if (x != NULL) {
+    if (x != NULL)
+    {
         *x = sprite->rect.x;
     }
-    if (y != NULL) {
+    if (y != NULL)
+    {
         *y = sprite->rect.y;
     }
-    if (width != NULL) {
+    if (width != NULL)
+    {
         *width = sprite->rect.w;
     }
-    if (height != NULL) {
+    if (height != NULL)
+    {
         *height = sprite->rect.h;
     }
     return RPG_NO_ERROR;
 }
 
-RPG_RESULT RPG_Sprite_SetSourceBounds(RPGsprite *sprite, RPGint x, RPGint y, RPGint w, RPGint h) {
+RPG_RESULT RPG_Sprite_SetSourceBounds(RPGsprite *sprite, RPGint x, RPGint y, RPGint w, RPGint h)
+{
     RPG_RETURN_IF_NULL(sprite);
-    if (sprite->image == NULL) {
+    if (sprite->image == NULL)
+    {
         return RPG_NO_ERROR;
     }
 
@@ -120,14 +144,14 @@ RPG_RESULT RPG_Sprite_SetSourceBounds(RPGsprite *sprite, RPGint x, RPGint y, RPG
     sprite->rect.w = w;
     sprite->rect.h = h;
 
-    GLfloat l = (GLfloat)x / sprite->image->width;
-    GLfloat t = (GLfloat)y / sprite->image->height;
-    GLfloat r = l + ((GLfloat)w / sprite->image->width);
-    GLfloat b = t + ((GLfloat)h / sprite->image->height);
+    GLfloat l = (GLfloat) x / sprite->image->width;
+    GLfloat t = (GLfloat) y / sprite->image->height;
+    GLfloat r = l + ((GLfloat) w / sprite->image->width);
+    GLfloat b = t + ((GLfloat) h / sprite->image->height);
 
     glBindBuffer(GL_ARRAY_BUFFER, sprite->vbo);
     GLfloat vertices[VERTICES_COUNT] = {0.0f, 1.0f, l, b, 1.0f, 0.0f, r, t, 0.0f, 0.0f, l, t,
-                                      0.0f, 1.0f, l, b, 1.0f, 1.0f, r, b, 1.0f, 0.0f, r, t};
+                                        0.0f, 1.0f, l, b, 1.0f, 1.0f, r, b, 1.0f, 0.0f, r, t};
     glBufferSubData(GL_ARRAY_BUFFER, 0, VERTICES_SIZE, vertices);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
@@ -135,25 +159,31 @@ RPG_RESULT RPG_Sprite_SetSourceBounds(RPGsprite *sprite, RPGint x, RPGint y, RPG
     return RPG_NO_ERROR;
 }
 
-RPG_RESULT RPG_Sprite_SetSourceRect(RPGsprite *sprite, RPGrect *rect) {
+RPG_RESULT RPG_Sprite_SetSourceRect(RPGsprite *sprite, RPGrect *rect)
+{
     RPG_RETURN_IF_NULL(rect);
     return RPG_Sprite_SetSourceBounds(sprite, rect->x, rect->y, rect->w, rect->h);
 }
 
-RPG_RESULT RPG_Sprite_GetOrigin(RPGsprite *sprite, RPGint *x, RPGint *y) {
+RPG_RESULT RPG_Sprite_GetOrigin(RPGsprite *sprite, RPGint *x, RPGint *y)
+{
     RPG_RETURN_IF_NULL(sprite);
-    if (x != NULL) {
+    if (x != NULL)
+    {
         *x = sprite->base.ox;
     }
-    if (y != NULL) {
+    if (y != NULL)
+    {
         *y = sprite->base.oy;
     }
     return RPG_NO_ERROR;
 }
 
-RPG_RESULT RPG_Sprite_SetOrigin(RPGsprite *sprite, RPGint x, RPGint y) {
+RPG_RESULT RPG_Sprite_SetOrigin(RPGsprite *sprite, RPGint x, RPGint y)
+{
     RPG_RETURN_IF_NULL(sprite);
-    if (sprite->base.ox != x || sprite->base.oy != y) {
+    if (sprite->base.ox != x || sprite->base.oy != y)
+    {
         sprite->base.ox      = x;
         sprite->base.oy      = y;
         sprite->base.updated = RPG_TRUE;

@@ -1,7 +1,7 @@
 #include "internal.h"
 
-
-void RPG_Renderable_Init(RPGrenderable *renderable, RPGrenderfunc renderfunc, RPGbatch *batch) {
+void RPG_Renderable_Init(RPGrenderable *renderable, RPGrenderfunc renderfunc, RPGbatch *batch)
+{
     RPG_ASSERT(renderable);
     RPG_ASSERT(renderfunc);
     renderable->scale     = (RPGvec2){1.0f, 1.0f};
@@ -16,11 +16,14 @@ void RPG_Renderable_Init(RPGrenderable *renderable, RPGrenderfunc renderfunc, RP
     RPG_Batch_Add(batch, renderable);
 }
 
-RPG_RESULT RPG_Renderable_Update(RPGrenderable *renderable) {
+RPG_RESULT RPG_Renderable_Update(RPGrenderable *renderable)
+{
     RPG_RETURN_IF_NULL(renderable);
-    if (renderable->flash.duration > 0) {
+    if (renderable->flash.duration > 0)
+    {
         renderable->flash.duration--;
-        if (renderable->flash.duration == 0) {
+        if (renderable->flash.duration == 0)
+        {
             memset(&renderable->flash.color, 0, sizeof(RPGcolor));
         }
     }
@@ -32,119 +35,149 @@ DEF_GETTER(Renderable, Alpha, RPGrenderable, RPGfloat, alpha)
 DEF_GETTER(Renderable, Hue, RPGrenderable, RPGfloat, hue)
 DEF_PARAM(Renderable, Visible, RPGrenderable, RPGbool, visible)
 
-RPG_RESULT RPG_Renderable_GetColor(RPGrenderable *renderable, RPGcolor *color) {
+RPG_RESULT RPG_Renderable_GetColor(RPGrenderable *renderable, RPGcolor *color)
+{
     RPG_RETURN_IF_NULL(renderable);
     RPG_RETURN_IF_NULL(color);
     memcpy(color, &renderable->color, sizeof(RPGcolor));
     return RPG_NO_ERROR;
 }
 
-RPG_RESULT RPG_Renderable_GetTone(RPGrenderable *renderable, RPGcolor *tone) {
+RPG_RESULT RPG_Renderable_GetTone(RPGrenderable *renderable, RPGcolor *tone)
+{
     RPG_RETURN_IF_NULL(renderable);
     RPG_RETURN_IF_NULL(tone);
     memcpy(tone, &renderable->tone, sizeof(RPGtone));
     return RPG_NO_ERROR;
 }
 
-RPG_RESULT RPG_Renderable_GetScale(RPGrenderable *renderable, RPGfloat *x, RPGfloat *y) {
+RPG_RESULT RPG_Renderable_GetScale(RPGrenderable *renderable, RPGfloat *x, RPGfloat *y)
+{
     RPG_RETURN_IF_NULL(renderable);
-    if (x != NULL) {
+    if (x != NULL)
+    {
         *x = renderable->scale.x;
     }
-    if (y != NULL) {
+    if (y != NULL)
+    {
         *y = renderable->scale.y;
     }
     return RPG_NO_ERROR;
 }
 
-RPG_RESULT RPG_Renderable_GetRotation(RPGrenderable *renderable, RPGfloat *degrees, RPGint *anchorX, RPGint *anchorY) {
+RPG_RESULT RPG_Renderable_GetRotation(RPGrenderable *renderable, RPGfloat *degrees, RPGint *anchorX, RPGint *anchorY)
+{
     RPG_RETURN_IF_NULL(renderable);
-    if (degrees != NULL) {
+    if (degrees != NULL)
+    {
         const float f = 180.0f / RPG_PI;
         *degrees      = f * renderable->rotation.radians;
     }
-    if (anchorX != NULL) {
+    if (anchorX != NULL)
+    {
         *anchorX = renderable->rotation.ox;
     }
-    if (anchorY != NULL) {
+    if (anchorY != NULL)
+    {
         *anchorY = renderable->rotation.oy;
     }
     return RPG_NO_ERROR;
 }
 
-RPG_RESULT RPG_Renderable_GetBlendMode(RPGrenderable *renderable, RPG_BLEND *src, RPG_BLEND *dst, RPG_BLEND_OP *op) {
+RPG_RESULT RPG_Renderable_GetBlendMode(RPGrenderable *renderable, RPG_BLEND *src, RPG_BLEND *dst, RPG_BLEND_OP *op)
+{
     RPG_RETURN_IF_NULL(renderable);
-    if (src != NULL) {
+    if (src != NULL)
+    {
         *src = renderable->blend.src;
     }
-    if (dst != NULL) {
+    if (dst != NULL)
+    {
         *dst = renderable->blend.dst;
     }
-    if (op != NULL) {
+    if (op != NULL)
+    {
         *op = renderable->blend.op;
     }
     return RPG_NO_ERROR;
 }
 
-RPG_RESULT RPG_Renderable_GetFlash(RPGrenderable *renderable, RPGcolor *color, RPGubyte *duration) {
+RPG_RESULT RPG_Renderable_GetFlash(RPGrenderable *renderable, RPGcolor *color, RPGubyte *duration)
+{
     RPG_RETURN_IF_NULL(renderable);
-    if (color != NULL) {
+    if (color != NULL)
+    {
         memcpy(color, &renderable->flash.color, sizeof(RPGcolor));
     }
-    if (duration != NULL) {
+    if (duration != NULL)
+    {
         *duration = renderable->flash.duration;
     }
     return RPG_NO_ERROR;
 }
 
-RPG_RESULT RPG_Renderable_GetUserPointer(RPGrenderable *renderable, void **user) {
+RPG_RESULT RPG_Renderable_GetUserPointer(RPGrenderable *renderable, void **user)
+{
     RPG_RETURN_IF_NULL(renderable);
     *user = renderable->user;
     return RPG_NO_ERROR;
 }
 
-RPG_RESULT RPG_Renderable_SetZ(RPGrenderable *renderable, RPGint z) {
+RPG_RESULT RPG_Renderable_SetZ(RPGrenderable *renderable, RPGint z)
+{
     RPG_RETURN_IF_NULL(renderable);
-    if (z != renderable->z) {
+    if (z != renderable->z)
+    {
         renderable->z               = z;
         renderable->parent->updated = RPG_TRUE;
     }
     return RPG_NO_ERROR;
 }
 
-RPG_RESULT RPG_Renderable_SetAlpha(RPGrenderable *renderable, RPGfloat alpha) {
+RPG_RESULT RPG_Renderable_SetAlpha(RPGrenderable *renderable, RPGfloat alpha)
+{
     RPG_RETURN_IF_NULL(renderable);
     renderable->alpha = RPG_CLAMPF(alpha, 0.0f, 1.0f);
     return RPG_NO_ERROR;
 }
 
-RPG_RESULT RPG_Renderable_SetHue(RPGrenderable *renderable, RPGfloat hue) {
+RPG_RESULT RPG_Renderable_SetHue(RPGrenderable *renderable, RPGfloat hue)
+{
     RPG_RETURN_IF_NULL(renderable);
     renderable->hue = RPG_CLAMPF(hue, 0.0f, 360.0f);
     return RPG_NO_ERROR;
 }
 
-RPG_RESULT RPG_Renderable_SetColor(RPGrenderable *renderable, RPGcolor *color) {
+RPG_RESULT RPG_Renderable_SetColor(RPGrenderable *renderable, RPGcolor *color)
+{
     RPG_RETURN_IF_NULL(renderable);
-    if (color) {
+    if (color)
+    {
         memcpy(&renderable->color, color, sizeof(RPGcolor));
-    } else {
+    }
+    else
+    {
         memset(&renderable->color, 0, sizeof(RPGcolor));
     }
     return RPG_NO_ERROR;
 }
 
-RPG_RESULT RPG_Renderable_SetTone(RPGrenderable *renderable, RPGcolor *tone) {
+RPG_RESULT RPG_Renderable_SetTone(RPGrenderable *renderable, RPGcolor *tone)
+{
     RPG_RETURN_IF_NULL(renderable);
-    if (tone) {
+    if (tone)
+    {
         memcpy(&renderable->tone, tone, sizeof(RPGtone));
-    } else {
+    }
+    else
+    {
         memset(&renderable->tone, 0, sizeof(RPGtone));
     }
     return RPG_NO_ERROR;
 }
 
-RPG_RESULT RPG_Renderable_SetScale(RPGrenderable *renderable, RPGfloat x, RPGfloat y) {
+RPG_RESULT RPG_Renderable_SetScale(RPGrenderable *renderable, RPGfloat x, RPGfloat y)
+{
     RPG_RETURN_IF_NULL(renderable);
     renderable->scale.x = x;
     renderable->scale.y = y;
@@ -152,7 +185,8 @@ RPG_RESULT RPG_Renderable_SetScale(RPGrenderable *renderable, RPGfloat x, RPGflo
     return RPG_NO_ERROR;
 }
 
-RPG_RESULT RPG_Renderable_SetRotation(RPGrenderable *renderable, RPGfloat degrees, RPGint anchorX, RPGint anchorY) {
+RPG_RESULT RPG_Renderable_SetRotation(RPGrenderable *renderable, RPGfloat degrees, RPGint anchorX, RPGint anchorY)
+{
     RPG_RETURN_IF_NULL(renderable);
     const float f                = RPG_PI / 180.0f;
     renderable->rotation.radians = f * RPG_CLAMPF(degrees, 0.0f, 360.0f);
@@ -162,13 +196,15 @@ RPG_RESULT RPG_Renderable_SetRotation(RPGrenderable *renderable, RPGfloat degree
     return RPG_NO_ERROR;
 }
 
-RPG_RESULT RPG_Renderable_SetUserPointer(RPGrenderable *renderable, void *user) {
+RPG_RESULT RPG_Renderable_SetUserPointer(RPGrenderable *renderable, void *user)
+{
     RPG_RETURN_IF_NULL(renderable);
     renderable->user = user;
     return RPG_NO_ERROR;
 }
 
-RPG_RESULT RPG_Renderable_SetBlendMode(RPGrenderable *renderable, RPG_BLEND src, RPG_BLEND dst, RPG_BLEND_OP op) {
+RPG_RESULT RPG_Renderable_SetBlendMode(RPGrenderable *renderable, RPG_BLEND src, RPG_BLEND dst, RPG_BLEND_OP op)
+{
     RPG_RETURN_IF_NULL(renderable);
     renderable->blend.src = src;
     renderable->blend.dst = dst;
@@ -176,40 +212,50 @@ RPG_RESULT RPG_Renderable_SetBlendMode(RPGrenderable *renderable, RPG_BLEND src,
     return RPG_NO_ERROR;
 }
 
-RPG_RESULT RPG_Renderable_SetFlash(RPGrenderable *renderable, RPGcolor *color, RPGubyte duration) {
+RPG_RESULT RPG_Renderable_SetFlash(RPGrenderable *renderable, RPGcolor *color, RPGubyte duration)
+{
     RPG_RETURN_IF_NULL(renderable);
-    if (color == NULL) {
+    if (color == NULL)
+    {
         memset(&renderable->flash.color, 0, sizeof(RPGcolor));
         renderable->flash.duration = 0;
-    } else {
+    }
+    else
+    {
         memcpy(&renderable->flash.color, color, sizeof(RPGcolor));
         renderable->flash.duration = duration;
     }
     return RPG_NO_ERROR;
 }
 
-RPG_RESULT RPG_Renderable_GetLocation(RPGrenderable *renderable, RPGint *x, RPGint *y) {
+RPG_RESULT RPG_Renderable_GetLocation(RPGrenderable *renderable, RPGint *x, RPGint *y)
+{
     RPG_RETURN_IF_NULL(renderable);
-    if (x != NULL) {
+    if (x != NULL)
+    {
         *x = renderable->x;
     }
-    if (y != NULL) {
+    if (y != NULL)
+    {
         *y = renderable->y;
     }
     return RPG_NO_ERROR;
 }
 
-RPG_RESULT RPG_Renderable_SetLocation(RPGrenderable *renderable, RPGint x, RPGint y) {
+RPG_RESULT RPG_Renderable_SetLocation(RPGrenderable *renderable, RPGint x, RPGint y)
+{
     RPG_RETURN_IF_NULL(renderable);
-    if (x != renderable->x || y != renderable->y) {
-        renderable->x            = x;
-        renderable->y            = y;
+    if (x != renderable->x || y != renderable->y)
+    {
+        renderable->x       = x;
+        renderable->y       = y;
         renderable->updated = RPG_TRUE;
     }
     return RPG_NO_ERROR;
 }
 
-RPG_RESULT RPG_Renderable_SetRenderFunc(RPGrenderable *renderable, RPGrenderfunc func) {
+RPG_RESULT RPG_Renderable_SetRenderFunc(RPGrenderable *renderable, RPGrenderfunc func)
+{
     RPG_RETURN_IF_NULL(renderable);
     RPG_RETURN_IF_NULL(func);
     renderable->render = func;

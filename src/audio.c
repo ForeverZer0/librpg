@@ -41,11 +41,13 @@ static LPALGETEFFECTFV alGetEffectfv;
 
 #endif /* RPG_WITHOUT_OPENAL_FX */
 
-typedef struct RPGsound {
+typedef struct RPGsound
+{
     SNDFILE *file;
     SF_INFO info;
     char *filename;
-    struct {
+    struct
+    {
         ALenum format;
         sf_count_t itemsize;
     } al;
@@ -61,7 +63,8 @@ typedef struct RPGsound {
     mtx_t mutex;
 } RPGsound;
 
-typedef struct RPGchannel {
+typedef struct RPGchannel
+{
     RPGint index;
     RPGaudiofunc cb;
     ALuint source;
@@ -70,7 +73,8 @@ typedef struct RPGchannel {
     RPGint loopCount;
     RPGsound *sound;
     thrd_t thread;
-    struct {
+    struct
+    {
         RPGint num;
         size_t capacity;
         ALuint *effects;
@@ -78,21 +82,26 @@ typedef struct RPGchannel {
     } aux;
 } RPGchannel;
 
-RPG_RESULT RPG_Audio_Initialize(RPGgame *game) {
-    if (game->audio.context) {
+RPG_RESULT RPG_Audio_Initialize(RPGgame *game)
+{
+    if (game->audio.context)
+    {
         return RPG_NO_ERROR;
     }
     ALCdevice *device = alcOpenDevice(NULL);
     RPG_ASSERT(device);
-    if (device == NULL) {
+    if (device == NULL)
+    {
         return RPG_ERR_AUDIO_DEVICE;
     }
     ALCcontext *context = alcCreateContext(device, NULL);
     RPG_ASSERT(context);
-    if (context == NULL) {
+    if (context == NULL)
+    {
         return RPG_ERR_AUDIO_CONTEXT;
     }
-    if (!alcMakeContextCurrent(context)) {
+    if (!alcMakeContextCurrent(context))
+    {
         return RPG_ERR_AUDIO_CONTEXT;
     }
 
@@ -136,40 +145,51 @@ RPG_RESULT RPG_Audio_Initialize(RPGgame *game) {
     return RPG_NO_ERROR;
 }
 
-RPG_RESULT RPG_Audio_Terminate(void) {
-    for (int i = 0; i < RPG_MAX_CHANNELS; i++) {
+RPG_RESULT RPG_Audio_Terminate(void)
+{
+    for (int i = 0; i < RPG_MAX_CHANNELS; i++)
+    {
         RPG_Audio_FreeChannel(i);
     }
     return RPG_NO_ERROR;
 }
 
-static void RPG_Audio_FreeSound(RPGsound *sound) {
-    if (sound) {
+static void RPG_Audio_FreeSound(RPGsound *sound)
+{
+    if (sound)
+    {
         mtx_destroy(&sound->mutex);
         sf_close(sound->file);
-        if (sound->filename) {
+        if (sound->filename)
+        {
             RPG_FREE(sound->filename);
         }
         RPG_FREE(sound);
     }
 }
 
-RPG_RESULT RPG_Audio_FreeChannel(RPGint index) {
-    if (index < 0 || index >= RPG_MAX_CHANNELS) {
+RPG_RESULT RPG_Audio_FreeChannel(RPGint index)
+{
+    if (index < 0 || index >= RPG_MAX_CHANNELS)
+    {
         return RPG_ERR_OUT_OF_RANGE;
     }
     RPGchannel *channel = CHANNELS[index];
-    if (channel) {
+    if (channel)
+    {
         alSourceStop(channel->source);
-        if (channel->thread) {
+        if (channel->thread)
+        {
             thrd_join(channel->thread, NULL);
         }
         alDeleteSources(1, &channel->source);
         alDeleteBuffers(BUFFER_COUNT, channel->buffers);
         RPG_Audio_FreeSound(channel->sound);
 #ifndef RPG_WITHOUT_OPENAL_FX
-        if (channel->aux.capacity > 0) {
-            for (int i = 0; i < channel->aux.num; i++) {
+        if (channel->aux.capacity > 0)
+        {
+            for (int i = 0; i < channel->aux.num; i++)
+            {
                 alDeleteAuxiliaryEffectSlots(1, &channel->aux.slots[i]);
             }
             RPG_FREE(channel->aux.slots);
@@ -182,9 +202,11 @@ RPG_RESULT RPG_Audio_FreeChannel(RPGint index) {
     return RPG_NO_ERROR;
 }
 
-static void RPG_Audio_SetALFormat(RPGsound *sound) {
+static void RPG_Audio_SetALFormat(RPGsound *sound)
+{
     int type = sound->info.format & SF_FORMAT_SUBMASK;
-    switch (type) {
+    switch (type)
+    {
         case SF_FORMAT_PCM_32:
         case SF_FORMAT_VORBIS:
         case SF_FORMAT_FLOAT:
@@ -219,16 +241,19 @@ static void RPG_Audio_SetALFormat(RPGsound *sound) {
     };
 }
 
-static RPG_RESULT RPG_Audio_CreateSound(const char *filename, RPGsound **sound) {
+static RPG_RESULT RPG_Audio_CreateSound(const char *filename, RPGsound **sound)
+{
     *sound = NULL;
     RPG_ENSURE_FILE(filename);
     RPG_ALLOC_ZERO(snd, RPGsound);
     // Createa file handle to the sound
     snd->file = sf_open(filename, SFM_READ, &snd->info);
     int error = sf_error(snd->file);
-    if (error) {
+    if (error)
+    {
         RPG_FREE(snd);
-        switch (error) {
+        switch (error)
+        {
             case SF_ERR_NO_ERROR: return RPG_NO_ERROR;
             case SF_ERR_UNRECOGNISED_FORMAT: return RPG_ERR_FORMAT;
             case SF_ERR_SYSTEM: return RPG_ERR_SYSTEM;
@@ -238,7 +263,8 @@ static RPG_RESULT RPG_Audio_CreateSound(const char *filename, RPGsound **sound) 
         }
     }
     // Only mono/stereo sounds supported
-    if (snd->info.channels > 2) {
+    if (snd->info.channels > 2)
+    {
         sf_close(snd->file);
         RPG_FREE(snd);
         return RPG_ERR_FORMAT;
@@ -253,12 +279,15 @@ static RPG_RESULT RPG_Audio_CreateSound(const char *filename, RPGsound **sound) 
     return RPG_NO_ERROR;
 }
 
-static RPGbool RPG_Audio_TryGetSlot(RPGint index, RPGchannel **channel) {
-    if (index < 0 || index >= RPG_MAX_CHANNELS) {
+static RPGbool RPG_Audio_TryGetSlot(RPGint index, RPGchannel **channel)
+{
+    if (index < 0 || index >= RPG_MAX_CHANNELS)
+    {
         *channel = NULL;
         return RPG_FALSE;
     }
-    if (CHANNELS[index] == NULL) {
+    if (CHANNELS[index] == NULL)
+    {
         RPG_ALLOC_ZERO(s, RPGchannel);
         alGenSources(1, &s->source);
         alGenBuffers(BUFFER_COUNT, s->buffers);
@@ -270,8 +299,10 @@ static RPGbool RPG_Audio_TryGetSlot(RPGint index, RPGchannel **channel) {
     return RPG_TRUE;
 }
 
-static RPGbool RPG_Channel_FillBuffer(RPGchannel *channel, ALuint buffer) {
-    if (!alIsSource(channel->source) || channel->sound == NULL) {
+static RPGbool RPG_Channel_FillBuffer(RPGchannel *channel, ALuint buffer)
+{
+    if (!alIsSource(channel->source) || channel->sound == NULL)
+    {
         return RPG_TRUE;
     }
     mtx_lock(&channel->sound->mutex);
@@ -279,29 +310,36 @@ static RPGbool RPG_Channel_FillBuffer(RPGchannel *channel, ALuint buffer) {
     sf_count_t n    = BUFFER_SIZE / snd->al.itemsize;
     sf_count_t size = snd->func.readframes(snd->file, channel->pcm, n) * snd->al.itemsize;
     alBufferData(buffer, snd->al.format, channel->pcm, (ALsizei) size, snd->info.samplerate);
-    if (size == 0) {
+    if (size == 0)
+    {
         sf_seek(snd->file, 0, SF_SEEK_SET);
         mtx_unlock(&channel->sound->mutex);
-        if (channel->loopCount != 0) {
+        if (channel->loopCount != 0)
+        {
             channel->loopCount--;
             alSourceUnqueueBuffers(channel->source, 0, NULL);
             RPG_Channel_FillBuffer(channel, buffer);
             ALint state;
             alGetSourcei(channel->source, AL_SOURCE_STATE, &state);
-            if (state != AL_PLAYING) {
+            if (state != AL_PLAYING)
+            {
                 alSourcePlay((channel->source));
             }
             return AL_FALSE;
         }
-    } else {
+    }
+    else
+    {
         mtx_unlock(&channel->sound->mutex);
     }
     return size == 0;
 }
 
-static int RPG_Audio_Stream(void *channel) {
+static int RPG_Audio_Stream(void *channel)
+{
     RPGchannel *s = channel;
-    for (int i = 0; i < BUFFER_COUNT; i++) {
+    for (int i = 0; i < BUFFER_COUNT; i++)
+    {
         RPG_Channel_FillBuffer(s, s->buffers[i]);
     }
     alSourceQueueBuffers(s->source, BUFFER_COUNT, s->buffers);
@@ -309,64 +347,84 @@ static int RPG_Audio_Stream(void *channel) {
     RPGbool done;
     ALint processed, state;
     ALuint buffer;
-    while (!done) {
-        if (!alIsSource(s->source)) {
+    while (!done)
+    {
+        if (!alIsSource(s->source))
+        {
             break;
-        } else {
+        }
+        else
+        {
             alGetSourcei(s->source, AL_SOURCE_STATE, &state);
-            if (state == AL_STOPPED) {
+            if (state == AL_STOPPED)
+            {
                 break;
             }
             RPG_SLEEP(100);
         }
         alGetSourcei(s->source, AL_BUFFERS_PROCESSED, &processed);
-        while (processed--) {
+        while (processed--)
+        {
             alSourceUnqueueBuffers(s->source, 1, &buffer);
-            if (RPG_Channel_FillBuffer(s, buffer)) {
+            if (RPG_Channel_FillBuffer(s, buffer))
+            {
                 done = RPG_TRUE;
                 break;
             }
             alSourceQueueBuffers(s->source, 1, &buffer);
         }
     }
-    if (s->cb) {
+    if (s->cb)
+    {
         s->cb(s->index);
     }
     return 0;
 }
 
-RPG_RESULT RPG_Audio_SetPlaybackCompleteCallback(RPGaudiofunc func, RPGaudiofunc *previous) {
-    if (previous != NULL) {
+RPG_RESULT RPG_Audio_SetPlaybackCompleteCallback(RPGaudiofunc func, RPGaudiofunc *previous)
+{
+    if (previous != NULL)
+    {
         *previous = RPG_GAME->audio.cb;
     }
     RPG_GAME->audio.cb = func;
     return RPG_NO_ERROR;
 }
 
-RPG_RESULT RPG_Audio_Play(RPGint index, const char *filename, RPGfloat volume, RPGfloat pitch, RPGint loopCount) {
-    if (index < 0 || index >= RPG_MAX_CHANNELS) {
+RPG_RESULT RPG_Audio_Play(RPGint index, const char *filename, RPGfloat volume, RPGfloat pitch, RPGint loopCount)
+{
+    if (index < 0 || index >= RPG_MAX_CHANNELS)
+    {
         return RPG_ERR_OUT_OF_RANGE;
     }
     RPG_RETURN_IF_NULL(filename);
     RPGchannel *channel;
-    if (!RPG_Audio_TryGetSlot(index, &channel)) {
+    if (!RPG_Audio_TryGetSlot(index, &channel))
+    {
         return RPG_ERR_MEMORY;
     }
 
-    if (channel->sound) {
-        if (strcasecmp(filename, channel->sound->filename) == 0) {
+    if (channel->sound)
+    {
+        if (strcasecmp(filename, channel->sound->filename) == 0)
+        {
             // Same sound is already loaded in channel
             ALint state;
             alGetSourcei(channel->source, AL_SOURCE_STATE, &state);
-            if (state == AL_PLAYING) {
+            if (state == AL_PLAYING)
+            {
                 // Do nothing if already playing same sound
                 return RPG_NO_ERROR;
-            } else if (state == AL_PAUSED) {
+            }
+            else if (state == AL_PAUSED)
+            {
                 // Resume play and return if paused
                 alSourcePlay(channel->source);
                 return RPG_NO_ERROR;
             }
-        } else {
+        }
+        else
+        {
             // Different sound, remove it
             alSourceStop(channel->source);
             RPG_Audio_FreeSound(channel->sound);
@@ -377,15 +435,18 @@ RPG_RESULT RPG_Audio_Play(RPGint index, const char *filename, RPGfloat volume, R
     channel->loopCount = loopCount;
     alSourcef(channel->source, AL_GAIN, RPG_CLAMPF(volume, 0.0f, 1.0f));
     alSourcef(channel->source, AL_PITCH, fmaxf(pitch, __FLT_EPSILON__));
-    if (channel->sound == NULL) {
+    if (channel->sound == NULL)
+    {
         RPG_RESULT result = RPG_Audio_CreateSound(filename, &channel->sound);
-        if (result != RPG_NO_ERROR) {
+        if (result != RPG_NO_ERROR)
+        {
             RPG_Audio_FreeChannel(index);
             return result;
         }
         // Begin streaming on separate thread
         channel->cb = RPG_GAME->audio.cb;
-        if (thrd_create(&channel->thread, RPG_Audio_Stream, channel)) {
+        if (thrd_create(&channel->thread, RPG_Audio_Stream, channel))
+        {
             return RPG_ERR_THREAD_FAILURE;
         }
     }
@@ -393,8 +454,10 @@ RPG_RESULT RPG_Audio_Play(RPGint index, const char *filename, RPGfloat volume, R
     return RPG_NO_ERROR;
 }
 
-RPG_RESULT RPG_Audio_GetVolume(RPGint channel, RPGfloat *volume) {
-    if (RPG_VALID_CHANNEL(channel)) {
+RPG_RESULT RPG_Audio_GetVolume(RPGint channel, RPGfloat *volume)
+{
+    if (RPG_VALID_CHANNEL(channel))
+    {
         alGetSourcef(CHANNELS[channel]->source, AL_GAIN, volume);
         return RPG_NO_ERROR;
     }
@@ -402,16 +465,20 @@ RPG_RESULT RPG_Audio_GetVolume(RPGint channel, RPGfloat *volume) {
     return RPG_ERR_AUDIO_NO_SOUND;
 }
 
-RPG_RESULT RPG_Audio_SetVolume(RPGint channel, RPGfloat volume) {
-    if (RPG_VALID_CHANNEL(channel)) {
+RPG_RESULT RPG_Audio_SetVolume(RPGint channel, RPGfloat volume)
+{
+    if (RPG_VALID_CHANNEL(channel))
+    {
         alSourcef(CHANNELS[channel]->source, AL_GAIN, RPG_CLAMPF(volume, 0.0f, 1.0f));
         return RPG_NO_ERROR;
     }
     return RPG_ERR_AUDIO_NO_SOUND;
 }
 
-RPG_RESULT RPG_Audio_GetPitch(RPGint channel, RPGfloat *pitch) {
-    if (RPG_VALID_CHANNEL(channel)) {
+RPG_RESULT RPG_Audio_GetPitch(RPGint channel, RPGfloat *pitch)
+{
+    if (RPG_VALID_CHANNEL(channel))
+    {
         alGetSourcef(CHANNELS[channel]->source, AL_PITCH, pitch);
         return RPG_NO_ERROR;
     }
@@ -419,16 +486,20 @@ RPG_RESULT RPG_Audio_GetPitch(RPGint channel, RPGfloat *pitch) {
     return RPG_ERR_AUDIO_NO_SOUND;
 }
 
-RPG_RESULT RPG_Audio_SetPitch(RPGint channel, RPGfloat pitch) {
-    if (RPG_VALID_CHANNEL(channel)) {
+RPG_RESULT RPG_Audio_SetPitch(RPGint channel, RPGfloat pitch)
+{
+    if (RPG_VALID_CHANNEL(channel))
+    {
         alSourcef(CHANNELS[channel]->source, AL_PITCH, fmaxf(0.0f, pitch));
         return RPG_NO_ERROR;
     }
     return RPG_ERR_AUDIO_NO_SOUND;
 }
 
-RPG_RESULT RPG_Audio_GetSampleRate(RPGint channel, RPGint *rate) {
-    if (RPG_VALID_CHANNEL(channel) && CHANNELS[channel]->sound != NULL) {
+RPG_RESULT RPG_Audio_GetSampleRate(RPGint channel, RPGint *rate)
+{
+    if (RPG_VALID_CHANNEL(channel) && CHANNELS[channel]->sound != NULL)
+    {
         *rate = CHANNELS[channel]->sound->info.samplerate;
         return RPG_NO_ERROR;
     }
@@ -436,8 +507,10 @@ RPG_RESULT RPG_Audio_GetSampleRate(RPGint channel, RPGint *rate) {
     return RPG_ERR_AUDIO_NO_SOUND;
 }
 
-RPG_RESULT RPG_Audio_GetChannelCount(RPGint channel, RPGint *count) {
-    if (RPG_VALID_CHANNEL(channel) && CHANNELS[channel]->sound != NULL) {
+RPG_RESULT RPG_Audio_GetChannelCount(RPGint channel, RPGint *count)
+{
+    if (RPG_VALID_CHANNEL(channel) && CHANNELS[channel]->sound != NULL)
+    {
         *count = CHANNELS[channel]->sound->info.channels;
         return RPG_NO_ERROR;
     }
@@ -445,8 +518,10 @@ RPG_RESULT RPG_Audio_GetChannelCount(RPGint channel, RPGint *count) {
     return RPG_ERR_AUDIO_NO_SOUND;
 }
 
-RPG_RESULT RPG_Audio_GetSampleCount(RPGint channel, RPGint *count) {
-    if (RPG_VALID_CHANNEL(channel) && CHANNELS[channel]->sound != NULL) {
+RPG_RESULT RPG_Audio_GetSampleCount(RPGint channel, RPGint *count)
+{
+    if (RPG_VALID_CHANNEL(channel) && CHANNELS[channel]->sound != NULL)
+    {
         *count = CHANNELS[channel]->sound->info.frames;
         return RPG_NO_ERROR;
     }
@@ -454,8 +529,10 @@ RPG_RESULT RPG_Audio_GetSampleCount(RPGint channel, RPGint *count) {
     return RPG_ERR_AUDIO_NO_SOUND;
 }
 
-RPG_RESULT RPG_Audio_GetSectionCount(RPGint channel, RPGint *count) {
-    if (RPG_VALID_CHANNEL(channel) && CHANNELS[channel]->sound != NULL) {
+RPG_RESULT RPG_Audio_GetSectionCount(RPGint channel, RPGint *count)
+{
+    if (RPG_VALID_CHANNEL(channel) && CHANNELS[channel]->sound != NULL)
+    {
         *count = CHANNELS[channel]->sound->info.sections;
         return RPG_NO_ERROR;
     }
@@ -463,8 +540,10 @@ RPG_RESULT RPG_Audio_GetSectionCount(RPGint channel, RPGint *count) {
     return RPG_ERR_AUDIO_NO_SOUND;
 }
 
-RPG_RESULT RPG_Audio_GetFormat(RPGint channel, RPG_SOUND_FORMAT *format) {
-    if (RPG_VALID_CHANNEL(channel) && CHANNELS[channel]->sound != NULL) {
+RPG_RESULT RPG_Audio_GetFormat(RPGint channel, RPG_SOUND_FORMAT *format)
+{
+    if (RPG_VALID_CHANNEL(channel) && CHANNELS[channel]->sound != NULL)
+    {
         *format = (RPG_SOUND_FORMAT)(CHANNELS[channel]->sound->info.format & SF_FORMAT_TYPEMASK);
         return RPG_NO_ERROR;
     }
@@ -472,8 +551,10 @@ RPG_RESULT RPG_Audio_GetFormat(RPGint channel, RPG_SOUND_FORMAT *format) {
     return RPG_ERR_AUDIO_NO_SOUND;
 }
 
-RPG_RESULT RPG_Audio_GetType(RPGint channel, RPG_SOUND_TYPE *type) {
-    if (RPG_VALID_CHANNEL(channel) && CHANNELS[channel]->sound != NULL) {
+RPG_RESULT RPG_Audio_GetType(RPGint channel, RPG_SOUND_TYPE *type)
+{
+    if (RPG_VALID_CHANNEL(channel) && CHANNELS[channel]->sound != NULL)
+    {
         *type = (RPG_SOUND_TYPE)(CHANNELS[channel]->sound->info.format & SF_FORMAT_SUBMASK);
         return RPG_NO_ERROR;
     }
@@ -481,8 +562,10 @@ RPG_RESULT RPG_Audio_GetType(RPGint channel, RPG_SOUND_TYPE *type) {
     return RPG_ERR_AUDIO_NO_SOUND;
 }
 
-RPG_RESULT RPG_Audio_GetDuration(RPGint channel, RPGint64 *milliseconds) {
-    if (RPG_VALID_CHANNEL(channel) && CHANNELS[channel]->sound != NULL) {
+RPG_RESULT RPG_Audio_GetDuration(RPGint channel, RPGint64 *milliseconds)
+{
+    if (RPG_VALID_CHANNEL(channel) && CHANNELS[channel]->sound != NULL)
+    {
         RPGsound *snd = CHANNELS[channel]->sound;
         *milliseconds = (RPGint64) round((1000.0 / snd->info.samplerate) * snd->info.frames);
         return RPG_NO_ERROR;
@@ -491,18 +574,23 @@ RPG_RESULT RPG_Audio_GetDuration(RPGint channel, RPGint64 *milliseconds) {
     return RPG_ERR_AUDIO_NO_SOUND;
 }
 
-RPG_RESULT RPG_Audio_GetInfo(RPGint channel, RPG_SOUND_INFO type, char *buffer, size_t sizeBuffer, size_t *written) {
-    if (sizeBuffer == 0) {
+RPG_RESULT RPG_Audio_GetInfo(RPGint channel, RPG_SOUND_INFO type, char *buffer, size_t sizeBuffer, size_t *written)
+{
+    if (sizeBuffer == 0)
+    {
         return RPG_NO_ERROR;
     }
-    if (buffer == NULL) {
+    if (buffer == NULL)
+    {
         *written = 0;
         return RPG_ERR_INVALID_POINTER;
     }
     memset(buffer, 0, sizeBuffer);
-    if (RPG_VALID_CHANNEL(channel) && CHANNELS[channel]->sound != NULL) {
+    if (RPG_VALID_CHANNEL(channel) && CHANNELS[channel]->sound != NULL)
+    {
         const char *str = sf_get_string(CHANNELS[channel]->sound->file, type);
-        if (str != NULL) {
+        if (str != NULL)
+        {
             size_t sz = strlen(str) + 1;
             *written  = sizeBuffer > sz ? sz : sizeBuffer;
             memcpy(buffer, str, *written);
@@ -513,11 +601,14 @@ RPG_RESULT RPG_Audio_GetInfo(RPGint channel, RPG_SOUND_INFO type, char *buffer, 
     return RPG_ERR_AUDIO_NO_SOUND;
 }
 
-RPG_RESULT RPG_Audio_GetPlaybackState(RPGint channel, RPG_PLAYBACK_STATE *state) {
-    if (RPG_VALID_CHANNEL(channel)) {
+RPG_RESULT RPG_Audio_GetPlaybackState(RPGint channel, RPG_PLAYBACK_STATE *state)
+{
+    if (RPG_VALID_CHANNEL(channel))
+    {
         ALint s;
         alGetSourcei(CHANNELS[channel]->source, AL_SOURCE_STATE, &s);
-        switch (s) {
+        switch (s)
+        {
             case AL_PLAYING: *state = RPG_PLAYBACK_STATE_PLAYING; break;
             case AL_PAUSED: *state = RPG_PLAYBACK_STATE_PAUSED; break;
             default: *state = RPG_PLAYBACK_STATE_STOPPED; break;
@@ -528,47 +619,58 @@ RPG_RESULT RPG_Audio_GetPlaybackState(RPGint channel, RPG_PLAYBACK_STATE *state)
     return RPG_ERR_AUDIO_NO_SOUND;
 }
 
-RPG_RESULT RPG_Audio_GetLoopCount(RPGint channel, RPGint *count) {
+RPG_RESULT RPG_Audio_GetLoopCount(RPGint channel, RPGint *count)
+{
     *count = RPG_VALID_CHANNEL(channel) ? CHANNELS[channel]->loopCount : 0;
     return RPG_NO_ERROR;
 }
 
-RPG_RESULT RPG_Audio_SetLoopCount(RPGint channel, RPGint count) {
+RPG_RESULT RPG_Audio_SetLoopCount(RPGint channel, RPGint count)
+{
     RPGchannel *s;
-    if (RPG_Audio_TryGetSlot(channel, &s)) {
+    if (RPG_Audio_TryGetSlot(channel, &s))
+    {
         s->loopCount = count;
         return RPG_NO_ERROR;
     }
     return RPG_ERR_MEMORY;
 }
 
-RPG_RESULT RPG_Audio_Resume(RPGint channel) {
-    if (RPG_VALID_CHANNEL(channel)) {
+RPG_RESULT RPG_Audio_Resume(RPGint channel)
+{
+    if (RPG_VALID_CHANNEL(channel))
+    {
         alSourcePlay(CHANNELS[channel]->source);
         return RPG_NO_ERROR;
     }
     return RPG_ERR_AUDIO_NO_SOUND;
 }
 
-RPG_RESULT RPG_Audio_Stop(RPGint channel) {
-    if (RPG_VALID_CHANNEL(channel)) {
+RPG_RESULT RPG_Audio_Stop(RPGint channel)
+{
+    if (RPG_VALID_CHANNEL(channel))
+    {
         alSourceStop(CHANNELS[channel]->source);
         return RPG_NO_ERROR;
     }
     return RPG_ERR_AUDIO_NO_SOUND;
 }
 
-RPG_RESULT RPG_Audio_Pause(RPGint channel) {
-    if (RPG_VALID_CHANNEL(channel)) {
+RPG_RESULT RPG_Audio_Pause(RPGint channel)
+{
+    if (RPG_VALID_CHANNEL(channel))
+    {
         alSourcePause(CHANNELS[channel]->source);
         return RPG_NO_ERROR;
     }
     return RPG_ERR_AUDIO_NO_SOUND;
 }
 
-RPG_RESULT RPG_Audio_GetPosition(RPGint channel, RPGint64 *position) {
+RPG_RESULT RPG_Audio_GetPosition(RPGint channel, RPGint64 *position)
+{
     RPG_RETURN_IF_NULL(position);
-    if (RPG_VALID_CHANNEL(channel) && CHANNELS[channel]->sound) {
+    if (RPG_VALID_CHANNEL(channel) && CHANNELS[channel]->sound)
+    {
         RPGchannel *s = CHANNELS[channel];
         mtx_lock(&s->sound->mutex);
         sf_count_t pos = sf_seek(s->sound->file, 0, SF_SEEK_CUR);
@@ -580,24 +682,29 @@ RPG_RESULT RPG_Audio_GetPosition(RPGint channel, RPGint64 *position) {
     return RPG_ERR_AUDIO_NO_SOUND;
 }
 
-RPG_RESULT RPG_Audio_Seek(RPGint channel, RPGint64 ms) {
-    if (RPG_VALID_CHANNEL(channel) && CHANNELS[channel]->sound) {
+RPG_RESULT RPG_Audio_Seek(RPGint channel, RPGint64 ms)
+{
+    if (RPG_VALID_CHANNEL(channel) && CHANNELS[channel]->sound)
+    {
         RPGchannel *s  = CHANNELS[channel];
         sf_count_t pos = (sf_count_t) round(ms * (s->sound->info.samplerate / 1000.0));
 
-        if (pos < 0 || pos > s->sound->info.frames) {
+        if (pos < 0 || pos > s->sound->info.frames)
+        {
             return RPG_ERR_OUT_OF_RANGE;
         }
         ALenum state;
         alGetSourcei(s->source, AL_SOURCE_STATE, &state);
-        if (state != AL_STOPPED) {
+        if (state != AL_STOPPED)
+        {
             alSourcePause(s->source);
             alSourceUnqueueBuffers(s->source, BUFFER_COUNT, NULL);
         }
         mtx_lock(&s->sound->mutex);
         sf_seek(s->sound->file, pos, SF_SEEK_SET);
         mtx_unlock(&s->sound->mutex);
-        if (state == AL_PLAYING) {
+        if (state == AL_PLAYING)
+        {
             alSourcePlay(s->source);
         }
     }
@@ -608,18 +715,24 @@ RPG_RESULT RPG_Audio_Seek(RPGint channel, RPGint64 ms) {
 
 #include <AL/efx-presets.h>
 
-typedef struct RPGaudiofx {
+typedef struct RPGaudiofx
+{
     ALint type;
     ALuint effect;
 } RPGaudiofx;
 
-RPG_RESULT RPG_Audio_UpdateEffectChange(RPGaudiofx *fx) {
+RPG_RESULT RPG_Audio_UpdateEffectChange(RPGaudiofx *fx)
+{
     RPG_RETURN_IF_NULL(fx);
     RPGchannel *c = CHANNELS[0];
-    for (int i = 0; i < RPG_MAX_CHANNELS; i++, c = CHANNELS[i]) {
-        if (c && c->aux.num > 0) {
-            for (int j = 0; j < c->aux.num; j++) {
-                if (c->aux.effects[j] == fx->effect) {
+    for (int i = 0; i < RPG_MAX_CHANNELS; i++, c = CHANNELS[i])
+    {
+        if (c && c->aux.num > 0)
+        {
+            for (int j = 0; j < c->aux.num; j++)
+            {
+                if (c->aux.effects[j] == fx->effect)
+                {
                     alAuxiliaryEffectSloti(c->aux.slots[j], AL_EFFECTSLOT_EFFECT, fx->effect);
                 }
             }
@@ -628,21 +741,26 @@ RPG_RESULT RPG_Audio_UpdateEffectChange(RPGaudiofx *fx) {
     return RPG_NO_ERROR;
 }
 
-static inline RPGbool RPG_Audio_IsAffectAttached_Inline(RPGchannel *c, RPGaudiofx *fx) {
-    for (int i = 0; i < c->aux.num; i++) {
-        if (c->aux.effects[i] == fx->effect) {
+static inline RPGbool RPG_Audio_IsAffectAttached_Inline(RPGchannel *c, RPGaudiofx *fx)
+{
+    for (int i = 0; i < c->aux.num; i++)
+    {
+        if (c->aux.effects[i] == fx->effect)
+        {
             return RPG_TRUE;
         }
     }
     return RPG_FALSE;
 }
 
-RPG_RESULT RPG_Audio_CreateEffect(RPG_AUDIOFX_TYPE type, RPGaudiofx **fx) {
+RPG_RESULT RPG_Audio_CreateEffect(RPG_AUDIOFX_TYPE type, RPGaudiofx **fx)
+{
     RPGaudiofx *f = RPG_ALLOC(RPGaudiofx);
     f->type       = type;
     alGenEffects(1, &f->effect);
     alEffecti(f->effect, AL_EFFECT_TYPE, (ALenum) type);
-    if (alGetError()) {
+    if (alGetError())
+    {
         RPG_FREE(f);
         return RPG_ERR_AUDIO_EXT;
     }
@@ -650,32 +768,41 @@ RPG_RESULT RPG_Audio_CreateEffect(RPG_AUDIOFX_TYPE type, RPGaudiofx **fx) {
     return RPG_NO_ERROR;
 }
 
-RPG_RESULT RPG_Audio_AttachEffect(RPGint channel, RPGaudiofx *fx) {
+RPG_RESULT RPG_Audio_AttachEffect(RPGint channel, RPGaudiofx *fx)
+{
     RPG_RETURN_IF_NULL(fx);
     RPGchannel *c;
-    if (RPG_Audio_TryGetSlot(channel, &c)) {
-        if (RPG_Audio_IsAffectAttached_Inline(c, fx)) {
+    if (RPG_Audio_TryGetSlot(channel, &c))
+    {
+        if (RPG_Audio_IsAffectAttached_Inline(c, fx))
+        {
             return RPG_NO_ERROR;
         }
         ALuint slot;
         alGenAuxiliaryEffectSlots(1, &slot);
         alAuxiliaryEffectSloti(slot, AL_EFFECTSLOT_EFFECT, fx->effect);
-        if (alGetError()) {
+        if (alGetError())
+        {
             alDeleteAuxiliaryEffectSlots(1, &slot);
             return RPG_ERR_INVALID_VALUE;
         }
 
-        if (c->aux.num == 0) {
+        if (c->aux.num == 0)
+        {
             c->aux.effects  = RPG_ALLOC(ALuint);
             c->aux.slots    = RPG_ALLOC(ALuint);
             c->aux.capacity = sizeof(ALuint);
-        } else {
+        }
+        else
+        {
             size_t sz = sizeof(ALuint) * (c->aux.num + 1);
-            if (sz < c->aux.capacity) {
+            if (sz < c->aux.capacity)
+            {
                 void *temp1, *temp2;
                 temp1 = RPG_REALLOC(c->aux.effects, sz);
                 temp2 = RPG_REALLOC(c->aux.slots, sz);
-                if (temp1 == NULL || temp2 == NULL) {
+                if (temp1 == NULL || temp2 == NULL)
+                {
                     alDeleteAuxiliaryEffectSlots(1, &slot);
                     return RPG_ERR_MEMORY;
                 }
@@ -694,21 +821,27 @@ RPG_RESULT RPG_Audio_AttachEffect(RPGint channel, RPGaudiofx *fx) {
     return RPG_ERR_MEMORY;
 }
 
-RPG_RESULT RPG_Audio_DetachEffect(RPGint channel, RPGaudiofx *fx) {
+RPG_RESULT RPG_Audio_DetachEffect(RPGint channel, RPGaudiofx *fx)
+{
     RPG_RETURN_IF_NULL(fx);
-    if (RPG_VALID_CHANNEL(channel)) {
+    if (RPG_VALID_CHANNEL(channel))
+    {
         RPGchannel *c = CHANNELS[channel];
         int index     = -1;
-        for (int i = 0; i < c->aux.num; i++) {
-            if (c->aux.effects[i] == fx->effect) {
+        for (int i = 0; i < c->aux.num; i++)
+        {
+            if (c->aux.effects[i] == fx->effect)
+            {
                 index = i;
                 break;
             }
         }
-        if (index > -1) {
+        if (index > -1)
+        {
             alSource3i(c->source, AL_AUXILIARY_SEND_FILTER, 0, index, AL_FILTER_NULL);
             alDeleteAuxiliaryEffectSlots(1, &c->aux.slots[index]);
-            for (int i = index; i < c->aux.num - 1; i++) {
+            for (int i = index; i < c->aux.num - 1; i++)
+            {
                 c->aux.effects[i] = c->aux.effects[i + 1];
                 c->aux.slots[i]   = c->aux.slots[i + 1];
             }
@@ -718,13 +851,17 @@ RPG_RESULT RPG_Audio_DetachEffect(RPGint channel, RPGaudiofx *fx) {
     return RPG_NO_ERROR;
 }
 
-RPG_RESULT RPG_Audio_IsEffectAttached(RPGint channel, RPGaudiofx *fx, RPGbool *attached) {
+RPG_RESULT RPG_Audio_IsEffectAttached(RPGint channel, RPGaudiofx *fx, RPGbool *attached)
+{
     *attached = RPG_FALSE;
     RPG_RETURN_IF_NULL(fx);
-    if (RPG_VALID_CHANNEL(channel)) {
+    if (RPG_VALID_CHANNEL(channel))
+    {
         RPGchannel *c = CHANNELS[channel];
-        for (int i = 0; i < c->aux.num; i++) {
-            if (c->aux.effects[i] == fx->effect) {
+        for (int i = 0; i < c->aux.num; i++)
+        {
+            if (c->aux.effects[i] == fx->effect)
+            {
                 *attached = RPG_TRUE;
                 break;
             }
@@ -733,11 +870,14 @@ RPG_RESULT RPG_Audio_IsEffectAttached(RPGint channel, RPGaudiofx *fx, RPGbool *a
     return RPG_NO_ERROR;
 }
 
-RPG_RESULT RPG_Audio_ReleaseEffect(RPGaudiofx *fx) {
+RPG_RESULT RPG_Audio_ReleaseEffect(RPGaudiofx *fx)
+{
     RPG_RETURN_IF_NULL(fx);
     RPGchannel *c = CHANNELS[0];
-    for (int i = 0; i < RPG_MAX_CHANNELS; i++, c = CHANNELS[i]) {
-        if (c) {
+    for (int i = 0; i < RPG_MAX_CHANNELS; i++, c = CHANNELS[i])
+    {
+        if (c)
+        {
             RPG_Audio_DetachEffect(i, fx);
         }
     }
@@ -746,8 +886,10 @@ RPG_RESULT RPG_Audio_ReleaseEffect(RPGaudiofx *fx) {
     return RPG_NO_ERROR;
 }
 
-static RPGreverbpreset RPG_Reverb_GetPreset_S(RPG_REVERB_TYPE type) {
-    switch (type) {
+static RPGreverbpreset RPG_Reverb_GetPreset_S(RPG_REVERB_TYPE type)
+{
+    switch (type)
+    {
         /* General Presets */
         case RPG_REVERB_TYPE_GENERIC: return (RPGreverbpreset) EFX_REVERB_PRESET_GENERIC;
         case RPG_REVERB_TYPE_PADDEDCELL: return (RPGreverbpreset) EFX_REVERB_PRESET_PADDEDCELL;
@@ -879,10 +1021,12 @@ static RPGreverbpreset RPG_Reverb_GetPreset_S(RPG_REVERB_TYPE type) {
     }
 }
 
-RPG_RESULT RPG_Reverb_SetPreset(RPGaudiofx *e, RPGreverbpreset *p) {
+RPG_RESULT RPG_Reverb_SetPreset(RPGaudiofx *e, RPGreverbpreset *p)
+{
     RPG_RETURN_IF_NULL(e);
     RPG_RETURN_IF_NULL(p);
-    if (e->type == AL_EFFECT_EAXREVERB) {
+    if (e->type == AL_EFFECT_EAXREVERB)
+    {
         // OpenAL-Soft reverb
         alEffectf(e->effect, AL_EAXREVERB_DENSITY, p->density);
         alEffectf(e->effect, AL_EAXREVERB_DIFFUSION, p->diffusion);
@@ -907,7 +1051,9 @@ RPG_RESULT RPG_Reverb_SetPreset(RPGaudiofx *e, RPGreverbpreset *p) {
         alEffectf(e->effect, AL_EAXREVERB_LFREFERENCE, p->referenceLF);
         alEffectf(e->effect, AL_EAXREVERB_ROOM_ROLLOFF_FACTOR, p->roomRolloffFactor);
         alEffecti(e->effect, AL_EAXREVERB_DECAY_HFLIMIT, p->decayHFLimit);
-    } else {
+    }
+    else
+    {
         // Standard Reverb
         alEffectf(e->effect, AL_REVERB_DENSITY, p->density);
         alEffectf(e->effect, AL_REVERB_DIFFUSION, p->diffusion);
@@ -927,9 +1073,11 @@ RPG_RESULT RPG_Reverb_SetPreset(RPGaudiofx *e, RPGreverbpreset *p) {
     return RPG_NO_ERROR;
 }
 
-RPG_RESULT RPG_Reverb_CreateFromType(RPG_REVERB_TYPE type, RPGaudiofx **reverb) {
+RPG_RESULT RPG_Reverb_CreateFromType(RPG_REVERB_TYPE type, RPGaudiofx **reverb)
+{
     RPGaudiofx *r;
-    if (RPG_Audio_CreateEffect(AL_EFFECT_EAXREVERB, &r)) {
+    if (RPG_Audio_CreateEffect(AL_EFFECT_EAXREVERB, &r))
+    {
         return RPG_ERR_AUDIO_EXT;
     }
     RPGreverbpreset p = RPG_Reverb_GetPreset_S(type);
@@ -938,16 +1086,19 @@ RPG_RESULT RPG_Reverb_CreateFromType(RPG_REVERB_TYPE type, RPGaudiofx **reverb) 
     return (type < 0 || type > RPG_REVERB_TYPE_LAST) ? RPG_ERR_OUT_OF_RANGE : RPG_NO_ERROR;
 }
 
-RPG_RESULT RPG_Reverb_CreateFromPreset(RPGreverbpreset *preset, RPGaudiofx **reverb) {
+RPG_RESULT RPG_Reverb_CreateFromPreset(RPGreverbpreset *preset, RPGaudiofx **reverb)
+{
     RPGaudiofx *r;
-    if (RPG_Audio_CreateEffect(AL_EFFECT_EAXREVERB, &r)) {
+    if (RPG_Audio_CreateEffect(AL_EFFECT_EAXREVERB, &r))
+    {
         return RPG_ERR_AUDIO_EXT;
     }
     *reverb = r;
     return RPG_Reverb_SetPreset(r, preset);
 }
 
-RPG_RESULT RPG_Reverb_GetPresetFromType(RPG_REVERB_TYPE type, RPGreverbpreset *preset) {
+RPG_RESULT RPG_Reverb_GetPresetFromType(RPG_REVERB_TYPE type, RPGreverbpreset *preset)
+{
     RPGreverbpreset result = RPG_Reverb_GetPreset_S(type);
     memcpy(preset, &result, sizeof(RPGreverbpreset));
     return (type < 0 || type > RPG_REVERB_TYPE_LAST) ? RPG_ERR_OUT_OF_RANGE : RPG_NO_ERROR;

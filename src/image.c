@@ -25,7 +25,8 @@ GLuint blitVBO;
 GLuint blitVAO;
 mtx_t vaoMutex;
 
-RPG_RESULT RPG_Image_Create(RPGint width, RPGint height, const void *pixels, RPG_PIXEL_FORMAT format, RPGimage **image) {
+RPG_RESULT RPG_Image_Create(RPGint width, RPGint height, const void *pixels, RPG_PIXEL_FORMAT format, RPGimage **image)
+{
     RPG_CHECK_DIMENSIONS(width, height);
     RPG_ALLOC_ZERO(img, RPGimage);
     img->width  = width;
@@ -43,11 +44,13 @@ RPG_RESULT RPG_Image_Create(RPGint width, RPGint height, const void *pixels, RPG
     return RPG_NO_ERROR;
 }
 
-RPG_RESULT RPG_Image_CreateEmpty(RPGint width, RPGint height, RPGimage **image) {
+RPG_RESULT RPG_Image_CreateEmpty(RPGint width, RPGint height, RPGimage **image)
+{
     return RPG_Image_Create(width, height, NULL, GL_RGBA, image);
 }
 
-RPG_RESULT RPG_Image_CreateFilled(RPGint width, RPGint height, RPGcolor *color, RPGimage **image) {
+RPG_RESULT RPG_Image_CreateFilled(RPGint width, RPGint height, RPGcolor *color, RPGimage **image)
+{
     RPG_CHECK_DIMENSIONS(width, height);
     RPG_RETURN_IF_NULL(color);
 
@@ -58,7 +61,8 @@ RPG_RESULT RPG_Image_CreateFilled(RPGint width, RPGint height, RPGcolor *color, 
     RPGubyte b      = (RPGubyte)(color->z * 255);
     RPGubyte a      = (RPGubyte)(color->w * 255);
     GLuint rgba     = (r << 0) | (g << 8) | (b << 16) | (a << 24);
-    for (int i = 0; i < size; i++) {
+    for (int i = 0; i < size; i++)
+    {
         pixels[i] = rgba;
     }
 
@@ -67,14 +71,16 @@ RPG_RESULT RPG_Image_CreateFilled(RPGint width, RPGint height, RPGcolor *color, 
     return result;
 }
 
-RPG_RESULT RPG_Image_CreateFromFile(const char *filename, RPGimage **image) {
+RPG_RESULT RPG_Image_CreateFromFile(const char *filename, RPGimage **image)
+{
 
     RPG_RETURN_IF_NULL(filename);
     RPG_ENSURE_FILE(filename);
 
     int width, height;
     void *pixels = stbi_load(filename, &width, &height, NULL, 4);
-    if (pixels) {
+    if (pixels)
+    {
         RPG_RESULT result = RPG_Image_Create(width, height, pixels, GL_RGBA, image);
         stbi_image_free(pixels);
         return result;
@@ -82,7 +88,8 @@ RPG_RESULT RPG_Image_CreateFromFile(const char *filename, RPGimage **image) {
     return RPG_ERR_IMAGE_LOAD;
 }
 
-RPG_RESULT RPG_Image_Free(RPGimage *image) {
+RPG_RESULT RPG_Image_Free(RPGimage *image)
+{
     RPG_RETURN_IF_NULL(image);
     glDeleteFramebuffers(1, &image->fbo);
     glDeleteTextures(1, &image->texture);
@@ -93,13 +100,15 @@ RPG_RESULT RPG_Image_Free(RPGimage *image) {
 DEF_GETTER(Image, Texture, RPGimage, RPGuint, texture)
 DEF_GETTER(Image, Framebuffer, RPGimage, RPGuint, fbo)
 
-RPG_RESULT RPG_Image_LoadRaw(const char *filename, RPGrawimage **rawImage) {
+RPG_RESULT RPG_Image_LoadRaw(const char *filename, RPGrawimage **rawImage)
+{
     RPG_RETURN_IF_NULL(filename);
     RPG_ENSURE_FILE(filename);
     RPGrawimage *img = RPG_ALLOC(RPGrawimage);
 
     img->pixels = stbi_load(filename, &img->width, &img->height, NULL, 4);
-    if (img->pixels == NULL) {
+    if (img->pixels == NULL)
+    {
         RPG_FREE(img);
         return RPG_ERR_IMAGE_LOAD;
     }
@@ -108,40 +117,50 @@ RPG_RESULT RPG_Image_LoadRaw(const char *filename, RPGrawimage **rawImage) {
     return RPG_NO_ERROR;
 }
 
-RPG_RESULT RPG_Image_GetSize(RPGimage *image, RPGint *width, RPGint *height) {
+RPG_RESULT RPG_Image_GetSize(RPGimage *image, RPGint *width, RPGint *height)
+{
     RPG_RETURN_IF_NULL(image);
-    if (width != NULL) {
+    if (width != NULL)
+    {
         *width = image->width;
     }
-    if (height != NULL) {
+    if (height != NULL)
+    {
         *height = image->height;
     }
     return RPG_NO_ERROR;
 }
 
-RPG_RESULT RPG_Image_GetUserPointer(RPGimage *image, void **pointer) {
+RPG_RESULT RPG_Image_GetUserPointer(RPGimage *image, void **pointer)
+{
     RPG_RETURN_IF_NULL(pointer);
     RPG_RETURN_IF_NULL(image);
     *pointer = image->user;
     return RPG_NO_ERROR;
 }
 
-RPG_RESULT RPG_Image_SetUserPointer(RPGimage *image, void *pointer) {
+RPG_RESULT RPG_Image_SetUserPointer(RPGimage *image, void *pointer)
+{
     RPG_RETURN_IF_NULL(image);
     image->user = pointer;
     return RPG_NO_ERROR;
 }
 
-RPG_RESULT RPG_Image_FillRect(RPGimage *image, RPGcolor *color, RPGrect *rect) {
+RPG_RESULT RPG_Image_FillRect(RPGimage *image, RPGcolor *color, RPGrect *rect)
+{
     RPG_RETURN_IF_NULL(rect);
     return RPG_Image_Fill(image, color, rect->x, rect->y, rect->w, rect->h);
 }
 
-RPG_RESULT RPG_Image_Fill(RPGimage *image, RPGcolor *color, RPGint x, RPGint y, RPGint w, RPGint h) {
+RPG_RESULT RPG_Image_Fill(RPGimage *image, RPGcolor *color, RPGint x, RPGint y, RPGint w, RPGint h)
+{
     RPG_BIND_FBO(image, x, y, w, h);
-    if (color == NULL) {
+    if (color == NULL)
+    {
         glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-    } else {
+    }
+    else
+    {
         glClearColor(color->x, color->y, color->z, color->w);
     }
     glClear(GL_COLOR_BUFFER_BIT);
@@ -150,12 +169,14 @@ RPG_RESULT RPG_Image_Fill(RPGimage *image, RPGcolor *color, RPGint x, RPGint y, 
     return RPG_NO_ERROR;
 }
 
-RPG_RESULT RPG_Image_Clear(RPGimage *image) {
+RPG_RESULT RPG_Image_Clear(RPGimage *image)
+{
     RPG_RETURN_IF_NULL(image);
     return RPG_Image_Fill(image, NULL, 0, 0, image->width, image->height);
 }
 
-RPG_RESULT RPG_Image_SubImage(RPGimage *image, RPGint x, RPGint y, RPGint width, RPGint height, RPGimage **subImage) {
+RPG_RESULT RPG_Image_SubImage(RPGimage *image, RPGint x, RPGint y, RPGint width, RPGint height, RPGimage **subImage)
+{
     RPG_RETURN_IF_NULL(image);
     RPG_CHECK_DIMENSIONS(width, height);
 
@@ -169,30 +190,38 @@ RPG_RESULT RPG_Image_SubImage(RPGimage *image, RPGint x, RPGint y, RPGint width,
     return result;
 }
 
-RPG_RESULT RPG_Image_Blit(RPGimage *dst, RPGrect *dstRect, RPGimage *src, RPGrect *srcRect, RPGfloat alpha) {
+RPG_RESULT RPG_Image_Blit(RPGimage *dst, RPGrect *dstRect, RPGimage *src, RPGrect *srcRect, RPGfloat alpha)
+{
     RPG_RETURN_IF_NULL(dst);
     RPG_RETURN_IF_NULL(src);
 
     // Get default source/destination rectangles if NULL
     RPGrect d, s;
-    if (srcRect != NULL) {
+    if (srcRect != NULL)
+    {
         s = *srcRect;
-    } else {
+    }
+    else
+    {
         s.x = 0;
         s.y = 0;
         s.w = src->width;
         s.h = src->height;
     }
-    if (dstRect != NULL) {
+    if (dstRect != NULL)
+    {
         d = *dstRect;
-    } else {
+    }
+    else
+    {
         d.x = 0;
         d.y = 0;
         d.w = s.w;
         d.h = s.h;
     }
     // Generate VBO/VAO if not defined yet
-    if (blitVAO == 0) {
+    if (blitVAO == 0)
+    {
         glGenVertexArrays(1, &blitVAO);
         glGenBuffers(1, &blitVBO);
         glBindVertexArray(blitVAO);
@@ -250,10 +279,13 @@ RPG_RESULT RPG_Image_Blit(RPGimage *dst, RPGrect *dstRect, RPGimage *src, RPGrec
     return RPG_NO_ERROR;
 }
 
-RPG_RESULT RPG_Image_GetPixel(RPGimage *image, RPGint x, RPGint y, RPGcolor *color) {
+RPG_RESULT RPG_Image_GetPixel(RPGimage *image, RPGint x, RPGint y, RPGcolor *color)
+{
     RPG_RETURN_IF_NULL(image);
-    if (color != NULL) {
-        if (x < 0 || x >= image->width || y < 0 || y > image->height) {
+    if (color != NULL)
+    {
+        if (x < 0 || x >= image->width || y < 0 || y > image->height)
+        {
             memset(color, 0, sizeof(RPGcolor));
             return RPG_ERR_OUT_OF_RANGE;
         }
@@ -269,19 +301,23 @@ RPG_RESULT RPG_Image_GetPixel(RPGimage *image, RPGint x, RPGint y, RPGcolor *col
     return RPG_NO_ERROR;
 }
 
-RPG_RESULT RPG_Image_SetPixel(RPGimage *image, RPGint x, RPGint y, RPGcolor *color) {
+RPG_RESULT RPG_Image_SetPixel(RPGimage *image, RPGint x, RPGint y, RPGcolor *color)
+{
     RPG_RETURN_IF_NULL(image);
-    if (x < 0 || x >= image->width || y < 0 || y > image->height) {
+    if (x < 0 || x >= image->width || y < 0 || y > image->height)
+    {
         return RPG_ERR_OUT_OF_RANGE;
     }
     return RPG_Image_Fill(image, color, x, y, 1, 1);
 }
 
-RPG_RESULT RPG_Image_GetPixels(RPGimage *image, void *buffer, RPGsize sizeBuffer) {
+RPG_RESULT RPG_Image_GetPixels(RPGimage *image, void *buffer, RPGsize sizeBuffer)
+{
     RPG_RETURN_IF_NULL(image);
     RPG_RETURN_IF_NULL(buffer);
     RPGsize size = image->width * image->height * BYTES_PER_PIXEL;
-    if (size != sizeBuffer) {
+    if (size != sizeBuffer)
+    {
         return RPG_ERR_MEMORY;
     }
     RPG_BIND_FBO(image, 0, 0, image->width, image->height);
@@ -290,20 +326,24 @@ RPG_RESULT RPG_Image_GetPixels(RPGimage *image, void *buffer, RPGsize sizeBuffer
     return RPG_NO_ERROR;
 }
 
-RPG_RESULT RPG_Image_Save(RPGimage *image, const char *filename, RPG_IMAGE_FORMAT format, RPGfloat quality) {
+RPG_RESULT RPG_Image_Save(RPGimage *image, const char *filename, RPG_IMAGE_FORMAT format, RPGfloat quality)
+{
     RPG_RETURN_IF_NULL(image);
     RPG_RETURN_IF_NULL(filename);
 
     RPGsize size      = image->width * image->height * BYTES_PER_PIXEL;
     void *pixels      = RPG_MALLOC(size);
     RPG_RESULT result = RPG_Image_GetPixels(image, pixels, size);
-    if (result == RPG_NO_ERROR) {
+    if (result == RPG_NO_ERROR)
+    {
         int code = 0;
-        switch (format) {
+        switch (format)
+        {
             case RPG_IMAGE_FORMAT_PNG:
                 code = stbi_write_png(filename, image->width, image->height, 4, pixels, image->width * BYTES_PER_PIXEL);
                 break;
-            case RPG_IMAGE_FORMAT_JPG: {
+            case RPG_IMAGE_FORMAT_JPG:
+            {
                 int q = (int) RPG_CLAMPF(quality * 100.0f, 0.0f, 100.f);
                 code  = stbi_write_jpg(filename, image->width, image->height, 4, pixels, q);
                 break;
@@ -312,7 +352,8 @@ RPG_RESULT RPG_Image_Save(RPGimage *image, const char *filename, RPG_IMAGE_FORMA
             // TODO: TGA
             default: result = RPG_ERR_INVALID_VALUE; break;
         }
-        if (code == 0) {
+        if (code == 0)
+        {
             result = RPG_ERR_IMAGE_SAVE;
         }
     }

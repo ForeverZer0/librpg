@@ -76,13 +76,15 @@ typedef struct RPGchannel RPGchannel;
 #define RPG_CLAMPI(v, min, max) (imax(min, imin(v, max)))
 
 #define DEF_FX_PARAM_F(type, name, param, min, max)                                                                                        \
-    RPG_RESULT RPG_##type##_Get##name(RPGaudiofx *fx, RPGfloat *value) {                                                                   \
+    RPG_RESULT RPG_##type##_Get##name(RPGaudiofx *fx, RPGfloat *value)                                                                     \
+    {                                                                                                                                      \
         RPG_RETURN_IF_NULL(fx);                                                                                                            \
         RPG_RETURN_IF_NULL(value);                                                                                                         \
         alGetEffectf(fx->effect, param, value);                                                                                            \
         return RPG_NO_ERROR;                                                                                                               \
     }                                                                                                                                      \
-    RPG_RESULT RPG_##type##_Set##name(RPGaudiofx *fx, RPGfloat value) {                                                                    \
+    RPG_RESULT RPG_##type##_Set##name(RPGaudiofx *fx, RPGfloat value)                                                                      \
+    {                                                                                                                                      \
         RPG_RETURN_IF_NULL(fx);                                                                                                            \
         alEffectf(fx->effect, param, RPG_CLAMPF(value, min, max));                                                                         \
         if (alGetError())                                                                                                                  \
@@ -92,13 +94,15 @@ typedef struct RPGchannel RPGchannel;
     }
 
 #define DEF_FX_PARAM_I(type, name, param, min, max)                                                                                        \
-    RPG_RESULT RPG_##type##_Get##name(RPGaudiofx *fx, RPGint *value) {                                                                     \
+    RPG_RESULT RPG_##type##_Get##name(RPGaudiofx *fx, RPGint *value)                                                                       \
+    {                                                                                                                                      \
         RPG_RETURN_IF_NULL(fx);                                                                                                            \
         RPG_RETURN_IF_NULL(value);                                                                                                         \
         alGetEffecti(fx->effect, param, value);                                                                                            \
         return RPG_NO_ERROR;                                                                                                               \
     }                                                                                                                                      \
-    RPG_RESULT RPG_##type##_Set##name(RPGaudiofx *fx, RPGint value) {                                                                      \
+    RPG_RESULT RPG_##type##_Set##name(RPGaudiofx *fx, RPGint value)                                                                        \
+    {                                                                                                                                      \
         RPG_RETURN_IF_NULL(fx);                                                                                                            \
         alEffecti(fx->effect, param, RPG_CLAMPI(value, min, max));                                                                         \
         if (alGetError())                                                                                                                  \
@@ -108,7 +112,8 @@ typedef struct RPGchannel RPGchannel;
     }
 
 #define DEF_FX_PARAM_B(type, name, param, min, max)                                                                                        \
-    RPG_RESULT RPG_##type##_Get##name(RPGaudiofx *fx, RPGbool *value) {                                                                    \
+    RPG_RESULT RPG_##type##_Get##name(RPGaudiofx *fx, RPGbool *value)                                                                      \
+    {                                                                                                                                      \
         RPG_RETURN_IF_NULL(fx);                                                                                                            \
         RPG_RETURN_IF_NULL(value);                                                                                                         \
         int i;                                                                                                                             \
@@ -116,7 +121,8 @@ typedef struct RPGchannel RPGchannel;
         *value = i ? RPG_TRUE : RPG_FALSE;                                                                                                 \
         return RPG_NO_ERROR;                                                                                                               \
     }                                                                                                                                      \
-    RPG_RESULT RPG_##type##_Set##name(RPGaudiofx *fx, RPGbool value) {                                                                     \
+    RPG_RESULT RPG_##type##_Set##name(RPGaudiofx *fx, RPGbool value)                                                                       \
+    {                                                                                                                                      \
         RPG_RETURN_IF_NULL(fx);                                                                                                            \
         alEffecti(fx->effect, param, RPG_CLAMPI(value, min, max));                                                                         \
         if (alGetError())                                                                                                                  \
@@ -126,13 +132,15 @@ typedef struct RPGchannel RPGchannel;
     }
 
 #define DEF_FX_PARAM_V(type, name, param)                                                                                                  \
-    RPG_RESULT RPG_##type##_Get##name(RPGaudiofx *fx, RPGvec3 *value) {                                                                    \
+    RPG_RESULT RPG_##type##_Get##name(RPGaudiofx *fx, RPGvec3 *value)                                                                      \
+    {                                                                                                                                      \
         RPG_RETURN_IF_NULL(fx);                                                                                                            \
         RPG_RETURN_IF_NULL(value);                                                                                                         \
         alGetEffectfv(fx->effect, param, (RPGfloat *) value);                                                                              \
         return RPG_NO_ERROR;                                                                                                               \
     }                                                                                                                                      \
-    RPG_RESULT RPG_##type##_Set##name(RPGaudiofx *fx, RPGvec3 *value) {                                                                    \
+    RPG_RESULT RPG_##type##_Set##name(RPGaudiofx *fx, RPGvec3 *value)                                                                      \
+    {                                                                                                                                      \
         RPG_RETURN_IF_NULL(fx);                                                                                                            \
         alEffectfv(fx->effect, param, (RPGfloat *) value);                                                                                 \
         if (alGetError())                                                                                                                  \
@@ -189,15 +197,17 @@ typedef struct RPGchannel RPGchannel;
 
 // Renders a texture to the currently bound framebuffer
 #define RPG_RENDER_TEXTURE(TEXTURE, VAO)                                                                                                   \
-    RPG_Drawing_BindTexture(TEXTURE, GL_TEXTURE0); \
+    RPG_Drawing_BindTexture(TEXTURE, GL_TEXTURE0);                                                                                         \
     glBindVertexArray(VAO);                                                                                                                \
     glDrawArrays(GL_TRIANGLES, 0, 6)
 
 // Defines a basic get function
 #define DEF_GETTER(name, param, objtype, paramtype, field)                                                                                 \
-    RPG_RESULT RPG_##name##_Get##param(objtype *obj, paramtype *value) {                                                                   \
+    RPG_RESULT RPG_##name##_Get##param(objtype *obj, paramtype *value)                                                                     \
+    {                                                                                                                                      \
         RPG_RETURN_IF_NULL(obj);                                                                                                           \
-        if (value != NULL) {                                                                                                               \
+        if (value != NULL)                                                                                                                 \
+        {                                                                                                                                  \
             *value = obj->field;                                                                                                           \
         }                                                                                                                                  \
         return RPG_NO_ERROR;                                                                                                               \
@@ -205,7 +215,8 @@ typedef struct RPGchannel RPGchannel;
 
 // Defines a basic set function
 #define DEF_SETTER(name, param, objtype, paramtype, field)                                                                                 \
-    RPG_RESULT RPG_##name_Set##param(objtype *obj, paramtype value) {                                                                      \
+    RPG_RESULT RPG_##name_Set##param(objtype *obj, paramtype value)                                                                        \
+    {                                                                                                                                      \
         RPG_RETURN_IF_NULL(obj);                                                                                                           \
         obj->field = value;                                                                                                                \
         return RPG_NO_ERROR;                                                                                                               \
@@ -237,11 +248,13 @@ typedef struct RPGchannel RPGchannel;
 
 // Binds a an image's framebuffer, creating it if it does not exist
 #define RPG_ENSURE_FBO(img)                                                                                                                \
-    if (img->fbo == 0) {                                                                                                                   \
+    if (img->fbo == 0)                                                                                                                     \
+    {                                                                                                                                      \
         glGenFramebuffers(1, &img->fbo);                                                                                                   \
         glBindFramebuffer(GL_FRAMEBUFFER, img->fbo);                                                                                       \
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, img->texture, 0);                                      \
-    } else                                                                                                                                 \
+    }                                                                                                                                      \
+    else                                                                                                                                   \
         glBindFramebuffer(GL_FRAMEBUFFER, img->fbo)
 
 // Binds an image's framebuffer, using the specified coordinates for its ortho
@@ -283,7 +296,8 @@ static inline int imax(int i1, int i2) { return i1 > i2 ? i1 : i2; }
  */
 static inline int imin(int i1, int i2) { return i1 < i2 ? i1 : i2; }
 
-typedef struct RPGimage {
+typedef struct RPGimage
+{
     RPGint width;
     RPGint height;
     GLuint texture;
@@ -294,34 +308,40 @@ typedef struct RPGimage {
 /**
  * @brief Container for a rendering batch, with a quick-sort based on sprite's position on the z-axis.
  */
-typedef struct {
+typedef struct
+{
     RPGrenderable **items; /** An array of pointers to the sprites within this batch. */
     int capacity;          /** The total capacity the batch can hold before reallocation. */
     int total;             /** The total number of sprites within the batch. */
     RPGbool updated;       /** Flag indicating the items may need reordered due to added entry or change of z-axis. */
 } RPGbatch;
 
-typedef struct RPGgame {
+typedef struct RPGgame
+{
     GLFWwindow *window;
     RPGmat4 projection;
     RPGbatch batch;
-    struct {
+    struct
+    {
         RPGint width;
         RPGint height;
     } resolution;
-    struct {
+    struct
+    {
         RPGint x, y, w, h;
         RPGvec2 ratio;
     } bounds;
     RPG_INIT_FLAGS flags;
     char *title;
     RPGcolor color;
-    struct {
+    struct
+    {
         RPGdouble rate;
         RPGint64 count;
         RPGdouble tick;
     } update;
-    struct {
+    struct
+    {
         GLuint program;
         GLint projection;
         GLint model;
@@ -332,31 +352,36 @@ typedef struct RPGgame {
         GLint hue;
     } shader;
 #ifndef RPG_WITHOUT_OPENAL
-    struct {
+    struct
+    {
         ALCcontext *context;
         ALCdevice *device;
         RPGchannel *channels[RPG_MAX_CHANNELS];
         void *cb;
     } audio;
 #endif
-    struct {
+    struct
+    {
         RPGubyte keys[RPG_KEY_LAST + 1];
         RPGubyte buttons[RPG_MBUTTON_LAST + 1];
         double scrollX, scrollY;
         GLFWcursor *cursor;
-        struct {
+        struct
+        {
             RPGkeyfunc key;
             RPGmbuttonfunc mbtn;
             RPGcursorfunc cursor;
             RPGcursorfunc scroll;
         } cb;
-        struct {
+        struct
+        {
             void *buffer;
             RPGsize size;
             RPGint pos;
         } capture;
     } input;
-    struct {
+    struct
+    {
         GLuint program;
         GLint projection;
         GLint color;
@@ -365,7 +390,8 @@ typedef struct RPGgame {
         RPGcolor defaultColor;
         RPGint defaultSize;
     } font;
-    struct {
+    struct
+    {
         RPGgamestate focused;
         RPGgamestate minimized;
         RPGgamestate maximized;
@@ -378,7 +404,8 @@ typedef struct RPGgame {
     void *user;
 } RPGgame;
 
-typedef struct RPGshader {
+typedef struct RPGshader
+{
     GLuint program;
     void *user;
 } RPGshader;
@@ -386,7 +413,8 @@ typedef struct RPGshader {
 /**
  * @brief Base structure for objects that can be rendered.
  */
-typedef struct RPGrenderable {
+typedef struct RPGrenderable
+{
     RPGint x;        /** The location of the sprite on the x-axis. */
     RPGint y;        /** The location of the sprite on the y-axis. */
     RPGint z;        /** The position of the sprite on the z-axis. */
@@ -399,16 +427,19 @@ typedef struct RPGrenderable {
     RPGtone tone;    /** The tone to apply when rendered. */
     RPGfloat hue;    /** The amount of hue to apply, in degrees. */
     RPGvec2 scale;   /** The amount of scale to apply when rendered. */
-    struct {
+    struct
+    {
         RPGcolor color;    /** The color to use for the flash effect. */
         RPGubyte duration; /** The number of remaining frames to apply the flash effect. */
     } flash;               /** The flash effect to apply when rendered. */
-    struct {
+    struct
+    {
         RPGfloat radians; /** The amount of rotation, in radians. */
         RPGint ox;        /** The anchor point on the x-axis to rotate around, relative to the sprite. */
         RPGint oy;        /** The anchor point on the y-axis to rotate around, relative to the sprite. */
     } rotation;
-    struct {
+    struct
+    {
         RPG_BLEND_OP op;  /** The equation used for combining the source and destination factors. */
         RPG_BLEND src;    /** The factor to be used for the source pixel color. */
         RPG_BLEND dst;    /** The factor ot used for the destination pixel color. */
@@ -422,7 +453,8 @@ typedef struct RPGrenderable {
 /**
  * @brief Contains the information required to render an arbitrary image on-screen.
  */
-typedef struct RPGsprite {
+typedef struct RPGsprite
+{
     RPGrenderable base;    /** The base renderable object, MUST BE FIRST FIELD IN THE STRUCTURE! */
     RPGimage *image;       /** A pointer ot the sprite's image, or NULL. */
     RPGviewport *viewport; /** A pointer to the sprite's viewport, or NULL. */
@@ -434,7 +466,8 @@ typedef struct RPGsprite {
 /**
  * @brief A container for sprites that is drawn in its own independent batch with its own projection.
  */
-typedef struct RPGviewport {
+typedef struct RPGviewport
+{
     RPGrenderable base; /** The base renderable object, MUST BE FIRST FIELD IN THE STRUCTURE! */
     RPGint width;       /** The dimension of the viewport, in pixels, on the x-axis. */
     RPGint height;      /** The dimension of the viewport, in pixels, on the y-axis. */
@@ -449,7 +482,8 @@ typedef struct RPGviewport {
 /**
  * @brief Specialized sprite that automatically tiles its source image across its bounds.
  */
-typedef struct RPGplane {
+typedef struct RPGplane
+{
     RPGrenderable base;    /** The base renderable object, MUST BE FIRST FIELD IN THE STRUCTURE! */
     RPGimage *image;       /** A pointer ot the sprite's image, or NULL. */
     RPGviewport *viewport; /** A pointer to the sprite's viewport, or NULL. */
@@ -546,30 +580,35 @@ void RPG_Batch_Sort(RPGbatch *batch, int first, int last);
 void RPG_Renderable_Init(RPGrenderable *renderable, RPGrenderfunc renderfunc, RPGbatch *batch);
 RPG_RESULT RPG_ReadFile(const char *filename, char **buffer, size_t *size);
 
-
 GLuint _texture[32];
 GLenum _unit;
 GLenum _op;
 GLenum _srcFactor;
 GLenum _dstFactor;
 
-static inline void RPG_Drawing_BindTexture(GLuint texture, GLenum unit) {
-    if (unit != _unit) {
+static inline void RPG_Drawing_BindTexture(GLuint texture, GLenum unit)
+{
+    if (unit != _unit)
+    {
         glActiveTexture(unit);
         _unit = unit;
     }
-    if (texture != _texture[unit - GL_TEXTURE0]) {
+    if (texture != _texture[unit - GL_TEXTURE0])
+    {
         glBindTexture(GL_TEXTURE_2D, texture);
         _texture[unit - GL_TEXTURE0] = texture;
     }
 }
 
-static inline void RPG_Drawing_SetBlending(GLenum op, GLenum srcFactor, GLenum dstFactor) {
-    if (op != _op) {
+static inline void RPG_Drawing_SetBlending(GLenum op, GLenum srcFactor, GLenum dstFactor)
+{
+    if (op != _op)
+    {
         glBlendEquation(op);
         _op = op;
     }
-    if (srcFactor != _srcFactor || dstFactor != _dstFactor) {
+    if (srcFactor != _srcFactor || dstFactor != _dstFactor)
+    {
         glBlendFunc(srcFactor, dstFactor);
         _srcFactor = srcFactor;
         _dstFactor = dstFactor;

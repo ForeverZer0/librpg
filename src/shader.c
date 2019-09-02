@@ -10,8 +10,10 @@
     if (_id != shader->program)                                                                                                            \
         return RPG_ERR_SHADER_NOT_ACTIVE;
 
-static const char *RPG_Shader_GetTransitionSource(RPG_TRANSITION_TYPE type) {
-    switch (type) {
+static const char *RPG_Shader_GetTransitionSource(RPG_TRANSITION_TYPE type)
+{
+    switch (type)
+    {
         case RPG_TRANSITION_TYPE_GLITCH_DISPLACE: return RPG_TRANSITION_GLITCH_DISPLACE;
         case RPG_TRANSITION_TYPE_DIRECTIONAL_WARP: return RPG_TRANSITION_DIRECTIONAL_WARP;
         case RPG_TRANSITION_TYPE_LUMINANCE_MELT: return RPG_TRANSITION_LUMINANCE_MELT;
@@ -79,7 +81,8 @@ static const char *RPG_Shader_GetTransitionSource(RPG_TRANSITION_TYPE type) {
     }
 }
 
-static RPGbool RPG_Shader_CreateShader(const char *source, GLenum type, GLuint *result) {
+static RPGbool RPG_Shader_CreateShader(const char *source, GLenum type, GLuint *result)
+{
     GLuint shader = glCreateShader(type);
     GLint length  = (GLint) strlen(source) + 1;
     glShaderSource(shader, 1, &source, &length);
@@ -87,13 +90,14 @@ static RPGbool RPG_Shader_CreateShader(const char *source, GLenum type, GLuint *
 
     GLint success;
     glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
-    if (success != GL_TRUE) {
+    if (success != GL_TRUE)
+    {
         *result = 0;
-        #ifdef RPG_DEBUG
+#ifdef RPG_DEBUG
         char msg[512];
         glGetShaderInfoLog(shader, 512, NULL, msg);
         fprintf(stderr, "%s", msg);
-        #endif
+#endif
         glDeleteShader(shader);
         return RPG_TRUE;
     }
@@ -101,20 +105,24 @@ static RPGbool RPG_Shader_CreateShader(const char *source, GLenum type, GLuint *
     return RPG_FALSE;
 }
 
-RPG_RESULT RPG_Shader_Create(const char *vertSrc, const char *fragSrc, const char *geoSrc, RPGshader **shader) {
+RPG_RESULT RPG_Shader_Create(const char *vertSrc, const char *fragSrc, const char *geoSrc, RPGshader **shader)
+{
     RPG_RETURN_IF_NULL(shader);
     RPG_RETURN_IF_NULL(vertSrc);
     RPG_RETURN_IF_NULL(fragSrc);
 
     GLuint program, vertex, fragment, geometry;
-    if (RPG_Shader_CreateShader(vertSrc, GL_VERTEX_SHADER, &vertex)) {
+    if (RPG_Shader_CreateShader(vertSrc, GL_VERTEX_SHADER, &vertex))
+    {
         return RPG_ERR_SHADER_COMPILE;
     }
-    if (RPG_Shader_CreateShader(fragSrc, GL_FRAGMENT_SHADER, &fragment)) {
+    if (RPG_Shader_CreateShader(fragSrc, GL_FRAGMENT_SHADER, &fragment))
+    {
         glDeleteShader(vertex);
         return RPG_ERR_SHADER_COMPILE;
     }
-    if (geoSrc != NULL && RPG_Shader_CreateShader(geoSrc, GL_GEOMETRY_SHADER, &geometry)) {
+    if (geoSrc != NULL && RPG_Shader_CreateShader(geoSrc, GL_GEOMETRY_SHADER, &geometry))
+    {
         glDeleteShader(fragment);
         glDeleteShader(vertex);
         return RPG_ERR_SHADER_COMPILE;
@@ -123,7 +131,8 @@ RPG_RESULT RPG_Shader_Create(const char *vertSrc, const char *fragSrc, const cha
     program = glCreateProgram();
     glAttachShader(program, vertex);
     glAttachShader(program, fragment);
-    if (geometry > 0) {
+    if (geometry > 0)
+    {
         glAttachShader(program, geometry);
     }
     glLinkProgram(program);
@@ -134,7 +143,8 @@ RPG_RESULT RPG_Shader_Create(const char *vertSrc, const char *fragSrc, const cha
 
     GLint success;
     glGetProgramiv(program, GL_LINK_STATUS, &success);
-    if (success != GL_TRUE) {
+    if (success != GL_TRUE)
+    {
         glDeleteProgram(program);
         return RPG_ERR_SHADER_LINK;
     }
@@ -145,8 +155,10 @@ RPG_RESULT RPG_Shader_Create(const char *vertSrc, const char *fragSrc, const cha
     return RPG_NO_ERROR;
 }
 
-RPG_RESULT RPG_Shader_CreateTransition(RPG_TRANSITION_TYPE type, RPGshader **shader) {
-    if (type < 0 || type > RPG_TRANSITION_TYPE_LAST) {
+RPG_RESULT RPG_Shader_CreateTransition(RPG_TRANSITION_TYPE type, RPGshader **shader)
+{
+    if (type < 0 || type > RPG_TRANSITION_TYPE_LAST)
+    {
         *shader = NULL;
         return RPG_ERR_OUT_OF_RANGE;
     }
@@ -159,172 +171,211 @@ RPG_RESULT RPG_Shader_CreateTransition(RPG_TRANSITION_TYPE type, RPGshader **sha
     return RPG_Shader_Create(RPG_TRANSITION_BASE_VERTEX, buffer, NULL, shader);
 }
 
-RPG_RESULT RPG_Shader_Free(RPGshader *shader) {
-    if (shader != NULL) {
+RPG_RESULT RPG_Shader_Free(RPGshader *shader)
+{
+    if (shader != NULL)
+    {
         glDeleteProgram(shader->program);
         RPG_FREE(shader);
     }
     return RPG_NO_ERROR;
 }
 
-RPG_RESULT RPG_Shader_Begin(RPGshader *shader) {
+RPG_RESULT RPG_Shader_Begin(RPGshader *shader)
+{
     RPG_RETURN_IF_NULL(shader);
     glUseProgram(shader->program);
     return RPG_NO_ERROR;
 }
 
-RPG_RESULT RPG_Shader_Finish(RPGshader *shader) {
+RPG_RESULT RPG_Shader_Finish(RPGshader *shader)
+{
     glUseProgram(RPG_GAME->shader.program);
     return RPG_NO_ERROR;
 }
 
-RPG_RESULT RPG_Shader_GetUniformf(RPGshader *shader, RPGint location, RPGfloat *v) {
+RPG_RESULT RPG_Shader_GetUniformf(RPGshader *shader, RPGint location, RPGfloat *v)
+{
     RPG_RETURN_IF_NULL(shader);
     glGetUniformfv(shader->program, location, v);
     return RPG_NO_ERROR;
 }
 
-RPG_RESULT RPG_Shader_GetUniformi(RPGshader *shader, RPGint location, RPGint *v) {
+RPG_RESULT RPG_Shader_GetUniformi(RPGshader *shader, RPGint location, RPGint *v)
+{
     RPG_RETURN_IF_NULL(shader);
     glGetUniformiv(shader->program, location, v);
     return RPG_NO_ERROR;
 }
 
-RPG_RESULT RPG_Shader_SetUniform1f(RPGshader *shader, RPGint location, RPGfloat v1) {
+RPG_RESULT RPG_Shader_SetUniform1f(RPGshader *shader, RPGint location, RPGfloat v1)
+{
     RPG_SHADER_ENSURE_ACTIVE(shader);
     glUniform1f(location, v1);
     return RPG_NO_ERROR;
 }
 
-RPG_RESULT RPG_Shader_SetUniform2f(RPGshader *shader, RPGint location, RPGfloat v1, RPGfloat v2) {
+RPG_RESULT RPG_Shader_SetUniform2f(RPGshader *shader, RPGint location, RPGfloat v1, RPGfloat v2)
+{
     RPG_SHADER_ENSURE_ACTIVE(shader);
     glUniform2f(location, v1, v2);
     return RPG_NO_ERROR;
 }
 
-RPG_RESULT RPG_Shader_SetUniform3f(RPGshader *shader, RPGint location, RPGfloat v1, RPGfloat v2, RPGfloat v3) {
+RPG_RESULT RPG_Shader_SetUniform3f(RPGshader *shader, RPGint location, RPGfloat v1, RPGfloat v2, RPGfloat v3)
+{
     RPG_SHADER_ENSURE_ACTIVE(shader);
     glUniform3f(location, v1, v2, v3);
     return RPG_NO_ERROR;
 }
 
-RPG_RESULT RPG_Shader_SetUniform4f(RPGshader *shader, RPGint location, RPGfloat v1, RPGfloat v2, RPGfloat v3, RPGfloat v4) {
+RPG_RESULT RPG_Shader_SetUniform4f(RPGshader *shader, RPGint location, RPGfloat v1, RPGfloat v2, RPGfloat v3, RPGfloat v4)
+{
     RPG_SHADER_ENSURE_ACTIVE(shader);
     glUniform4f(location, v1, v2, v3, v4);
     return RPG_NO_ERROR;
 }
 
-RPG_RESULT RPG_Shader_SetUniform1i(RPGshader *shader, RPGint location, RPGint v1) {
+RPG_RESULT RPG_Shader_SetUniform1i(RPGshader *shader, RPGint location, RPGint v1)
+{
     RPG_SHADER_ENSURE_ACTIVE(shader);
     glUniform1i(location, v1);
     return RPG_NO_ERROR;
 }
 
-RPG_RESULT RPG_Shader_SetUniform2i(RPGshader *shader, RPGint location, RPGint v1, RPGint v2) {
+RPG_RESULT RPG_Shader_SetUniform2i(RPGshader *shader, RPGint location, RPGint v1, RPGint v2)
+{
     RPG_SHADER_ENSURE_ACTIVE(shader);
     glUniform2i(location, v1, v2);
     return RPG_NO_ERROR;
 }
 
-RPG_RESULT RPG_Shader_SetUniform3i(RPGshader *shader, RPGint location, RPGint v1, RPGint v2, RPGint v3) {
+RPG_RESULT RPG_Shader_SetUniform3i(RPGshader *shader, RPGint location, RPGint v1, RPGint v2, RPGint v3)
+{
     RPG_SHADER_ENSURE_ACTIVE(shader);
     glUniform3i(location, v1, v2, v3);
     return RPG_NO_ERROR;
 }
 
-RPG_RESULT RPG_Shader_SetUniform4i(RPGshader *shader, RPGint location, RPGint v1, RPGint v2, RPGint v3, RPGint v4) {
+RPG_RESULT RPG_Shader_SetUniform4i(RPGshader *shader, RPGint location, RPGint v1, RPGint v2, RPGint v3, RPGint v4)
+{
     RPG_SHADER_ENSURE_ACTIVE(shader);
     glUniform4i(location, v1, v2, v3, v4);
     return RPG_NO_ERROR;
 }
 
-RPG_RESULT RPG_Shader_SetUniformVec2(RPGshader *shader, RPGint location, RPGvec2 *vec) {
+RPG_RESULT RPG_Shader_SetUniformVec2(RPGshader *shader, RPGint location, RPGvec2 *vec)
+{
     RPG_SHADER_ENSURE_ACTIVE(shader);
-    if (vec != NULL) {
+    if (vec != NULL)
+    {
         glUniform2f(location, vec->x, vec->y);
-    } else {
+    }
+    else
+    {
         glUniform2f(location, 0.0f, 0.0f);
     }
     return RPG_NO_ERROR;
 }
 
-RPG_RESULT RPG_Shader_SetUniformVec3(RPGshader *shader, RPGint location, RPGvec3 *vec) {
+RPG_RESULT RPG_Shader_SetUniformVec3(RPGshader *shader, RPGint location, RPGvec3 *vec)
+{
     RPG_SHADER_ENSURE_ACTIVE(shader);
-    if (vec != NULL) {
+    if (vec != NULL)
+    {
         glUniform3f(location, vec->x, vec->y, vec->z);
-    } else {
+    }
+    else
+    {
         glUniform3f(location, 0.0f, 0.0f, 0.0f);
     }
     return RPG_NO_ERROR;
 }
 
-RPG_RESULT RPG_Shader_SetUniformVec4(RPGshader *shader, RPGint location, RPGvec4 *vec) {
+RPG_RESULT RPG_Shader_SetUniformVec4(RPGshader *shader, RPGint location, RPGvec4 *vec)
+{
     RPG_SHADER_ENSURE_ACTIVE(shader);
-    if (vec != NULL) {
+    if (vec != NULL)
+    {
         glUniform4f(location, vec->x, vec->y, vec->z, vec->w);
-    } else {
+    }
+    else
+    {
         glUniform4f(location, 0.0f, 0.0f, 0.0f, 0.0f);
     }
     return RPG_NO_ERROR;
 }
 
-RPG_RESULT RPG_Shader_SetUniformMat3(RPGshader *shader, RPGint location, RPGmat3 *mat) {
+RPG_RESULT RPG_Shader_SetUniformMat3(RPGshader *shader, RPGint location, RPGmat3 *mat)
+{
     RPG_SHADER_ENSURE_ACTIVE(shader);
-    if (mat != NULL) {
+    if (mat != NULL)
+    {
         glUniformMatrix3fv(location, 1, GL_FALSE, (GLfloat *) mat);
     }
     return RPG_NO_ERROR;
 }
 
-RPG_RESULT RPG_Shader_SetUniformMat4(RPGshader *shader, RPGint location, RPGmat4 *mat) {
+RPG_RESULT RPG_Shader_SetUniformMat4(RPGshader *shader, RPGint location, RPGmat4 *mat)
+{
     RPG_SHADER_ENSURE_ACTIVE(shader);
-    if (mat != NULL) {
+    if (mat != NULL)
+    {
         glUniformMatrix4fv(location, 1, GL_FALSE, (GLfloat *) mat);
     }
     return RPG_NO_ERROR;
 }
 
-RPG_RESULT RPG_Shader_BindImage(RPGshader *shader, RPGint location, RPGint unit, RPGimage *image) {
+RPG_RESULT RPG_Shader_BindImage(RPGshader *shader, RPGint location, RPGint unit, RPGimage *image)
+{
     RPG_SHADER_ENSURE_ACTIVE(shader);
     glUniform1i(location, unit);
     RPG_Drawing_BindTexture(image != NULL ? image->texture : 0, GL_TEXTURE0 + unit);
     return RPG_NO_ERROR;
 }
 
-RPG_RESULT RPG_Shader_UnbindImage(RPGshader *shader, RPGint unit) {
+RPG_RESULT RPG_Shader_UnbindImage(RPGshader *shader, RPGint unit)
+{
     RPG_SHADER_ENSURE_ACTIVE(shader);
     RPG_Drawing_BindTexture(0, GL_TEXTURE0 + unit);
     return RPG_NO_ERROR;
 }
 
-RPG_RESULT RPG_Shader_GetUniformLocation(RPGshader *shader, const char *name, RPGint *location) {
+RPG_RESULT RPG_Shader_GetUniformLocation(RPGshader *shader, const char *name, RPGint *location)
+{
     RPG_RETURN_IF_NULL(shader);
-    if (location != NULL) {
+    if (location != NULL)
+    {
         *location = glGetUniformLocation(shader->program, name);
-    } 
+    }
     return RPG_NO_ERROR;
 }
 
-RPG_RESULT RPG_Shader_GetIsActive(RPGshader *shader, RPGbool *active) {
+RPG_RESULT RPG_Shader_GetIsActive(RPGshader *shader, RPGbool *active)
+{
     RPG_RETURN_IF_NULL(shader);
-    if (active != NULL) {
+    if (active != NULL)
+    {
         GLint id;
         glGetIntegerv(GL_CURRENT_PROGRAM, &id);
         *active = shader->program == id;
-    } 
+    }
     return RPG_NO_ERROR;
 }
 
-RPG_RESULT RPG_Shader_GetUserPointer(RPGshader *shader, void **user) {
+RPG_RESULT RPG_Shader_GetUserPointer(RPGshader *shader, void **user)
+{
     RPG_RETURN_IF_NULL(shader);
-    if (user != NULL) {
+    if (user != NULL)
+    {
         *user = shader->user;
     }
     return RPG_NO_ERROR;
 }
 
-RPG_RESULT RPG_Shader_SetUserPointer(RPGshader *shader, void *user) {
+RPG_RESULT RPG_Shader_SetUserPointer(RPGshader *shader, void *user)
+{
     RPG_RETURN_IF_NULL(shader);
     shader->user = user;
-    return RPG_NO_ERROR; 
+    return RPG_NO_ERROR;
 }

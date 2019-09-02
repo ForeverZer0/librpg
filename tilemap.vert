@@ -7,7 +7,7 @@ layout(location = 6) in mat4 model;
 uniform mat4 projection;
 uniform vec2 origin;
 
-const vec2 blah[6] = vec2[](
+const vec2 normal[6] = vec2[](
     vec2(0.0, 1.0), 
     vec2(1.0, 0.0), 
     vec2(0.0, 0.0), 
@@ -23,5 +23,5 @@ void main() {
     mat4 translated = model;
     translated[3][0] -= origin.x;
     translated[3][1] -= origin.y;
-    gl_Position = projection * translated * vec4(blah[gl_VertexID], 0.0, 1.0);
+    gl_Position = projection * translated * vec4(normal[gl_VertexID], 0.0, 1.0);
 }

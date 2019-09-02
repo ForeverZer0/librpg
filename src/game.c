@@ -5,11 +5,13 @@ RPGgame *RPG_GAME;
 
 volatile int errorCode;
 
-static void RPG_Game_FramebufferResize(GLFWwindow *window, int width, int height) {
+static void RPG_Game_FramebufferResize(GLFWwindow *window, int width, int height)
+{
     RPGgame *g = glfwGetWindowUserPointer(window);
     RPG_ASSERT(g);
 
-    if ((g->flags & RPG_INIT_AUTO_ASPECT) != 0) {
+    if ((g->flags & RPG_INIT_AUTO_ASPECT) != 0)
+    {
 
         // Calculate ratios
         g->bounds.ratio.x = (GLfloat) width / g->resolution.width;
@@ -31,8 +33,9 @@ static void RPG_Game_FramebufferResize(GLFWwindow *window, int width, int height
         glClear(GL_COLOR_BUFFER_BIT);
         glEnable(GL_SCISSOR_TEST);
         RPG_RESET_BACK_COLOR();
-
-    } else {
+    }
+    else
+    {
         g->bounds.x = 0;
         g->bounds.y = 0;
         g->bounds.w = width;
@@ -40,60 +43,77 @@ static void RPG_Game_FramebufferResize(GLFWwindow *window, int width, int height
         glViewport(0, 0, width, height);
         glScissor(0, 0, width, height);
     }
-    if (g->cb.resized) {
+    if (g->cb.resized)
+    {
         g->cb.resized(g, width, height);
     }
 }
 
 static void RPG_Game_CB_Error(int error, const char *msg) { errorCode = error; }
 
-static void RPG_Game_CB_FocusChanged(GLFWwindow *window, int focused) {
+static void RPG_Game_CB_FocusChanged(GLFWwindow *window, int focused)
+{
     RPGgame *game = glfwGetWindowUserPointer(window);
-    if (game != NULL && game->cb.focused != NULL) {
+    if (game != NULL && game->cb.focused != NULL)
+    {
         game->cb.focused(game, focused ? RPG_TRUE : RPG_FALSE);
     }
 }
 
-static void RPG_Game_CB_MinimizeChange(GLFWwindow *window, int minimized) {
+static void RPG_Game_CB_MinimizeChange(GLFWwindow *window, int minimized)
+{
     RPGgame *game = glfwGetWindowUserPointer(window);
-    if (game != NULL) {
-        if (game->cb.minimized != NULL) {
+    if (game != NULL)
+    {
+        if (game->cb.minimized != NULL)
+        {
             game->cb.minimized(game, minimized ? RPG_TRUE : RPG_FALSE);
         }
-        if (!minimized && game->cb.restored) {
+        if (!minimized && game->cb.restored)
+        {
             game->cb.restored(game);
         }
     }
 }
 
-static void RPG_Game_CB_MaximizeChange(GLFWwindow *window, int maximized) {
+static void RPG_Game_CB_MaximizeChange(GLFWwindow *window, int maximized)
+{
     RPGgame *game = glfwGetWindowUserPointer(window);
-    if (game != NULL) {
-        if (game->cb.maximized != NULL) {
+    if (game != NULL)
+    {
+        if (game->cb.maximized != NULL)
+        {
             game->cb.maximized(game, maximized ? RPG_TRUE : RPG_FALSE);
         }
-        if (!maximized && game->cb.restored) {
+        if (!maximized && game->cb.restored)
+        {
             game->cb.restored(game);
         }
     }
 }
 
-static void RPG_Game_CB_FileDrop(GLFWwindow *window, int count, const char **files) {
+static void RPG_Game_CB_FileDrop(GLFWwindow *window, int count, const char **files)
+{
     RPGgame *game = glfwGetWindowUserPointer(window);
-    if (game != NULL && game->cb.filedrop != NULL) {
+    if (game != NULL && game->cb.filedrop != NULL)
+    {
         game->cb.filedrop(game, count, files);
     }
 }
 
-static void RPG_Game_CB_Moved(GLFWwindow *window, int x, int y) {
+static void RPG_Game_CB_Moved(GLFWwindow *window, int x, int y)
+{
     RPGgame *game = glfwGetWindowUserPointer(window);
-    if (game && game->cb.moved) {
+    if (game && game->cb.moved)
+    {
         game->cb.moved(game, x, y);
     }
 }
 
-static RPG_RESULT RPG_Game_GetError(void) {
-    switch (errorCode) {
+static RPG_RESULT RPG_Game_GetError(void)
+{
+    switch (errorCode)
+    {
         case GLFW_NO_ERROR: return RPG_NO_ERROR;
         case GLFW_NOT_INITIALIZED:
         case GLFW_NO_CURRENT_CONTEXT: return RPG_ERR_CONTEXT;
@@ -109,15 +129,18 @@ static RPG_RESULT RPG_Game_GetError(void) {
     }
 }
 
-static RPG_RESULT RPG_Game_CreateShaderProgram(RPGgame *game) {
+static RPG_RESULT RPG_Game_CreateShaderProgram(RPGgame *game)
+{
     RPG_RETURN_IF_NULL(game);
-    if (game->shader.program) {
+    if (game->shader.program)
+    {
         return RPG_NO_ERROR;
     }
 
     RPGshader *shader;
     RPG_RESULT result = RPG_Shader_Create(RPG_VERTEX_SHADER, RPG_FRAGMENT_SHADER, NULL, &shader);
-    if (result) {
+    if (result)
+    {
         return result;
     }
 
@@ -138,7 +161,8 @@ static RPG_RESULT RPG_Game_CreateShaderProgram(RPGgame *game) {
     return RPG_NO_ERROR;
 }
 
-static void RPG_Game_BindCallbacks(RPGgame *game) {
+static void RPG_Game_BindCallbacks(RPGgame *game)
+{
     RPG_ASSERT(game);
     RPG_Input_Initialize(game);
 
@@ -150,18 +174,22 @@ static void RPG_Game_BindCallbacks(RPGgame *game) {
     glfwSetFramebufferSizeCallback(game->window, RPG_Game_FramebufferResize);
 }
 
-RPG_RESULT RPG_Game_GetResolution(RPGgame *game, RPGint *width, RPGint *height) {
+RPG_RESULT RPG_Game_GetResolution(RPGgame *game, RPGint *width, RPGint *height)
+{
     RPG_RETURN_IF_NULL(game);
-    if (width != NULL) {
+    if (width != NULL)
+    {
         *width = game->resolution.width;
     }
-    if (height != NULL) {
+    if (height != NULL)
+    {
         *height = game->resolution.height;
     }
     return RPG_NO_ERROR;
 }
 
-RPG_RESULT RPG_Game_SetResolution(RPGgame *game, RPGint width, RPGint height) {
+RPG_RESULT RPG_Game_SetResolution(RPGgame *game, RPGint width, RPGint height)
+{
     RPG_CHECK_DIMENSIONS(width, height);
     RPG_RETURN_IF_NULL(game);
     game->resolution.width  = width;
@@ -178,7 +206,8 @@ RPG_RESULT RPG_Game_SetResolution(RPGgame *game, RPGint width, RPGint height) {
     return RPG_NO_ERROR;
 }
 
-RPG_RESULT RPG_Game_Destroy(RPGgame *game) {
+RPG_RESULT RPG_Game_Destroy(RPGgame *game)
+{
     glfwTerminate();
 #ifndef RPG_WITHOUT_OPENAL
     RPG_Audio_Terminate();
@@ -190,12 +219,14 @@ RPG_RESULT RPG_Game_Destroy(RPGgame *game) {
     return RPG_NO_ERROR;
 }  // TODO:
 
-RPG_RESULT RPG_Game_Create(const char *title, RPGint width, RPGint height, RPG_INIT_FLAGS flags, RPGgame **game) {
+RPG_RESULT RPG_Game_Create(const char *title, RPGint width, RPGint height, RPG_INIT_FLAGS flags, RPGgame **game)
+{
     RPG_ALLOC_ZERO(g, RPGgame);
     RPG_RESULT result;
 #ifndef RPG_WITHOUT_OPENAL
     result = RPG_Audio_Initialize(g);
-    if (result) {
+    if (result)
+    {
         alcDestroyContext(g->audio.context);
         alcCloseDevice(g->audio.device);
         RPG_FREE(g);
@@ -204,9 +235,10 @@ RPG_RESULT RPG_Game_Create(const char *title, RPGint width, RPGint height, RPG_I
 #endif
 
     glfwSetErrorCallback(RPG_Game_CB_Error);
-    if (glfwInit()) {
+    if (glfwInit())
+    {
         glfwDefaultWindowHints();
-        glfwWindowHint(GLFW_SAMPLES, 4); // FIXME: If can't fix texture bleeding in tilemap
+        glfwWindowHint(GLFW_SAMPLES, 4);  // FIXME: If can't fix texture bleeding in tilemap
         glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
         glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
         glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
@@ -214,7 +246,9 @@ RPG_RESULT RPG_Game_Create(const char *title, RPGint width, RPGint height, RPG_I
 #ifdef __APPLE__
         glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GLFW_TRUE);
 #endif
-    } else {
+    }
+    else
+    {
         *game = NULL;
         RPG_FREE(g);
         return RPG_Game_GetError();
@@ -227,7 +261,8 @@ RPG_RESULT RPG_Game_Create(const char *title, RPGint width, RPGint height, RPG_I
     g->flags             = flags;
     g->font.defaultColor = RPG_FONT_DEFAULT_COLOR;
     g->font.defaultSize  = RPG_FONT_DEFAULT_SIZE;
-    if (title) {
+    if (title)
+    {
         g->title = RPG_MALLOC(strlen(title) + 1);
         strcpy(g->title, title);
     }
@@ -240,19 +275,22 @@ RPG_RESULT RPG_Game_Create(const char *title, RPGint width, RPGint height, RPG_I
     glfwSwapInterval(0);
     // Create graphics context
     g->window = glfwCreateWindow(width, height, title, monitor, NULL);
-    if (g->window == NULL) {
+    if (g->window == NULL)
+    {
         RPG_FREE(g);
         return RPG_Game_GetError();
     }
     // Position window if necessary
-    if ((flags & RPG_INIT_CENTERED) != 0 && monitor == NULL) {
+    if ((flags & RPG_INIT_CENTERED) != 0 && monitor == NULL)
+    {
         monitor = glfwGetPrimaryMonitor();
         int x, y, w, h;
         glfwGetMonitorWorkarea(monitor, &x, &y, &w, &h);
         glfwSetWindowPos(g->window, x + ((w - width) / 2), y + ((h - height) / 2));
     }
     // Lock aspect ratio if necessary
-    if ((flags & RPG_INIT_LOCK_ASPECT) != 0) {
+    if ((flags & RPG_INIT_LOCK_ASPECT) != 0)
+    {
         glfwSetWindowAspectRatio(g->window, width, height);
     }
 
@@ -266,10 +304,11 @@ RPG_RESULT RPG_Game_Create(const char *title, RPGint width, RPGint height, RPG_I
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
     glEnable(GL_SCISSOR_TEST);
     glEnable(GL_BLEND);
-    glEnable(GL_MULTISAMPLE); // FIXME: ?
+    glEnable(GL_MULTISAMPLE);  // FIXME: ?
 
     result = RPG_Game_CreateShaderProgram(g);
-    if (result) {
+    if (result)
+    {
         glfwDestroyWindow(g->window);
         RPG_FREE(g);
         return result;
@@ -281,17 +320,21 @@ RPG_RESULT RPG_Game_Create(const char *title, RPGint width, RPGint height, RPG_I
     return RPG_NO_ERROR;
 }
 
-RPG_RESULT RPG_Game_Main(RPGgame *game, RPGdouble tps, RPGupdatefunc updateCallback) {
+RPG_RESULT RPG_Game_Main(RPGgame *game, RPGdouble tps, RPGupdatefunc updateCallback)
+{
     RPG_RETURN_IF_NULL(game);
     RPG_RETURN_IF_NULL(updateCallback);
 
     RPG_RESULT result = RPG_Game_SetFrameRate(game, tps);
-    if (result != RPG_NO_ERROR) {
+    if (result != RPG_NO_ERROR)
+    {
         return result;
     }
     double delta = glfwGetTime();
-    while (!glfwWindowShouldClose(game->window)) {
-        while (delta < glfwGetTime()) {
+    while (!glfwWindowShouldClose(game->window))
+    {
+        while (delta < glfwGetTime())
+        {
             game->update.count++;
             updateCallback(game->update.count);
             RPG_Input_Update();
@@ -305,16 +348,19 @@ RPG_RESULT RPG_Game_Main(RPGgame *game, RPGdouble tps, RPGupdatefunc updateCallb
     return RPG_NO_ERROR;
 }
 
-RPG_RESULT RPG_Game_GetFrameRate(RPGgame *game, RPGdouble *rate) {
+RPG_RESULT RPG_Game_GetFrameRate(RPGgame *game, RPGdouble *rate)
+{
     RPG_RETURN_IF_NULL(game);
     RPG_RETURN_IF_NULL(rate);
     *rate = game->update.rate;
     return RPG_NO_ERROR;
 }
 
-RPG_RESULT RPG_Game_SetFrameRate(RPGgame *game, RPGdouble rate) {
+RPG_RESULT RPG_Game_SetFrameRate(RPGgame *game, RPGdouble rate)
+{
     RPG_RETURN_IF_NULL(game);
-    if (rate < 1.0) {
+    if (rate < 1.0)
+    {
         return RPG_ERR_OUT_OF_RANGE;
     }
     game->update.rate = rate;
@@ -322,66 +368,84 @@ RPG_RESULT RPG_Game_SetFrameRate(RPGgame *game, RPGdouble rate) {
     return RPG_NO_ERROR;
 }
 
-RPG_RESULT RPG_Game_GetBackColor(RPGgame *game, RPGcolor *color) {
+RPG_RESULT RPG_Game_GetBackColor(RPGgame *game, RPGcolor *color)
+{
     RPG_RETURN_IF_NULL(game);
     RPG_RETURN_IF_NULL(color);
     *color = game->color;
     return RPG_NO_ERROR;
 }
 
-RPG_RESULT RPG_Game_SetBackColor(RPGgame *game, RPGcolor *color) {
+RPG_RESULT RPG_Game_SetBackColor(RPGgame *game, RPGcolor *color)
+{
     RPG_RETURN_IF_NULL(game);
-    if (color == NULL) {
+    if (color == NULL)
+    {
         memset(&game->color, 0, sizeof(RPGcolor));
         glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-    } else {
+    }
+    else
+    {
         memcpy(&game->color, color, sizeof(RPGcolor));
         glClearColor(color->x, color->y, color->z, color->w);
     }
     return RPG_NO_ERROR;
 }
 
-RPG_RESULT RPG_Game_Render(RPGgame *game) {
+RPG_RESULT RPG_Game_Render(RPGgame *game)
+{
 
     glClear(GL_COLOR_BUFFER_BIT);
-    if (game->batch.updated) {
+    if (game->batch.updated)
+    {
         RPG_Batch_Sort(&game->batch, 0, game->batch.total - 1);
     }
     RPGrenderable *r;
     int count = game->batch.total;
-    for (int i = 0; i < count; i++) {
+    for (int i = 0; i < count; i++)
+    {
         r = game->batch.items[i];
         r->render(r);
     }
     return RPG_NO_ERROR;
 }
 
-RPG_RESULT RPG_Game_SetIcon(RPGgame *game, RPGrawimage *image) {
+RPG_RESULT RPG_Game_SetIcon(RPGgame *game, RPGrawimage *image)
+{
     RPG_RETURN_IF_NULL(game);
-    if (image) {
+    if (image)
+    {
         glfwSetWindowIcon(game->window, 1, (GLFWimage *) image);
-    } else {
+    }
+    else
+    {
         glfwSetWindowIcon(game->window, 0, NULL);
     }
     return RPG_NO_ERROR;
 }
 
-RPG_RESULT RPG_Game_SetIconFromFile(RPGgame *game, const char *filename) {
+RPG_RESULT RPG_Game_SetIconFromFile(RPGgame *game, const char *filename)
+{
     RPG_RETURN_IF_NULL(game);
-    if (filename) {
+    if (filename)
+    {
         GLFWimage *img;
         RPG_RESULT result = RPG_Image_LoadRaw(filename, (RPGrawimage **) &img);
-        if (result == RPG_NO_ERROR) {
+        if (result == RPG_NO_ERROR)
+        {
             glfwSetWindowIcon(game->window, 1, img);
         }
         return result;
-    } else {
+    }
+    else
+    {
         glfwSetWindowIcon(game->window, 0, NULL);
     }
     return RPG_NO_ERROR;
 }
 
-RPG_RESULT RPG_Game_MakeCurrent(RPGgame *game) {
+RPG_RESULT RPG_Game_MakeCurrent(RPGgame *game)
+{
     RPG_RETURN_IF_NULL(game);
     glfwMakeContextCurrent(game->window);
     alcMakeContextCurrent(game->audio.context);
@@ -389,185 +453,224 @@ RPG_RESULT RPG_Game_MakeCurrent(RPGgame *game) {
     return RPG_NO_ERROR;
 }
 
-RPG_RESULT RPG_Game_Close(RPGgame *game, RPGbool close) {
+RPG_RESULT RPG_Game_Close(RPGgame *game, RPGbool close)
+{
     RPG_RETURN_IF_NULL(game);
     glfwSetWindowShouldClose(game->window, close);
     return RPG_NO_ERROR;
 }
 
-RPG_RESULT RPG_Game_Show(RPGgame *game) {
+RPG_RESULT RPG_Game_Show(RPGgame *game)
+{
     RPG_RETURN_IF_NULL(game);
     glfwShowWindow(game->window);
     return RPG_NO_ERROR;
 }
 
-RPG_RESULT RPG_Game_Hide(RPGgame *game) {
+RPG_RESULT RPG_Game_Hide(RPGgame *game)
+{
     RPG_RETURN_IF_NULL(game);
     glfwHideWindow(game->window);
     return RPG_NO_ERROR;
 }
 
-RPG_RESULT RPG_Game_Focus(RPGgame *game) {
+RPG_RESULT RPG_Game_Focus(RPGgame *game)
+{
     RPG_RETURN_IF_NULL(game);
     glfwFocusWindow(game->window);
     return RPG_NO_ERROR;
 }
 
-RPG_RESULT RPG_Game_RequestAttention(RPGgame *game) {
+RPG_RESULT RPG_Game_RequestAttention(RPGgame *game)
+{
     RPG_RETURN_IF_NULL(game);
     glfwRequestWindowAttention(game->window);
     return RPG_NO_ERROR;
 }
 
-RPG_RESULT RPG_Game_Minimize(RPGgame *game) {
+RPG_RESULT RPG_Game_Minimize(RPGgame *game)
+{
     RPG_RETURN_IF_NULL(game);
     glfwIconifyWindow(game->window);
     return RPG_NO_ERROR;
 }
 
-RPG_RESULT RPG_Game_Maximize(RPGgame *game) {
+RPG_RESULT RPG_Game_Maximize(RPGgame *game)
+{
     RPG_RETURN_IF_NULL(game);
     glfwMaximizeWindow(game->window);
     return RPG_NO_ERROR;
 }
 
-RPG_RESULT RPG_Game_Restore(RPGgame *game) {
+RPG_RESULT RPG_Game_Restore(RPGgame *game)
+{
     RPG_RETURN_IF_NULL(game);
     glfwRestoreWindow(game->window);
     return RPG_NO_ERROR;
 }
 
-RPG_RESULT RPG_Game_SetWindowSize(RPGgame *game, RPGint width, RPGint height) {
+RPG_RESULT RPG_Game_SetWindowSize(RPGgame *game, RPGint width, RPGint height)
+{
     RPG_RETURN_IF_NULL(game);
     glfwSetWindowSize(game->window, width, height);
     return RPG_NO_ERROR;
 }
 
-RPG_RESULT RPG_Game_GetWindowSize(RPGgame *game, RPGint *width, RPGint *height) {
+RPG_RESULT RPG_Game_GetWindowSize(RPGgame *game, RPGint *width, RPGint *height)
+{
     RPG_RETURN_IF_NULL(game);
     glfwGetWindowSize(game->window, width, height);
     return RPG_NO_ERROR;
 }
 
-RPG_RESULT RPG_Game_SetWindowLocation(RPGgame *game, RPGint x, RPGint y) {
+RPG_RESULT RPG_Game_SetWindowLocation(RPGgame *game, RPGint x, RPGint y)
+{
     RPG_RETURN_IF_NULL(game);
     glfwSetWindowPos(game->window, x, y);
     return RPG_NO_ERROR;
 }
 
-RPG_RESULT RPG_Game_GetWindowLocation(RPGgame *game, RPGint *x, RPGint *y) {
+RPG_RESULT RPG_Game_GetWindowLocation(RPGgame *game, RPGint *x, RPGint *y)
+{
     RPG_RETURN_IF_NULL(game);
     glfwGetWindowPos(game->window, x, y);
     return RPG_NO_ERROR;
 }
 
-RPG_RESULT RPG_Game_SetWindowOpacity(RPGgame *game, RPGfloat opacity) {
+RPG_RESULT RPG_Game_SetWindowOpacity(RPGgame *game, RPGfloat opacity)
+{
     RPG_RETURN_IF_NULL(game);
     glfwSetWindowOpacity(game->window, opacity);
     return RPG_NO_ERROR;
 }
 
-RPG_RESULT RPG_Game_GetWindowOpacity(RPGgame *game, RPGfloat *opacity) {
+RPG_RESULT RPG_Game_GetWindowOpacity(RPGgame *game, RPGfloat *opacity)
+{
     RPG_RETURN_IF_NULL(game);
     *opacity = (RPGfloat) glfwGetWindowOpacity(game->window);
     return RPG_NO_ERROR;
 }
 
-RPG_RESULT RPG_Game_GetClipboardString(RPGgame *game, void *buffer, RPGsize sizeBuffer, RPGsize *size) {
+RPG_RESULT RPG_Game_GetClipboardString(RPGgame *game, void *buffer, RPGsize sizeBuffer, RPGsize *size)
+{
     const char *str = glfwGetClipboardString(NULL);
-    if (str == NULL) {
+    if (str == NULL)
+    {
         *size = 0;
         return RPG_NO_ERROR;
     }
     RPGsize sz = strlen(str);
-    if (size != NULL) {
+    if (size != NULL)
+    {
         *size = sz;
     }
-    if (buffer != NULL) {
+    if (buffer != NULL)
+    {
         memset(buffer, 0, sizeBuffer);
         memcpy(buffer, str, sz > sizeBuffer ? sizeBuffer : sz);
     }
     return RPG_NO_ERROR;
 }
 
-RPG_RESULT RPG_Game_SetClipboardString(RPGgame *game, const char *str) {
+RPG_RESULT RPG_Game_SetClipboardString(RPGgame *game, const char *str)
+{
     glfwSetClipboardString(NULL, str);
     return RPG_NO_ERROR;
 }
 
-RPG_RESULT RPG_Game_GetWindowTitle(RPGgame *game, void *buffer, RPGsize sizeBuffer, RPGsize *size) {
+RPG_RESULT RPG_Game_GetWindowTitle(RPGgame *game, void *buffer, RPGsize sizeBuffer, RPGsize *size)
+{
     RPG_RETURN_IF_NULL(game);
     const char *str = game->title;
-    if (str == NULL) {
+    if (str == NULL)
+    {
         *size = 0;
         return RPG_NO_ERROR;
     }
     RPGsize sz = strlen(str);
-    if (size != NULL) {
+    if (size != NULL)
+    {
         *size = sz;
     }
-    if (buffer != NULL) {
+    if (buffer != NULL)
+    {
         memset(buffer, 0, sizeBuffer);
         memcpy(buffer, str, sz > sizeBuffer ? sizeBuffer : sz);
     }
     return RPG_NO_ERROR;
 }
 
-RPG_RESULT RPG_Game_GetIsMaximized(RPGgame *game, RPGbool *state) {
+RPG_RESULT RPG_Game_GetIsMaximized(RPGgame *game, RPGbool *state)
+{
     RPG_RETURN_IF_NULL(game);
-    if (state != NULL) {
+    if (state != NULL)
+    {
         *state = glfwGetWindowAttrib(game->window, GLFW_MAXIMIZED) ? RPG_TRUE : RPG_FALSE;
     }
     return RPG_NO_ERROR;
 }
 
-RPG_RESULT RPG_Game_GetIsMinimized(RPGgame *game, RPGbool *state) {
+RPG_RESULT RPG_Game_GetIsMinimized(RPGgame *game, RPGbool *state)
+{
     RPG_RETURN_IF_NULL(game);
-    if (state != NULL) {
+    if (state != NULL)
+    {
         *state = glfwGetWindowAttrib(game->window, GLFW_ICONIFIED) ? RPG_TRUE : RPG_FALSE;
     }
     return RPG_NO_ERROR;
 }
 
-RPG_RESULT RPG_Game_GetIsFocused(RPGgame *game, RPGbool *state) {
+RPG_RESULT RPG_Game_GetIsFocused(RPGgame *game, RPGbool *state)
+{
     RPG_RETURN_IF_NULL(game);
-    if (state != NULL) {
+    if (state != NULL)
+    {
         *state = glfwGetWindowAttrib(game->window, GLFW_FOCUSED) ? RPG_TRUE : RPG_FALSE;
     }
     return RPG_NO_ERROR;
 }
 
-RPG_RESULT RPG_Game_GetTopMost(RPGgame *game, RPGbool *state) {
+RPG_RESULT RPG_Game_GetTopMost(RPGgame *game, RPGbool *state)
+{
     RPG_RETURN_IF_NULL(game);
-    if (state != NULL) {
+    if (state != NULL)
+    {
         *state = glfwGetWindowAttrib(game->window, GLFW_FLOATING) ? RPG_TRUE : RPG_FALSE;
     }
     return RPG_NO_ERROR;
 }
 
-RPG_RESULT RPG_Game_SetTopMost(RPGgame *game, RPGbool state) {
+RPG_RESULT RPG_Game_SetTopMost(RPGgame *game, RPGbool state)
+{
     RPG_RETURN_IF_NULL(game);
     glfwSetWindowAttrib(game->window, GLFW_FLOATING, state);
     return RPG_NO_ERROR;
 }
 
-RPG_RESULT RPG_Game_SetWindowTitle(RPGgame *game, const char *title) {
+RPG_RESULT RPG_Game_SetWindowTitle(RPGgame *game, const char *title)
+{
     RPG_RETURN_IF_NULL(game);
-    if (game->title != NULL) {
+    if (game->title != NULL)
+    {
         RPG_FREE(game->title);
     }
     glfwSetWindowTitle(game->window, title);
-    if (title != NULL) {
+    if (title != NULL)
+    {
         game->title = RPG_MALLOC(strlen(title) + 1);
         strcpy(game->title, title);
-    } else {
+    }
+    else
+    {
         game->title = NULL;
     }
     return RPG_NO_ERROR;
 }
 
-RPG_RESULT RPG_Game_Snapshot(RPGgame *game, RPGimage **image) {
-    if (game == NULL || *image == NULL) {
+RPG_RESULT RPG_Game_Snapshot(RPGgame *game, RPGimage **image)
+{
+    if (game == NULL || *image == NULL)
+    {
         return RPG_ERR_INVALID_POINTER;
     }
 
@@ -610,67 +713,78 @@ RPG_RESULT RPG_Game_Snapshot(RPGgame *game, RPGimage **image) {
     return RPG_NO_ERROR;
 }
 
-RPG_RESULT RPG_Game_SetMinimizeCallback(RPGgame *game, RPGgamestate func) {
+RPG_RESULT RPG_Game_SetMinimizeCallback(RPGgame *game, RPGgamestate func)
+{
     RPG_RETURN_IF_NULL(game);
     game->cb.minimized = func;
     return RPG_NO_ERROR;
 }
 
-RPG_RESULT RPG_Game_SetMaximizeCallback(RPGgame *game, RPGgamestate func) {
+RPG_RESULT RPG_Game_SetMaximizeCallback(RPGgame *game, RPGgamestate func)
+{
     RPG_RETURN_IF_NULL(game);
     game->cb.maximized = func;
     return RPG_NO_ERROR;
 }
 
-RPG_RESULT RPG_Game_SetFocusCallback(RPGgame *game, RPGgamestate func) {
+RPG_RESULT RPG_Game_SetFocusCallback(RPGgame *game, RPGgamestate func)
+{
     RPG_RETURN_IF_NULL(game);
     game->cb.focused = func;
     return RPG_NO_ERROR;
 }
 
-RPG_RESULT RPG_Game_SetRestoredCallback(RPGgame *game, RPGgameaction func) {
+RPG_RESULT RPG_Game_SetRestoredCallback(RPGgame *game, RPGgameaction func)
+{
     RPG_RETURN_IF_NULL(game);
     game->cb.restored = func;
     return RPG_NO_ERROR;
 }
 
-RPG_RESULT RPG_Game_SetCloseCallback(RPGgame *game, RPGgameaction func) {
+RPG_RESULT RPG_Game_SetCloseCallback(RPGgame *game, RPGgameaction func)
+{
     RPG_RETURN_IF_NULL(game);
     game->cb.closing = func;
     return RPG_NO_ERROR;
 }
 
-RPG_RESULT RPG_Game_SetFileDropCallback(RPGgame *game, RPGfiledropfunc func) {
+RPG_RESULT RPG_Game_SetFileDropCallback(RPGgame *game, RPGfiledropfunc func)
+{
     RPG_RETURN_IF_NULL(game);
     glfwSetDropCallback(game->window, RPG_Game_CB_FileDrop);
     game->cb.filedrop = func;
     return RPG_NO_ERROR;
 }
 
-RPG_RESULT RPG_Game_SetMoveCallback(RPGgame *game, RPGmovefunc func) {
+RPG_RESULT RPG_Game_SetMoveCallback(RPGgame *game, RPGmovefunc func)
+{
     RPG_RETURN_IF_NULL(game);
     glfwSetWindowPosCallback(game->window, RPG_Game_CB_Moved);
     game->cb.moved = func;
     return RPG_NO_ERROR;
 }
 
-RPG_RESULT RPG_Game_SetResizeCallback(RPGgame *game, RPGsizefunc func) {
+RPG_RESULT RPG_Game_SetResizeCallback(RPGgame *game, RPGsizefunc func)
+{
     RPG_RETURN_IF_NULL(game);
     game->cb.resized = func;
     return RPG_NO_ERROR;
 }
 
-RPG_RESULT RPG_Game_GetWindowFrameSize(RPGgame *game, RPGint *left, RPGint *top, RPGint *right, RPGint *bottom) {
+RPG_RESULT RPG_Game_GetWindowFrameSize(RPGgame *game, RPGint *left, RPGint *top, RPGint *right, RPGint *bottom)
+{
     RPG_RETURN_IF_NULL(game);
     glfwGetWindowFrameSize(game->window, left, top, right, bottom);
     return RPG_NO_ERROR;
 }
 
-RPG_RESULT RPG_Game_Transition(RPGgame *game, RPGshader *shader, RPGint duration, RPGtransitionfunc func) {
+RPG_RESULT RPG_Game_Transition(RPGgame *game, RPGshader *shader, RPGint duration, RPGtransitionfunc func)
+{
     RPG_RETURN_IF_NULL(game);
     RPG_RETURN_IF_NULL(func);
 
-    if (shader == NULL || duration < 1) {
+    if (shader == NULL || duration < 1)
+    {
         // Early out
         func(game, shader);
         return RPG_NO_ERROR;
@@ -734,7 +848,8 @@ RPG_RESULT RPG_Game_Transition(RPGgame *game, RPGshader *shader, RPGint duration
     float percent;
 
     // Loop through the defined amount of time, updating the "progress" uniform each draw
-    while (time < max && !glfwWindowShouldClose(game->window)) {
+    while (time < max && !glfwWindowShouldClose(game->window))
+    {
         percent = RPG_CLAMPF((RPGfloat)(1.0 - ((max - time) / done)), 0.0f, 1.0f);
         glUniform1f(progress, percent);
         glDrawArrays(GL_TRIANGLES, 0, 6);

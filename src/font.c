@@ -10,7 +10,8 @@
 #define STBTT_assert(x) RPG_ASSERT(x)
 #include "stb_truetype.h"
 
-typedef struct RPGglyph {
+typedef struct RPGglyph
+{
     UT_hash_handle hh;
     RPGint codepoint;
     GLuint tex;
@@ -18,7 +19,8 @@ typedef struct RPGglyph {
     RPGfloat advance;
 } RPGglyph;
 
-typedef struct RPGfontsize {
+typedef struct RPGfontsize
+{
     UT_hash_handle hh;
     RPGint size;
     RPGint ascent;
@@ -28,7 +30,8 @@ typedef struct RPGfontsize {
     RPGglyph *glyphs;
 } RPGfontsize;
 
-typedef struct RPGfont {
+typedef struct RPGfont
+{
     RPGcolor color;
     RPGint size;
     stbtt_fontinfo font;
@@ -36,27 +39,34 @@ typedef struct RPGfont {
     void *user;
 } RPGfont;
 
-RPG_RESULT RPG_ReadFile(const char *filename, char **buffer, size_t *size) {
+RPG_RESULT RPG_ReadFile(const char *filename, char **buffer, size_t *size)
+{
     RPG_ENSURE_FILE(filename);
     char *source = NULL;
     FILE *fp     = fopen(filename, "rb");
-    if (fp != NULL) {
-        if (fseek(fp, 0L, SEEK_END) == 0) {
+    if (fp != NULL)
+    {
+        if (fseek(fp, 0L, SEEK_END) == 0)
+        {
             long len = ftell(fp);
-            if (len == -1) {
+            if (len == -1)
+            {
                 fclose(fp);
                 return RPG_ERR_FILE_READ_ERROR;
             }
-            if (fseek(fp, 0L, SEEK_SET) != 0) {
+            if (fseek(fp, 0L, SEEK_SET) != 0)
+            {
                 return RPG_ERR_FILE_READ_ERROR;
             }
-            source = RPG_MALLOC(len + 1);
+            source    = RPG_MALLOC(len + 1);
             size_t sz = fread(source, sizeof(char), (size_t) len, fp);
-            if (size != NULL) {
+            if (size != NULL)
+            {
                 *size = sz;
             }
             source[len] = '\0';
-            if (ferror(fp) != 0) {
+            if (ferror(fp) != 0)
+            {
                 RPG_FREE(source);
                 fclose(fp);
                 return RPG_ERR_FILE_READ_ERROR;
@@ -68,17 +78,19 @@ RPG_RESULT RPG_ReadFile(const char *filename, char **buffer, size_t *size) {
     return RPG_NO_ERROR;
 }
 
-static void RPG_Font_GetGlyph(RPGfont *font, int codepoint, RPGglyph **glyph) {
+static void RPG_Font_GetGlyph(RPGfont *font, int codepoint, RPGglyph **glyph)
+{
     RPGfontsize *fs;
     HASH_FIND(hh, font->sizes, &font->size, sizeof(RPGint), fs);
     RPGglyph *g = NULL;
     HASH_FIND(hh, fs->glyphs, &codepoint, sizeof(RPGint), g);
-    if (g == NULL) {
+    if (g == NULL)
+    {
         g            = RPG_ALLOC(RPGglyph);
         g->codepoint = codepoint;
 
         int advance;
-        void *bmp    = stbtt_GetCodepointBitmap(&font->font, fs->scale, fs->scale, codepoint, &g->w, &g->h, &g->ox, &g->oy);
+        void *bmp = stbtt_GetCodepointBitmap(&font->font, fs->scale, fs->scale, codepoint, &g->w, &g->h, &g->ox, &g->oy);
         stbtt_GetCodepointHMetrics(&font->font, codepoint, &advance, NULL);
         g->advance = fs->scale * advance;
 
@@ -95,14 +107,15 @@ static void RPG_Font_GetGlyph(RPGfont *font, int codepoint, RPGglyph **glyph) {
     *glyph = g;
 }
 
-static void RPG_Font_Initialize(RPGgame *game) {
+static void RPG_Font_Initialize(RPGgame *game)
+{
     RPGshader *shader;
     RPG_RESULT s = RPG_Shader_Create(RPG_FONT_VERTEX, RPG_FONT_FRAGMENT, NULL, &shader);
     RPG_ASSERT(s == RPG_NO_ERROR);
 
-    game->font.program      = *((GLuint *) shader);
-    game->font.projection   = glGetUniformLocation(game->font.program, "projection");
-    game->font.color        = glGetUniformLocation(game->font.program, "color");
+    game->font.program    = *((GLuint *) shader);
+    game->font.projection = glGetUniformLocation(game->font.program, "projection");
+    game->font.color      = glGetUniformLocation(game->font.program, "color");
 
     glGenVertexArrays(1, &game->font.vao);
     glGenBuffers(1, &game->font.vbo);
@@ -117,16 +130,20 @@ static void RPG_Font_Initialize(RPGgame *game) {
     RPG_FREE(shader);
 }
 
-RPG_RESULT RPG_Font_Create(void *buffer, RPGsize sizeBuffer, RPGfont **font) {
+RPG_RESULT RPG_Font_Create(void *buffer, RPGsize sizeBuffer, RPGfont **font)
+{
     RPG_RETURN_IF_NULL(buffer);
-    if (RPG_GAME->font.program == 0) {
+    if (RPG_GAME->font.program == 0)
+    {
         RPG_Font_Initialize(RPG_GAME);
     }
-    if (sizeBuffer == 0) {
+    if (sizeBuffer == 0)
+    {
         return RPG_ERR_INVALID_VALUE;
     }
     RPG_ALLOC_ZERO(f, RPGfont);
-    if (stbtt_InitFont(&f->font, buffer, 0)) {
+    if (stbtt_InitFont(&f->font, buffer, 0))
+    {
         RPG_Font_SetSize(f, RPG_GAME->font.defaultSize);
         RPG_Font_SetColor(f, &RPG_GAME->font.defaultColor);
         *font = f;
@@ -136,23 +153,28 @@ RPG_RESULT RPG_Font_Create(void *buffer, RPGsize sizeBuffer, RPGfont **font) {
     return RPG_ERR_FORMAT;
 }
 
-RPG_RESULT RPG_Font_CreateFromFile(const char *filename, RPGfont **font) {
+RPG_RESULT RPG_Font_CreateFromFile(const char *filename, RPGfont **font)
+{
     size_t size;
     char *buffer;
     RPG_RESULT result = RPG_ReadFile(filename, &buffer, &size);
-    if (result == RPG_NO_ERROR) {
+    if (result == RPG_NO_ERROR)
+    {
         result = RPG_Font_Create(buffer, size, font);
         RPG_FREE(buffer);
     }
     return result;
 }
 
-RPG_RESULT RPG_Font_Free(RPGfont *font) {
+RPG_RESULT RPG_Font_Free(RPGfont *font)
+{
     RPGfontsize *size, *tmpSize;
-    HASH_ITER(hh, font->sizes, size, tmpSize) {
+    HASH_ITER(hh, font->sizes, size, tmpSize)
+    {
         // Enumerate through each glyph
         RPGglyph *glyph, *tmpGlyph;
-        HASH_ITER(hh, size->glyphs, glyph, tmpGlyph) {
+        HASH_ITER(hh, size->glyphs, glyph, tmpGlyph)
+        {
             glDeleteTextures(1, &glyph->tex);
             RPG_FREE(glyph);
         }
@@ -160,30 +182,36 @@ RPG_RESULT RPG_Font_Free(RPGfont *font) {
             RPG_FREE(size->glyphs);
         RPG_FREE(size);
     }
-    if (font->sizes) {
+    if (font->sizes)
+    {
         RPG_FREE(font->sizes);
     }
     RPG_FREE(font);
     return RPG_NO_ERROR;
 }
 
-RPG_RESULT RPG_Font_GetSize(RPGfont *font, RPGint *size) {
+RPG_RESULT RPG_Font_GetSize(RPGfont *font, RPGint *size)
+{
     RPG_RETURN_IF_NULL(font);
-    if (size != NULL) {
+    if (size != NULL)
+    {
         *size = font->size;
     }
     return RPG_NO_ERROR;
 }
 
-RPG_RESULT RPG_Font_SetSize(RPGfont *font, RPGint size) {
+RPG_RESULT RPG_Font_SetSize(RPGfont *font, RPGint size)
+{
     RPG_RETURN_IF_NULL(font);
-    if (size < 1) {
+    if (size < 1)
+    {
         return RPG_ERR_OUT_OF_RANGE;
     }
     font->size      = size;
     RPGfontsize *fs = NULL;
     HASH_FIND(hh, font->sizes, &size, sizeof(RPGint), fs);
-    if (fs == NULL) {
+    if (fs == NULL)
+    {
         fs        = RPG_ALLOC(RPGfontsize);
         fs->size  = size;
         fs->scale = stbtt_ScaleForPixelHeight(&font->font, size);
@@ -195,69 +223,86 @@ RPG_RESULT RPG_Font_SetSize(RPGfont *font, RPGint size) {
     return RPG_NO_ERROR;
 }
 
-RPG_RESULT RPG_Font_GetColor(RPGfont *font, RPGcolor *color) {
+RPG_RESULT RPG_Font_GetColor(RPGfont *font, RPGcolor *color)
+{
     RPG_RETURN_IF_NULL(font);
-    if (color != NULL) {
+    if (color != NULL)
+    {
         *color = font->color;
     }
     return RPG_NO_ERROR;
 }
 
-RPG_RESULT RPG_Font_SetColor(RPGfont *font, RPGcolor *color) {
+RPG_RESULT RPG_Font_SetColor(RPGfont *font, RPGcolor *color)
+{
     RPG_RETURN_IF_NULL(font);
-    if (color != NULL) {
+    if (color != NULL)
+    {
         font->color = *color;
-    } else {
+    }
+    else
+    {
         font->color = RPG_GAME->font.defaultColor;
     }
     return RPG_NO_ERROR;
 }
 
-static void RPG_Font_AlignAdjust(RPGrect *rect, RPG_ALIGN align, RPGint dimX, RPGint dimY, RPGint descent) {
+static void RPG_Font_AlignAdjust(RPGrect *rect, RPG_ALIGN align, RPGint dimX, RPGint dimY, RPGint descent)
+{
 
-    switch (align) {
-        case RPG_ALIGN_TOP_LEFT: {
+    switch (align)
+    {
+        case RPG_ALIGN_TOP_LEFT:
+        {
             break;
         }
-        case RPG_ALIGN_TOP_RIGHT: {
+        case RPG_ALIGN_TOP_RIGHT:
+        {
             rect->x = rect->w - rect->x - dimX;
             break;
         }
         case RPG_ALIGN_CENTER_H:
         case RPG_ALIGN_TOP:
-        case RPG_ALIGN_TOP_CENTER: {
+        case RPG_ALIGN_TOP_CENTER:
+        {
             rect->x += (rect->w - dimX) / 2;
             break;
         }
-        case RPG_ALIGN_BOTTOM_LEFT: {
+        case RPG_ALIGN_BOTTOM_LEFT:
+        {
             rect->y = rect->h - rect->y - dimY + descent;
             break;
         }
-        case RPG_ALIGN_BOTTOM_RIGHT: {
+        case RPG_ALIGN_BOTTOM_RIGHT:
+        {
             rect->x = rect->w - rect->x - dimX;
             rect->y = rect->h - rect->y - dimY + descent;
             break;
         }
         case RPG_ALIGN_BOTTOM:
-        case RPG_ALIGN_BOTTOM_CENTER: {
+        case RPG_ALIGN_BOTTOM_CENTER:
+        {
             rect->x += (rect->w - dimX) / 2;
             rect->y = rect->h - rect->y - dimY + descent;
             break;
         }
         case RPG_ALIGN_CENTER_V:
         case RPG_ALIGN_LEFT:
-        case RPG_ALIGN_CENTER_LEFT: {
+        case RPG_ALIGN_CENTER_LEFT:
+        {
             rect->y += (rect->h - dimY) / 2;
             break;
         }
         case RPG_ALIGN_RIGHT:
-        case RPG_ALIGN_CENTER_RIGHT: {
+        case RPG_ALIGN_CENTER_RIGHT:
+        {
             rect->x = rect->w - rect->x - dimX;
             rect->y += (rect->h - dimY) / 2;
             break;
         }
         case RPG_ALIGN_NONE:
-        case RPG_ALIGN_CENTER: {
+        case RPG_ALIGN_CENTER:
+        {
             rect->x += (rect->w - dimX) / 2;
             rect->y += (rect->h - dimY) / 2;
             break;
@@ -265,19 +310,23 @@ static void RPG_Font_AlignAdjust(RPGrect *rect, RPG_ALIGN align, RPGint dimX, RP
     }
 }
 
-RPG_RESULT RPG_Font_DrawText(RPGfont *font, RPGimage *image, const char *text, RPGrect *dstRect, RPG_ALIGN align) {
+RPG_RESULT RPG_Font_DrawText(RPGfont *font, RPGimage *image, const char *text, RPGrect *dstRect, RPG_ALIGN align)
+{
     RPG_RETURN_IF_NULL(font);
     RPG_RETURN_IF_NULL(image);
     RPG_RETURN_IF_NULL(text);
 
     // Use full image bounds to draw if no destination rectangle is defined
     RPGrect d;
-    if (dstRect == NULL) {
+    if (dstRect == NULL)
+    {
         d.x = 0;
         d.y = 0;
         d.w = image->width;
         d.h = image->height;
-    } else {
+    }
+    else
+    {
         d = *dstRect;
     }
 
@@ -287,7 +336,7 @@ RPG_RESULT RPG_Font_DrawText(RPGfont *font, RPGimage *image, const char *text, R
 
     int dimX, dimY;
     RPG_Font_MeasureText(font, text, &dimX, &dimY);
-    RPG_Font_AlignAdjust(&d, align, dimX, dimY, (RPGint) (fs->scale * fs->descent));
+    RPG_Font_AlignAdjust(&d, align, dimX, dimY, (RPGint)(fs->scale * fs->descent));
 
     // Enable the font shader, bind the FBO, and set the projection matrix
     glUseProgram(RPG_GAME->font.program);
@@ -314,7 +363,8 @@ RPG_RESULT RPG_Font_DrawText(RPGfont *font, RPGimage *image, const char *text, R
     void *str = utf8codepoint(text, &cp);
 
     // Enumerate through each codepoint in the string, calculating metrics and rendering each glyph
-    while (cp) {
+    while (cp)
+    {
         // Load the glyph for the current codepoint
         RPG_Font_GetGlyph(font, cp, &glyph);
         x = ox + glyph->ox;
@@ -331,7 +381,8 @@ RPG_RESULT RPG_Font_DrawText(RPGfont *font, RPGimage *image, const char *text, R
 
         // Check if there is another codepoint to render after this one, if so, apply kerning
         str = utf8codepoint(str, &next);
-        if (next) {
+        if (next)
+        {
             ox += fs->scale * stbtt_GetCodepointKernAdvance(&font->font, cp, next);
         }
         ox += glyph->advance;
@@ -347,45 +398,57 @@ RPG_RESULT RPG_Font_DrawText(RPGfont *font, RPGimage *image, const char *text, R
     glUseProgram(RPG_GAME->shader.program);
     RPG_RESET_PROJECTION();
     RPG_RESET_VIEWPORT();
-    
+
     return RPG_NO_ERROR;
 }
 
-RPG_RESULT RPG_Font_GetDefaultSize(RPGint *size) {
-    if (size != NULL) {
+RPG_RESULT RPG_Font_GetDefaultSize(RPGint *size)
+{
+    if (size != NULL)
+    {
         *size = RPG_GAME->font.defaultSize;
     }
     return RPG_NO_ERROR;
 }
 
-RPG_RESULT RPG_Font_GetDefaultColor(RPGcolor *color) {
-    if (color != NULL) {
+RPG_RESULT RPG_Font_GetDefaultColor(RPGcolor *color)
+{
+    if (color != NULL)
+    {
         *color = RPG_GAME->font.defaultColor;
     }
     return RPG_NO_ERROR;
 }
 
-RPG_RESULT RPG_Font_SetDefaultSize(RPGint size) {
-    if (size < 1) {
+RPG_RESULT RPG_Font_SetDefaultSize(RPGint size)
+{
+    if (size < 1)
+    {
         return RPG_ERR_OUT_OF_RANGE;
     }
     RPG_GAME->font.defaultSize = size;
     return RPG_NO_ERROR;
 }
 
-RPG_RESULT RPG_Font_SetDefaultColor(RPGcolor *color) {
-    if (color == NULL) {
+RPG_RESULT RPG_Font_SetDefaultColor(RPGcolor *color)
+{
+    if (color == NULL)
+    {
         RPG_GAME->font.defaultColor = RPG_FONT_DEFAULT_COLOR;
-    } else {
+    }
+    else
+    {
         RPG_GAME->font.defaultColor = *color;
     }
     return RPG_NO_ERROR;
 }
 
-RPG_RESULT RPG_Font_MeasureText(RPGfont *font, const char *text, RPGint *width, RPGint *height) {
+RPG_RESULT RPG_Font_MeasureText(RPGfont *font, const char *text, RPGint *width, RPGint *height)
+{
     RPG_RETURN_IF_NULL(font);
-    if (text == NULL) {
-        *width = 0;
+    if (text == NULL)
+    {
+        *width  = 0;
         *height = 0;
         return RPG_NO_ERROR;
     }
@@ -397,31 +460,36 @@ RPG_RESULT RPG_Font_MeasureText(RPGfont *font, const char *text, RPGint *width, 
     RPGglyph *glyph = NULL;
     utf8_int32_t cp, next;
     void *str = utf8codepoint(text, &cp);
-    while (cp) {
+    while (cp)
+    {
         RPG_Font_GetGlyph(font, cp, &glyph);
-        h = fmaxf(glyph->h + glyph->oy + fs->baseline, h);
+        h   = fmaxf(glyph->h + glyph->oy + fs->baseline, h);
         str = utf8codepoint(str, &next);
-        if (next) {
+        if (next)
+        {
             w += fs->scale * stbtt_GetCodepointKernAdvance(&font->font, cp, next);
         }
         w += glyph->advance;
         cp = next;
     }
-    *width = (RPGint) roundf(w);
+    *width  = (RPGint) roundf(w);
     *height = (RPGint) roundf(h);
     return RPG_NO_ERROR;
 }
 
-RPG_RESULT RPG_Font_GetUserPointer(RPGfont *font, void **user) {
+RPG_RESULT RPG_Font_GetUserPointer(RPGfont *font, void **user)
+{
     RPG_RETURN_IF_NULL(font);
-    if (user != NULL) {
+    if (user != NULL)
+    {
         *user = font->user;
     }
     return RPG_NO_ERROR;
 }
 
-RPG_RESULT RPG_Font_SetUserPointer(RPGfont *font, void *user) {
+RPG_RESULT RPG_Font_SetUserPointer(RPGfont *font, void *user)
+{
     RPG_RETURN_IF_NULL(font);
     font->user = user;
-    return RPG_NO_ERROR; 
+    return RPG_NO_ERROR;
 }
