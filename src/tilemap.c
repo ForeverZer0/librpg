@@ -86,29 +86,22 @@ static void *RPG_Tilemap_ImageLoad(const char *path) {
 
 static void RPG_Tilemap_ImageFree(void *image) { RPG_Image_Free(image); }
 
-static void RPG_Tilemap_SetVertices(float l, float t, float r, float b, RPGint gid, GLuint vbo, RPGbool bind) {
-    if (bind) {
-        glBindBuffer(GL_ARRAY_BUFFER, vbo);
-    }
+static void RPG_Tilemap_SetVertices(float l, float t, float r, float b, RPGint gid, RPGvec2 vertices[6]) {
     // Determine placement of vertices based on flag set in GID
     if ((gid & TMX_FLIPPED_VERTICALLY) != 0 && (gid & TMX_FLIPPED_HORIZONTALLY) != 0) {
-        RPGvec4 elements[6] = {{0.0f, 1.0f, r, t}, {1.0f, 0.0f, l, b}, {0.0f, 0.0f, r, b},
-                               {0.0f, 1.0f, r, t}, {1.0f, 1.0f, l, t}, {1.0f, 0.0f, l, b}};
-        glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(elements), elements);
+        RPGvec2 v[] = {{r, t}, {l, b}, {r, b}, {r, t}, {l, t}, {l, b}};
+        memcpy(vertices, v, sizeof(v));
     } else if ((gid & TMX_FLIPPED_HORIZONTALLY) != 0) {
-        RPGvec4 elements[6] = {{0.0f, 1.0f, r, b}, {1.0f, 0.0f, l, t}, {0.0f, 0.0f, r, t},
-                               {0.0f, 1.0f, r, b}, {1.0f, 1.0f, l, b}, {1.0f, 0.0f, l, t}};
-        glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(elements), elements);
+        RPGvec2 v[] = {{r, b}, {l, t}, {r, t}, {r, b}, {l, b}, {l, t}};
+        memcpy(vertices, v, sizeof(v));
     } else if ((gid & TMX_FLIPPED_VERTICALLY) != 0) {
-        RPGvec4 elements[6] = {{0.0f, 1.0f, l, t}, {1.0f, 0.0f, r, b}, {0.0f, 0.0f, l, b},
-                               {0.0f, 1.0f, l, t}, {1.0f, 1.0f, r, t}, {1.0f, 0.0f, r, b}};
-        glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(elements), elements);
+        RPGvec2 v[] = {{l, t}, {r, b}, {l, b}, {l, t}, {r, t}, {r, b}};
+        memcpy(vertices, v, sizeof(v));
     } else if ((gid & TMX_FLIPPED_DIAGONALLY) != 0) {
         // TODO: Implement diagonal?
     } else {
-        RPGvec4 elements[6] = {{0.0f, 1.0f, l, b}, {1.0f, 0.0f, r, t}, {0.0f, 0.0f, l, t},
-                               {0.0f, 1.0f, l, b}, {1.0f, 1.0f, r, b}, {1.0f, 0.0f, r, t}};
-        glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(elements), elements);
+        RPGvec2 v[] = {{l, b}, {r, t}, {l, t}, {l, b}, {r, b}, {r, t}};
+        memcpy(vertices, v, sizeof(v));
     }
 }
 
@@ -221,12 +214,13 @@ static RPGtilelayer *RPG_Tilemap_CreateTileLayer(RPGtilemap *tilemap, tmx_map *m
     // Get the locations for the vertex and model attributes in the vertex shader
     GLint vLoc = glGetAttribLocation(tilemap->shader.program, "vertex");
     GLint mLoc = glGetAttribLocation(tilemap->shader.program, "model");
+    RPGvec2 vertices[6];
 
     glGenVertexArrays(1, &tilelayer->vao);
     glGenBuffers(1, &tilelayer->vbo);
 
     glBindBuffer(GL_ARRAY_BUFFER, tilelayer->vbo);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(TILE) * tilelayer->tileCount, NULL, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(TILE) * tilelayer->tileCount, NULL, GL_DYNAMIC_DRAW);
     TILE *ptr = glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
 
     // Enumerate throught each tile coordinate in the map for this layer
@@ -258,23 +252,8 @@ static RPGtilelayer *RPG_Tilemap_CreateTileLayer(RPGtilemap *tilemap, tmx_map *m
             GLfloat tt = getUV(tmxtile->ul_y, tilelayer->image->height);
             GLfloat tr = getUV(tmxtile->ul_x + tmxtile->tileset->tile_width - 1, tilelayer->image->width);
             GLfloat tb = getUV(tmxtile->ul_y + tmxtile->tileset->tile_height - 1, tilelayer->image->height);
-        
-        
-            // Calculate the left/top/right/bottom of tile source in normalized coordinates
-            // GLfloat tl = tmxtile->ul_x / (GLfloat) tilelayer->image->width;
-            // GLfloat tt = tmxtile->ul_y / (GLfloat) tilelayer->image->height;
-            // GLfloat tr = tl + (tmxtile->tileset->tile_width / (GLfloat) tilelayer->image->width);
-            // GLfloat tb = tt + (tmxtile->tileset->tile_height / (GLfloat) tilelayer->image->height);
+            RPG_Tilemap_SetVertices(tl, tt, tr, tb, gid, vertices);
 
-            RPGvec2 vertices[6] = 
-            {
-                {tl, tb}, 
-                {tr, tt}, 
-                {tl, tt},
-                {tl, tb}, 
-                {tr, tb}, 
-                {tr, tt}
-            };
             memcpy(&ptr[index].vertices, vertices, sizeof(vertices));
             RPG_MAT4_SET(ptr[index].model, 
                 map->tile_width, 0.0f, 0.0f, 0.0f, 
@@ -282,7 +261,6 @@ static RPGtilelayer *RPG_Tilemap_CreateTileLayer(RPGtilemap *tilemap, tmx_map *m
                 0.0f, 0.0f, 1.0f, 0.0f,
                 mapX * map->tile_width, mapY * map->tile_height, 0.0f, 1.0f
             );
-
 
             // Store the info in the tile
             tilelayer->tiles[index].gid = gid;
@@ -412,11 +390,13 @@ RPG_RESULT RPG_Tilemap_Free(RPGtilemap *tilemap) {
 }
 
 void RPG_Tilemap_UpdateTileLayer(RPGtilemap *map, RPGtilelayer *layer, tmx_layer *tmx) {
-    return;  // TODO:!!!!!!!!!!!!!!!!!!!!!
+
     // Declare variable storage;
     tmx_tile *next;
     tmx_anim_frame *frame;
     RPGtile *tile;
+    TILE *ptr;
+    RPGbool bound = RPG_FALSE;
 
     // Get the current time
     RPGdouble time = glfwGetTime();
@@ -434,15 +414,27 @@ void RPG_Tilemap_UpdateTileLayer(RPGtilemap *map, RPGtilelayer *layer, tmx_layer
             next              = &tile->tmx->tileset->tiles[frame->tile_id];
 
             // left/top/right/bottom in normalized texture coordinates
-            GLfloat l = next->ul_x / (GLfloat) layer->image->width;
-            GLfloat t = next->ul_y / (GLfloat) layer->image->height;
-            GLfloat r = l + (next->tileset->tile_width / (GLfloat) layer->image->width);
-            GLfloat b = t + (next->tileset->tile_height / (GLfloat) layer->image->height);
+            GLfloat l = getUV(next->ul_x, layer->image->width);
+            GLfloat t = getUV(next->ul_y, layer->image->height);
+            GLfloat r = getUV(next->ul_x + next->tileset->tile_width - 1, layer->image->width);
+            GLfloat b = getUV(next->ul_y + next->tileset->tile_height - 1, layer->image->height);
 
             // Buffer the new data, and set the next target time for an animation
             tile->anime.delta = time + (frame->duration * 0.001);
-            RPG_Tilemap_SetVertices(l, t, r, b, next->id, tile->vbo, RPG_TRUE);
+            if (!bound) {
+                // Lazy-bind the buffer only if needed
+                glBindBuffer(GL_ARRAY_BUFFER, layer->vbo);
+                ptr = glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
+                bound = RPG_TRUE;
+            }
+
+            // Update the vertices directly in the VBO
+            RPG_Tilemap_SetVertices(l, t, r, b, next->id, ptr[i].vertices);
         }
+    }
+    if (bound) {
+        // Unmap our pointer if buffer was bound
+        glUnmapBuffer(GL_ARRAY_BUFFER);
     }
 }
 
