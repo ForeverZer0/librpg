@@ -10,8 +10,8 @@ out vec2 coords;
 
 void main() {
     coords      = vertex.zw;
-    mat4 test = model;
-    test[3][0] -= origin.x;
-    test[3][1] -= origin.y;
-    gl_Position = projection * test * vec4(vertex.xy, 0.0, 1.0);
+    mat4 translated = model;
+    translated[3][0] -= origin.x;
+    translated[3][1] -= origin.y;
+    gl_Position = projection * translated * vec4(vertex.xy, 0.0, 1.0);
 }
