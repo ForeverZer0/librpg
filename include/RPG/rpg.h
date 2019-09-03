@@ -40,122 +40,6 @@ extern "C" {
 #define RPG_TRUE 1
 #define RPG_FALSE 0
 
-// Primitive types // TODO: Group for types, sub-group for primitives, function protypes, enums, incomplete, complete, etc
-
-typedef uint8_t RPGbool;    /** A boolean type (32-bits), zero is false, otherwise non-zero is true */
-typedef int8_t RPGbyte;     /** Signed 8-bit integer (-128 to 127) */
-typedef int16_t RPGshort;   /** Signed 16-bit integer (-32,768 to 32,7677) */
-typedef int32_t RPGint;     /** Signed 32-bit integer (-2,147,483,648 to 2,147,483,647) */
-typedef int64_t RPGint64;   /** Signed 64-bit integer (-9,223,372,036,854,775,808 to 9,223,372,036,854,775,807) */
-typedef uint8_t RPGubyte;   /** Unsigned 8-bit integer (0 to 255) */
-typedef uint16_t RPGushort; /** Unsigned 16-bit integer (0 to 65,535) */
-typedef uint32_t RPGuint;   /** Unsigned 32-bit integer (0 to 4,294,967,295) */
-typedef uint64_t RPGuint64; /** Unsigned 64-bit integer (0 to 18,446,744,073,709,551,615) */
-typedef float RPGfloat;     /** Single-precision 32-bit floating point number with 6 decimal places of precision (1.2E-38 to 3.4E+38) */
-typedef double RPGdouble;   /** Double-precision 64-bit floating point number with 15 decimal places of precision (2.3E-308 to 1.7E+308) */
-typedef uint32_t RPGsize;   /** Unsigned 32-bit integer (0 to 4,294,967,295) */
-
-// Incomplete types
-
-typedef struct RPGrenderable RPGrenderable;
-typedef struct RPGbasic RPGbasic;
-typedef struct RPGsprite RPGsprite;
-typedef struct RPGviewport RPGviewport;
-typedef struct RPGplane RPGplane;
-typedef struct RPGgame RPGgame;
-typedef struct RPGimage RPGimage;
-typedef struct RPGfont RPGfont;
-typedef struct RPGshader RPGshader;
-typedef struct RPGtilemap RPGtilemap;
-
-// Complete types
-
-/**
- * @brief A structure encapsulating two single precision floating point values
- */
-typedef struct {
-    RPGfloat x; /** The value of the x component. */
-    RPGfloat y; /** The value of the y component. */
-} RPGvec2;
-
-/**
- * @brief A structure encapsulating three single precision floating point values
- */
-typedef struct {
-    RPGfloat x; /** The value of the x component. */
-    RPGfloat y; /** The value of the y component. */
-    RPGfloat z; /** The value of the z component. */
-} RPGvec3;
-
-/**
- * @brief A structure encapsulating four single precision floating point values.
- */
-typedef struct {
-    RPGfloat x; /** The value of the x component. */
-    RPGfloat y; /** The value of the y component. */
-    RPGfloat z; /** The value of the z component. */
-    RPGfloat w; /** The value of the w component. */
-} RPGvec4;
-
-/**
- * @brief A structure encapsulating a 3x3 matrix.
- */
-typedef struct {
-    RPGfloat m11; /** Value at row 1, column 1 of the matrix. */
-    RPGfloat m12; /** Value at row 1, column 2 of the matrix. */
-    RPGfloat m13; /** Value at row 1, column 3 of the matrix. */
-    RPGfloat m21; /** Value at row 2, column 1 of the matrix. */
-    RPGfloat m22; /** Value at row 2, column 2 of the matrix. */
-    RPGfloat m23; /** Value at row 2, column 3 of the matrix. */
-    RPGfloat m31; /** Value at row 3, column 1 of the matrix. */
-    RPGfloat m32; /** Value at row 3, column 2 of the matrix. */
-    RPGfloat m33; /** Value at row 3, column 3 of the matrix. */
-} RPGmat3;
-
-/**
- * @brief A structure encapsulating a 4x4 matrix.
- */
-typedef struct {
-    RPGfloat m11; /** Value at row 1, column 1 of the matrix. */
-    RPGfloat m12; /** Value at row 1, column 2 of the matrix. */
-    RPGfloat m13; /** Value at row 1, column 3 of the matrix. */
-    RPGfloat m14; /** Value at row 1, column 4 of the matrix. */
-    RPGfloat m21; /** Value at row 2, column 1 of the matrix. */
-    RPGfloat m22; /** Value at row 2, column 2 of the matrix. */
-    RPGfloat m23; /** Value at row 2, column 3 of the matrix. */
-    RPGfloat m24; /** Value at row 2, column 4 of the matrix. */
-    RPGfloat m31; /** Value at row 3, column 1 of the matrix. */
-    RPGfloat m32; /** Value at row 3, column 2 of the matrix. */
-    RPGfloat m33; /** Value at row 3, column 3 of the matrix. */
-    RPGfloat m34; /** Value at row 3, column 4 of the matrix. */
-    RPGfloat m41; /** Value at row 4, column 1 of the matrix. */
-    RPGfloat m42; /** Value at row 4, column 2 of the matrix. */
-    RPGfloat m43; /** Value at row 4, column 3 of the matrix. */
-    RPGfloat m44; /** Value at row 4, column 4 of the matrix. */
-} RPGmat4;
-
-/**
- * @brief Represents a color in the RGBA colorspace, where each component is in the range of 0.0 to 1.0
- */
-typedef RPGvec4 RPGcolor;
-typedef RPGvec4 RPGtone;
-
-typedef struct {
-    RPGint width;
-    RPGint height;
-    void *pixels;
-} RPGrawimage;
-
-/**
- * @brief Describes a shape with four sides and four 90 degree angles.
- */
-typedef struct {
-    RPGint x; /** The location on the x-axis. */
-    RPGint y; /** The location on the y-axis. */
-    RPGint w; /** The dimension on the x-axis. */
-    RPGint h; /** The dimension on the y-axis. */
-} RPGrect;
-
 // Enums
 
 typedef enum {
@@ -489,6 +373,123 @@ typedef enum { RPG_INPUT_STATE_RELEASE, RPG_INPUT_STATE_PRESS, RPG_INPUT_STATE_R
 
 typedef enum { RPG_CURSOR_MODE_NORMAL, RPG_CURSOR_MODE_HIDDEN, RPG_CURSOR_MODE_DISABLED } RPG_CURSOR_MODE;
 
+// Primitive types // TODO: Group for types, sub-group for primitives, function protypes, enums, incomplete, complete, etc
+
+typedef uint8_t RPGbool;    /** A boolean type (32-bits), zero is false, otherwise non-zero is true */
+typedef int8_t RPGbyte;     /** Signed 8-bit integer (-128 to 127) */
+typedef int16_t RPGshort;   /** Signed 16-bit integer (-32,768 to 32,7677) */
+typedef int32_t RPGint;     /** Signed 32-bit integer (-2,147,483,648 to 2,147,483,647) */
+typedef int64_t RPGint64;   /** Signed 64-bit integer (-9,223,372,036,854,775,808 to 9,223,372,036,854,775,807) */
+typedef uint8_t RPGubyte;   /** Unsigned 8-bit integer (0 to 255) */
+typedef uint16_t RPGushort; /** Unsigned 16-bit integer (0 to 65,535) */
+typedef uint32_t RPGuint;   /** Unsigned 32-bit integer (0 to 4,294,967,295) */
+typedef uint64_t RPGuint64; /** Unsigned 64-bit integer (0 to 18,446,744,073,709,551,615) */
+typedef float RPGfloat;     /** Single-precision 32-bit floating point number with 6 decimal places of precision (1.2E-38 to 3.4E+38) */
+typedef double RPGdouble;   /** Double-precision 64-bit floating point number with 15 decimal places of precision (2.3E-308 to 1.7E+308) */
+typedef uint32_t RPGsize;   /** Unsigned 32-bit integer (0 to 4,294,967,295) */
+
+// Incomplete types
+
+typedef struct RPGrenderable RPGrenderable;
+typedef struct RPGbasic RPGbasic;
+typedef struct RPGsprite RPGsprite;
+typedef struct RPGviewport RPGviewport;
+typedef struct RPGplane RPGplane;
+typedef struct RPGgame RPGgame;
+typedef struct RPGimage RPGimage;
+typedef struct RPGfont RPGfont;
+typedef struct RPGshader RPGshader;
+typedef struct RPGtilemap RPGtilemap;
+
+// Complete types
+
+/**
+ * @brief A structure encapsulating two single precision floating point values
+ */
+typedef struct {
+    RPGfloat x; /** The value of the x component. */
+    RPGfloat y; /** The value of the y component. */
+} RPGvec2;
+
+/**
+ * @brief A structure encapsulating three single precision floating point values
+ */
+typedef struct {
+    RPGfloat x; /** The value of the x component. */
+    RPGfloat y; /** The value of the y component. */
+    RPGfloat z; /** The value of the z component. */
+} RPGvec3;
+
+/**
+ * @brief A structure encapsulating four single precision floating point values.
+ */
+typedef struct {
+    RPGfloat x; /** The value of the x component. */
+    RPGfloat y; /** The value of the y component. */
+    RPGfloat z; /** The value of the z component. */
+    RPGfloat w; /** The value of the w component. */
+} RPGvec4;
+
+/**
+ * @brief A structure encapsulating a 3x3 matrix.
+ */
+typedef struct {
+    RPGfloat m11; /** Value at row 1, column 1 of the matrix. */
+    RPGfloat m12; /** Value at row 1, column 2 of the matrix. */
+    RPGfloat m13; /** Value at row 1, column 3 of the matrix. */
+    RPGfloat m21; /** Value at row 2, column 1 of the matrix. */
+    RPGfloat m22; /** Value at row 2, column 2 of the matrix. */
+    RPGfloat m23; /** Value at row 2, column 3 of the matrix. */
+    RPGfloat m31; /** Value at row 3, column 1 of the matrix. */
+    RPGfloat m32; /** Value at row 3, column 2 of the matrix. */
+    RPGfloat m33; /** Value at row 3, column 3 of the matrix. */
+} RPGmat3;
+
+/**
+ * @brief A structure encapsulating a 4x4 matrix.
+ */
+typedef struct {
+    RPGfloat m11; /** Value at row 1, column 1 of the matrix. */
+    RPGfloat m12; /** Value at row 1, column 2 of the matrix. */
+    RPGfloat m13; /** Value at row 1, column 3 of the matrix. */
+    RPGfloat m14; /** Value at row 1, column 4 of the matrix. */
+    RPGfloat m21; /** Value at row 2, column 1 of the matrix. */
+    RPGfloat m22; /** Value at row 2, column 2 of the matrix. */
+    RPGfloat m23; /** Value at row 2, column 3 of the matrix. */
+    RPGfloat m24; /** Value at row 2, column 4 of the matrix. */
+    RPGfloat m31; /** Value at row 3, column 1 of the matrix. */
+    RPGfloat m32; /** Value at row 3, column 2 of the matrix. */
+    RPGfloat m33; /** Value at row 3, column 3 of the matrix. */
+    RPGfloat m34; /** Value at row 3, column 4 of the matrix. */
+    RPGfloat m41; /** Value at row 4, column 1 of the matrix. */
+    RPGfloat m42; /** Value at row 4, column 2 of the matrix. */
+    RPGfloat m43; /** Value at row 4, column 3 of the matrix. */
+    RPGfloat m44; /** Value at row 4, column 4 of the matrix. */
+} RPGmat4;
+
+/**
+ * @brief Represents a color in the RGBA colorspace, where each component is in the range of 0.0 to 1.0
+ */
+typedef RPGvec4 RPGcolor;
+typedef RPGvec4 RPGtone;
+
+typedef struct {
+    RPGint width;
+    RPGint height;
+    void *pixels;
+    RPG_PIXEL_FORMAT format;
+} RPGbitmap;
+
+/**
+ * @brief Describes a shape with four sides and four 90 degree angles.
+ */
+typedef struct {
+    RPGint x; /** The location on the x-axis. */
+    RPGint y; /** The location on the y-axis. */
+    RPGint w; /** The dimension on the x-axis. */
+    RPGint h; /** The dimension on the y-axis. */
+} RPGrect;
+
 // Function protoypes
 typedef void (*RPGupdatefunc)(RPGint64 time);
 typedef void (*RPGrenderfunc)(void *basic);
@@ -513,7 +514,7 @@ RPG_RESULT RPG_Game_GetBackColor(RPGgame *game, RPGcolor *color);
 RPG_RESULT RPG_Game_SetBackColor(RPGgame *game, RPGcolor *color);
 RPG_RESULT RPG_Game_GetResolution(RPGgame *game, RPGint *width, RPGint *height);
 RPG_RESULT RPG_Game_SetResolution(RPGgame *game, RPGint width, RPGint height);
-RPG_RESULT RPG_Game_SetIcon(RPGgame *game, RPGrawimage *image);
+RPG_RESULT RPG_Game_SetIcon(RPGgame *game, RPGbitmap *bitmap);
 RPG_RESULT RPG_Game_SetIconFromFile(RPGgame *game, const char *filename);
 RPG_RESULT RPG_Game_Snapshot(RPGgame *game, RPGimage **image);
 RPG_RESULT RPG_Game_Close(RPGgame *game, RPGbool close);
@@ -550,13 +551,17 @@ RPG_RESULT RPG_Game_SetMoveCallback(RPGgame *game, RPGmovefunc func);
 RPG_RESULT RPG_Game_SetResizeCallback(RPGgame *game, RPGsizefunc func);
 RPG_RESULT RPG_Game_Transition(RPGgame *game, RPGshader *shader, RPGint duration, RPGtransitionfunc func);
 
+// Bitmap
+RPG_RESULT RPG_Bitmap_CreateFromFile(const char *filename, RPGbitmap **bitmap);
+RPG_RESULT RPG_Bitmap_CreateFromBuffer(void *buffer, RPGsize size, RPGbitmap **bitmap);
+RPG_RESULT RPG_Bitmap_Free(RPGbitmap *bitmap);
+
 // Image
 RPG_RESULT RPG_Image_Create(RPGint width, RPGint height, const void *pixels, RPG_PIXEL_FORMAT format, RPGimage **image);
 RPG_RESULT RPG_Image_CreateEmpty(RPGint width, RPGint height, RPGimage **image);
 RPG_RESULT RPG_Image_CreateFilled(RPGint width, RPGint height, RPGcolor *color, RPGimage **image);
 RPG_RESULT RPG_Image_CreateFromFile(const char *filename, RPGimage **image);
 RPG_RESULT RPG_Image_Free(RPGimage *image);
-RPG_RESULT RPG_Image_LoadRaw(const char *filename, RPGrawimage **rawImage);
 RPG_RESULT RPG_Image_GetSize(RPGimage *image, RPGint *width, RPGint *height);
 RPG_RESULT RPG_Image_GetUserPointer(RPGimage *image, void **pointer);
 RPG_RESULT RPG_Image_SetUserPointer(RPGimage *image, void *pointer);
@@ -715,6 +720,13 @@ RPG_RESULT RPG_Tilemap_GetTileSize(RPGtilemap *tilemap, RPGint *width, RPGint *h
 RPG_RESULT RPG_Tilemap_Update(RPGtilemap *tilemap);
 RPG_RESULT RPG_Tilemap_GetOrigin(RPGtilemap *tilemap, RPGint *x, RPGint *y);
 RPG_RESULT RPG_Tilemap_SetOrigin(RPGtilemap *tilemap, RPGint x, RPGint y);
+RPG_RESULT RPG_Tilemap_GetLayerCount(RPGtilemap *tilemap, RPGint *count);
+RPG_RESULT RPG_Tilemap_GetLayerAlpha(RPGtilemap *tilemap, RPGint layer, RPGfloat *alpha);
+RPG_RESULT RPG_Tilemap_SetLayerAlpha(RPGtilemap *tilemap, RPGint layer, RPGfloat alpha);
+RPG_RESULT RPG_Tilemap_GetLayerVisible(RPGtilemap *tilemap, RPGint layer, RPGbool *visible);
+RPG_RESULT RPG_Tilemap_SetLayerVisible(RPGtilemap *tilemap, RPGint layer, RPGbool visible);
+RPG_RESULT RPG_Tilemap_GetLayerZ(RPGtilemap *tilemap, RPGint layer, RPGint *z);
+RPG_RESULT RPG_Tilemap_SetLayerZ(RPGtilemap *tilemap, RPGint layer, RPGint z);
 
 /**
  * @brief Pointer to the game whose context is current.

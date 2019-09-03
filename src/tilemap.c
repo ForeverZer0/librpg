@@ -3,22 +3,20 @@
 #include "tmx/tmx.h"
 #include <stdio.h>
 
-#define LAYER_Z_OFFSET 32
+#define RPG_LAYER_OFFSET 32
 
-static inline float getUV(float t, float dim)
-{
-    return (t + 0.5f) / dim;  // FIXME: Put in internal.h
-}
+/****************************************************************************************
+ * Type Definitions
+ ****************************************************************************************/
 
 typedef struct
 {
-    RPGint gid;
-    tmx_tile *tmx;
+    tmx_tile *tmx; /** The TMX format tile structure. */
     struct
     {
-        RPGubyte index;
-        RPGdouble delta;
-    } anime;
+        RPGubyte index;  /** The current animation frame index. */
+        RPGdouble delta; /** The target time when the next animation will occur. */
+    } anime;             /** Structure containing animation timing. */
 } RPGtile;
 
 // Tile Layer
@@ -34,7 +32,9 @@ typedef struct
 // Image Layer
 typedef struct
 {
-    int stuff;
+    RPGimage *image;
+    GLuint vao;
+    GLuint vbo;
 } RPGimagelayer;
 
 // Object Layer
@@ -84,6 +84,51 @@ typedef struct RPGtilemap
     void *user;
 } RPGtilemap;
 
+typedef struct
+{
+    RPGvec2 vertices[6];
+    RPGmat4 model;
+} RPGvertexdata;
+
+/****************************************************************************************
+ * Helper Functions
+ ****************************************************************************************/
+
+/**
+ * @brief Configures the vertex attributes for the currently bound VBO.
+ *
+ * @param program The tilemap's shader program.
+ * @param vao The vertex array object to configure.
+ */
+static void RPG_Tilemap_SetupVAO(GLuint program, GLuint vao)
+{
+    // Get the locations for the vertex and model attributes in the vertex shader
+    GLint vLoc = glGetAttribLocation(program, "vertex");
+    GLint mLoc = glGetAttribLocation(program, "model");
+
+    glBindVertexArray(vao);
+    for (int i = 0; i < 6; i++)
+    {
+        glEnableVertexAttribArray(vLoc + i);
+        glVertexAttribPointer(vLoc + i, 4, GL_FLOAT, GL_TRUE, 0, (void *) (sizeof(RPGvec2) * i));
+        glVertexAttribDivisor(vLoc + i, 1);
+    }
+
+    // Set four vec4 attribute locations to store as a 4x4 matrix
+    for (int i = 0; i < 4; i++)
+    {
+        glEnableVertexAttribArray(mLoc + i);
+        glVertexAttribPointer(mLoc + i, 4, GL_FLOAT, GL_TRUE, 0, (void *) ((sizeof(RPGvec2) * 6) + (sizeof(RPGvec4) * i)));
+        glVertexAttribDivisor(mLoc + i, 1);
+    }
+}
+
+/**
+ * @brief Load function for the TMX library to use for laoding resource images.
+ *
+ * @param path The path to the resource image.
+ * @return void* The created image.
+ */
 static void *RPG_Tilemap_ImageLoad(const char *path)
 {
     if (RPG_FILE_EXISTS(path))
@@ -97,8 +142,23 @@ static void *RPG_Tilemap_ImageLoad(const char *path)
     return NULL;
 }
 
+/**
+ * @brief Free function for the TMX library to use for freeing resource images.
+ *
+ * @param image A pointer to the image to free.
+ */
 static void RPG_Tilemap_ImageFree(void *image) { RPG_Image_Free(image); }
 
+/**
+ * @brief Sets up an array of vertex data for a VAO.
+ *
+ * @param l The normalized texture coordinate of the left side on the x-axis.
+ * @param t The normalized texture coordinate of the right side on the x-axis.
+ * @param r The normalized texture coordinate of the top side on the y-axis.
+ * @param b The normalized texture coordinate of the bottom side on the y-axis.
+ * @param gid The global ID of a tile, or 0 to ignore. Bit-flags for rotation/flipping will be honored.
+ * @param vertices The array of vertices the data will be written to.
+ */
 static void RPG_Tilemap_SetVertices(float l, float t, float r, float b, RPGint gid, RPGvec2 vertices[6])
 {
     // Determine placement of vertices based on flag set in GID
@@ -140,14 +200,18 @@ static void RPG_Tilemap_SetVertices(float l, float t, float r, float b, RPGint g
     }
 }
 
+/**
+ * @brief Creates and sets up the shader information for this tilemap.
+ *
+ * @param tilemap A pointer to the tilemap to configure shader for.
+ */
 static void RPG_Tilemap_CreateShader(RPGtilemap *tilemap)
 {
-
     RPGshader *shader;
-
     size_t s;
     char *tempv;
-    RPG_ReadFile("/home/eric/Desktop/rpg/tilemap.vert", &tempv, &s);
+
+    RPG_ReadFile("/home/eric/Desktop/rpg/tilemap.vert", &tempv, &s);  // FIXME: Embed in "assets.c"
     RPG_Shader_Create(tempv, RPG_FRAGMENT_SHADER, NULL, &shader);
     RPG_ASSERT(shader);
 
@@ -165,12 +229,23 @@ static void RPG_Tilemap_CreateShader(RPGtilemap *tilemap)
         RPG_FREE(tempv);
 }
 
+/****************************************************************************************
+ * Render Functions
+ ****************************************************************************************/
+
+/**
+ * @brief Renders a tile layer.
+ *
+ * @param layer A pointer to the layer, can be cast to an RPGlayer structure.
+ */
 static void RPG_Tilemap_RenderTileLayer(void *layer)
 {
     RPGlayer *l = (RPGlayer *) layer;
 
     glUseProgram(l->parent->shader.program);
     RPG_Drawing_SetBlending(l->parent->base.blend.op, l->parent->base.blend.src, l->parent->base.blend.dst);
+
+    glUniform1f(l->parent->shader.alpha, l->parent->base.alpha * (GLfloat) l->tmx->opacity);
 
     // Bind tileset texture
     RPG_Drawing_BindTexture(l->layer.tile->image->texture, GL_TEXTURE0);
@@ -179,13 +254,32 @@ static void RPG_Tilemap_RenderTileLayer(void *layer)
     glUseProgram(RPG_GAME->shader.program);
 }
 
-static void RPG_Tilemap_RenderImageLayer(void *layer) {
+/**
+ * @brief Renders an image layer.
+ *
+ * @param layer A pointer to the layer, can be cast to an RPGlayer structure.
+ */
+static void RPG_Tilemap_RenderImageLayer(void *layer)
+{
     RPGlayer *l = (RPGlayer *) layer;
-    glUseProgram(l->parent->shader.program);
 
+    glUseProgram(l->parent->shader.program);
+    RPG_Drawing_SetBlending(l->parent->base.blend.op, l->parent->base.blend.src, l->parent->base.blend.dst);
+
+    glUniform1f(l->parent->shader.alpha, l->parent->base.alpha * (GLfloat) l->tmx->opacity);
+
+    // Bind tileset texture
+    RPG_Drawing_BindTexture(l->layer.image->image->texture, GL_TEXTURE0);
+    glBindVertexArray(l->layer.image->vao);
+    glDrawArraysInstanced(GL_TRIANGLES, 0, 6, 6);
     glUseProgram(RPG_GAME->shader.program);
 }
 
+/**
+ * @brief Render function for a tilemap. Does not actually render, as layers are independent, only configures shader uniforms.
+ *
+ * @param tilemap A pointer to the RPGtilemap layer struct to render.
+ */
 static void RPG_Tilemap_Render(void *tilemap)
 {
     RPGtilemap *t = tilemap;
@@ -205,29 +299,27 @@ static void RPG_Tilemap_Render(void *tilemap)
         RPG_MAT4_ORTHO(t->base.model, 0.0f, RPG_GAME->resolution.width, RPG_GAME->resolution.height, 0.0f, -1.0f, 1.0f);
         // RPG_MAT4_ORTHO(t->base.model, 0.0f, w, h, 0.0f, -1.0f, 1.0f);
         // glUniformMatrix4fv(t->shader.projection, 1, GL_FALSE, (GLfloat *) &t->base.model);
-        glUniformMatrix4fv(t->shader.projection, 1, GL_FALSE, (GLfloat *) &RPG_GAME->projection);
+        glUniformMatrix4fv(t->shader.projection, 1, GL_FALSE, (GLfloat *) &RPG_GAME->projection);  // TODO: Update on resolution change?
 
         // Update any changes to the origin point and clear "dirty" flag
         glUniform2f(t->shader.origin, (float) t->base.ox, (float) t->base.oy);
         t->base.updated = RPG_FALSE;
     }
 
+    // Setup shared shader uniforms
     glUniform1f(t->shader.alpha, t->base.alpha);
-    glUniform4f(t->shader.color, 0.0f, 0.0f, 0.0f, 0.0f);
-    glUniform4f(t->shader.tone, 0.0f, 0.0f, 0.0f, 0.0f);
-    glUniform1f(t->shader.alpha, 1.0f);
-    glUniform1f(t->shader.hue, 0.0f);
-    glUniform4f(t->shader.flash, 0.0f, 0.0f, 0.0f, 0.0f);
+    glUniform4f(t->shader.color, t->base.color.x, t->base.color.y, t->base.color.z, t->base.color.w);
+    glUniform4f(t->shader.tone, t->base.tone.x, t->base.tone.y, t->base.tone.z, t->base.tone.w);
+    glUniform1f(t->shader.hue, t->base.hue);
+    glUniform4f(t->shader.flash, t->base.flash.color.x, t->base.flash.color.y, t->base.flash.color.z, t->base.flash.color.w);
 
     // No actual rendering, just update shader uniforms and ortho if needed
     glUseProgram(RPG_GAME->shader.program);
 }
 
-typedef struct
-{
-    RPGvec2 vertices[6];
-    RPGmat4 model;
-} TILE;
+/****************************************************************************************
+ * Initialization
+ ****************************************************************************************/
 
 static RPGtilelayer *RPG_Tilemap_CreateTileLayer(RPGtilemap *tilemap, tmx_map *map, tmx_layer *layer)
 {
@@ -239,20 +331,19 @@ static RPGtilelayer *RPG_Tilemap_CreateTileLayer(RPGtilemap *tilemap, tmx_map *m
     tilelayer->tiles        = RPG_MALLOC(sizeof(RPGtile) * tilelayer->tileCount);
     memset(tilelayer->tiles, 0, sizeof(RPGtile) * tilelayer->tileCount);
 
-    // Get the locations for the vertex and model attributes in the vertex shader
-    GLint vLoc = glGetAttribLocation(tilemap->shader.program, "vertex");
-    GLint mLoc = glGetAttribLocation(tilemap->shader.program, "model");
     RPGvec2 vertices[6];
 
     glGenVertexArrays(1, &tilelayer->vao);
     glGenBuffers(1, &tilelayer->vbo);
 
     glBindBuffer(GL_ARRAY_BUFFER, tilelayer->vbo);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(TILE) * tilelayer->tileCount, NULL, GL_DYNAMIC_DRAW);
-    TILE *ptr = glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(RPGvertexdata) * tilelayer->tileCount, NULL, GL_DYNAMIC_DRAW);
+    
+    RPGvertexdata *ptr = glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
 
     // Enumerate throught each tile coordinate in the map for this layer
     RPGuint index = 0;
+    RPGint count = 0;
     for (RPGuint mapY = 0; mapY < map->height; mapY++)
     {
         for (RPGuint mapX = 0; mapX < map->width; mapX++)
@@ -266,7 +357,7 @@ static RPGtilelayer *RPG_Tilemap_CreateTileLayer(RPGtilemap *tilemap, tmx_map *m
 
             if (gid == 0)
             {
-                memset(&ptr[index], 0, sizeof(TILE));
+                memset(&ptr[index], 0, sizeof(RPGvertexdata));
                 // Skip if there is no tile here
                 continue;
             }
@@ -281,10 +372,10 @@ static RPGtilelayer *RPG_Tilemap_CreateTileLayer(RPGtilemap *tilemap, tmx_map *m
                 fprintf(stderr, "only one tileset per layer is supported");
             }
 
-            GLfloat tl = getUV(tmxtile->ul_x, tilelayer->image->width);
-            GLfloat tt = getUV(tmxtile->ul_y, tilelayer->image->height);
-            GLfloat tr = getUV(tmxtile->ul_x + tmxtile->tileset->tile_width - 1, tilelayer->image->width);
-            GLfloat tb = getUV(tmxtile->ul_y + tmxtile->tileset->tile_height - 1, tilelayer->image->height);
+            GLfloat tl = RPG_Drawing_GetUV(tmxtile->ul_x, tilelayer->image->width);
+            GLfloat tt = RPG_Drawing_GetUV(tmxtile->ul_y, tilelayer->image->height);
+            GLfloat tr = RPG_Drawing_GetUV(tmxtile->ul_x + tmxtile->tileset->tile_width - 1, tilelayer->image->width);
+            GLfloat tb = RPG_Drawing_GetUV(tmxtile->ul_y + tmxtile->tileset->tile_height - 1, tilelayer->image->height);
             RPG_Tilemap_SetVertices(tl, tt, tr, tb, gid, vertices);
 
             memcpy(&ptr[index].vertices, vertices, sizeof(vertices));
@@ -292,32 +383,34 @@ static RPGtilelayer *RPG_Tilemap_CreateTileLayer(RPGtilemap *tilemap, tmx_map *m
                          mapX * map->tile_width, mapY * map->tile_height, 0.0f, 1.0f);
 
             // Store the info in the tile
-            tilelayer->tiles[index].gid = gid;
             tilelayer->tiles[index].tmx = tmxtile;
         }
     }
     glUnmapBuffer(GL_ARRAY_BUFFER);
 
-    glBindVertexArray(tilelayer->vao);
-
-    for (int i = 0; i < 6; i++)
-    {
-        glEnableVertexAttribArray(vLoc + i);
-        glVertexAttribPointer(vLoc + i, 4, GL_FLOAT, GL_TRUE, 0, (void *) (sizeof(RPGvec2) * i));
-        glVertexAttribDivisor(vLoc + i, 1);
-    }
-
-    // Set four vec4 attribute locations to store as a 4x4 matrix
-    for (int i = 0; i < 4; i++)
-    {
-        glEnableVertexAttribArray(mLoc + i);
-        glVertexAttribPointer(mLoc + i, 4, GL_FLOAT, GL_TRUE, 0, (void *) ((sizeof(RPGvec2) * 6) + (sizeof(RPGvec4) * i)));
-        glVertexAttribDivisor(mLoc + i, 1);
-    }
+    RPG_Tilemap_SetupVAO(tilemap->shader.program, tilelayer->vao);
     return tilelayer;
 }
 
-static RPGimagelayer *RPG_Tilemap_CreateImageLayer(tmx_map *map, tmx_layer *layer) { return NULL; }
+static RPGimagelayer *RPG_Tilemap_CreateImageLayer(RPGtilemap *tilemap, tmx_layer *layer)
+{
+
+    RPGimagelayer *l = RPG_ALLOC(RPGimagelayer);
+    l->image         = layer->content.image->resource_image;
+    RPG_ASSERT(l->image);
+
+    RPGvertexdata obj;
+    RPG_Tilemap_SetVertices(0.0f, 0.0f, 1.0f, 1.0f, 0, obj.vertices);
+    RPG_MAT4_SET(obj.model, l->image->width, 0, 0, 0, 0, l->image->height, 0, 0, 0, 0, 1.0f, 0, layer->offsetx, layer->offsety, 0, 1.0f);
+
+    glGenVertexArrays(1, &l->vao);
+    glGenBuffers(1, &l->vbo);
+    glBindBuffer(GL_ARRAY_BUFFER, l->vbo);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(RPGvertexdata), &obj, GL_STATIC_DRAW);
+
+    RPG_Tilemap_SetupVAO(tilemap->shader.program, l->vao);
+    return l;
+}
 
 static RPGobjectlayer *RPG_Tilemap_CreateObjectLayer(tmx_map *map, tmx_layer *layer) { return NULL; }
 
@@ -340,9 +433,9 @@ static void RPG_Tilemap_Initialize(tmx_map *map, RPGviewport *viewport, RPGtilem
     int index = 0;
     for (tmx_layer *layer = map->ly_head; layer != NULL; layer = layer->next, index++)
     {
-        RPG_ALLOC_ZERO(base, RPGlayer);   
-        base->type     = layer->type;
-        base->tmx      = layer;   
+        RPG_ALLOC_ZERO(base, RPGlayer);
+        base->type = layer->type;
+        base->tmx  = layer;
         switch (layer->type)
         {
             case L_LAYER:
@@ -353,7 +446,7 @@ static void RPG_Tilemap_Initialize(tmx_map *map, RPGviewport *viewport, RPGtilem
             }
             case L_IMAGE:
             {
-                base->layer.image = RPG_Tilemap_CreateImageLayer(map, layer);
+                base->layer.image = RPG_Tilemap_CreateImageLayer(tm, layer);
                 RPG_Renderable_Init(&base->renderable, RPG_Tilemap_RenderImageLayer, batch);
                 break;
             }
@@ -373,15 +466,15 @@ static void RPG_Tilemap_Initialize(tmx_map *map, RPGviewport *viewport, RPGtilem
                 break;
             }
         }
-        base->parent = tm;
+        base->parent             = tm;
         base->renderable.visible = (RPGbool) layer->visible;
+        base->renderable.z       = index * RPG_LAYER_OFFSET;
         RPG_Batch_Add(&tm->layers, &base->renderable);
     }
-
     *tilemap = tm;
 }
 
-tmx_resource_manager *TEST;
+tmx_resource_manager *TEST;  // FIXME:
 
 RPG_RESULT RPG_Tilemap_Create(const void *buffer, RPGsize size, RPGviewport *viewport, RPGtilemap **tilemap)
 {
@@ -436,14 +529,18 @@ RPG_RESULT RPG_Tilemap_Free(RPGtilemap *tilemap)
     return RPG_NO_ERROR;
 }
 
-void RPG_Tilemap_UpdateTileLayer(RPGtilemap *map, RPGtilelayer *layer, tmx_layer *tmx)
+/****************************************************************************************
+ * Updating
+ ****************************************************************************************/
+
+static void RPG_Tilemap_UpdateTileLayer(RPGtilemap *map, RPGtilelayer *layer, tmx_layer *tmx)
 {
 
     // Declare variable storage;
     tmx_tile *next;
     tmx_anim_frame *frame;
     RPGtile *tile;
-    TILE *ptr;
+    RPGvertexdata *ptr;
     RPGbool bound = RPG_FALSE;
 
     // Get the current time
@@ -464,10 +561,10 @@ void RPG_Tilemap_UpdateTileLayer(RPGtilemap *map, RPGtilelayer *layer, tmx_layer
             next              = &tile->tmx->tileset->tiles[frame->tile_id];
 
             // left/top/right/bottom in normalized texture coordinates
-            GLfloat l = getUV(next->ul_x, layer->image->width);
-            GLfloat t = getUV(next->ul_y, layer->image->height);
-            GLfloat r = getUV(next->ul_x + next->tileset->tile_width - 1, layer->image->width);
-            GLfloat b = getUV(next->ul_y + next->tileset->tile_height - 1, layer->image->height);
+            GLfloat l = RPG_Drawing_GetUV(next->ul_x, layer->image->width);
+            GLfloat t = RPG_Drawing_GetUV(next->ul_y, layer->image->height);
+            GLfloat r = RPG_Drawing_GetUV(next->ul_x + next->tileset->tile_width - 1, layer->image->width);
+            GLfloat b = RPG_Drawing_GetUV(next->ul_y + next->tileset->tile_height - 1, layer->image->height);
 
             // Buffer the new data, and set the next target time for an animation
             tile->anime.delta = time + (frame->duration * 0.001);
@@ -493,11 +590,12 @@ void RPG_Tilemap_UpdateTileLayer(RPGtilemap *map, RPGtilelayer *layer, tmx_layer
 RPG_RESULT RPG_Tilemap_Update(RPGtilemap *tilemap)
 {
     RPG_RETURN_IF_NULL(tilemap);
+    RPG_BasicSprite_Update(&tilemap->base);
 
     RPGlayer *layer;
     for (RPGuint i = 0; i < tilemap->layers.total; i++)
     {
-        layer = (RPGlayer*) tilemap->layers.items[i];
+        layer = (RPGlayer *) tilemap->layers.items[i];
         if (layer->type == L_LAYER)
         {
             RPG_Tilemap_UpdateTileLayer(tilemap, layer->layer.tile, layer->tmx);
@@ -506,6 +604,10 @@ RPG_RESULT RPG_Tilemap_Update(RPGtilemap *tilemap)
 
     return RPG_NO_ERROR;
 }
+
+/****************************************************************************************
+ * Public Getters/Setters
+ ****************************************************************************************/
 
 RPG_RESULT RPG_Tilemap_GetSize(RPGtilemap *tilemap, RPGint *width, RPGint *height)
 {
@@ -568,5 +670,92 @@ RPG_RESULT RPG_Tilemap_SetOrigin(RPGtilemap *tilemap, RPGint x, RPGint y)
         tilemap->base.oy      = y;
         tilemap->base.updated = RPG_TRUE;
     }
+    return RPG_NO_ERROR;
+}
+
+RPG_RESULT RPG_Tilemap_GetLayerCount(RPGtilemap *tilemap, RPGint *count)
+{
+    RPG_RETURN_IF_NULL(tilemap);
+    if (count != NULL)
+    {
+        *count = tilemap->layers.total;
+    }
+    return RPG_NO_ERROR;
+}
+
+RPG_RESULT RPG_Tilemap_GetLayerAlpha(RPGtilemap *tilemap, RPGint layer, RPGfloat *alpha)
+{
+    RPG_RETURN_IF_NULL(tilemap);
+    if (layer < 0 || layer >= tilemap->layers.total)
+    {
+        return RPG_ERR_OUT_OF_RANGE;
+    }
+    if (alpha != NULL)
+    {
+        RPGlayer *l = (RPGlayer *) tilemap->layers.items[layer];
+        *alpha      = (RPGfloat) l->tmx->opacity;
+    }
+    return RPG_NO_ERROR;
+}
+
+RPG_RESULT RPG_Tilemap_SetLayerAlpha(RPGtilemap *tilemap, RPGint layer, RPGfloat alpha)
+{
+    RPG_RETURN_IF_NULL(tilemap);
+    if (layer < 0 || layer >= tilemap->layers.total)
+    {
+        return RPG_ERR_OUT_OF_RANGE;
+    }
+    RPGlayer *l     = (RPGlayer *) tilemap->layers.items[layer];
+    l->tmx->opacity = RPG_CLAMPF(alpha, 0.0f, 1.0f);
+    return RPG_NO_ERROR;
+}
+
+RPG_RESULT RPG_Tilemap_GetLayerVisible(RPGtilemap *tilemap, RPGint layer, RPGbool *visible)
+{
+    RPG_RETURN_IF_NULL(tilemap);
+    if (layer < 0 || layer >= tilemap->layers.total)
+    {
+        return RPG_ERR_OUT_OF_RANGE;
+    }
+    if (visible != NULL)
+    {
+        *visible = tilemap->layers.items[layer]->visible;
+    }
+    return RPG_NO_ERROR;
+}
+
+RPG_RESULT RPG_Tilemap_SetLayerVisible(RPGtilemap *tilemap, RPGint layer, RPGbool visible)
+{
+    RPG_RETURN_IF_NULL(tilemap);
+    if (layer < 0 || layer >= tilemap->layers.total)
+    {
+        return RPG_ERR_OUT_OF_RANGE;
+    }
+    tilemap->layers.items[layer]->visible = visible;
+    return RPG_NO_ERROR;
+}
+
+RPG_RESULT RPG_Tilemap_GetLayerZ(RPGtilemap *tilemap, RPGint layer, RPGint *z)
+{
+    RPG_RETURN_IF_NULL(tilemap);
+    if (layer < 0 || layer >= tilemap->layers.total)
+    {
+        return RPG_ERR_OUT_OF_RANGE;
+    }
+    if (z != NULL)
+    {
+        *z = tilemap->layers.items[layer]->z;
+    }
+    return RPG_NO_ERROR;
+}
+
+RPG_RESULT RPG_Tilemap_SetLayerZ(RPGtilemap *tilemap, RPGint layer, RPGint z)
+{
+    RPG_RETURN_IF_NULL(tilemap);
+    if (layer < 0 || layer >= tilemap->layers.total)
+    {
+        return RPG_ERR_OUT_OF_RANGE;
+    }
+    tilemap->layers.items[layer]->z = z;
     return RPG_NO_ERROR;
 }

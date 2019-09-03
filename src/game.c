@@ -12,7 +12,6 @@ static void RPG_Game_FramebufferResize(GLFWwindow *window, int width, int height
 
     if ((g->flags & RPG_INIT_AUTO_ASPECT) != 0)
     {
-
         // Calculate ratios
         g->bounds.ratio.x = (GLfloat) width / g->resolution.width;
         g->bounds.ratio.y = (GLfloat) height / g->resolution.height;
@@ -410,12 +409,12 @@ RPG_RESULT RPG_Game_Render(RPGgame *game)
     return RPG_NO_ERROR;
 }
 
-RPG_RESULT RPG_Game_SetIcon(RPGgame *game, RPGrawimage *image)
+RPG_RESULT RPG_Game_SetIcon(RPGgame *game, RPGbitmap *bitmap)
 {
     RPG_RETURN_IF_NULL(game);
-    if (image)
+    if (bitmap)
     {
-        glfwSetWindowIcon(game->window, 1, (GLFWimage *) image);
+        glfwSetWindowIcon(game->window, 1, (GLFWimage *) bitmap);
     }
     else
     {
@@ -430,7 +429,7 @@ RPG_RESULT RPG_Game_SetIconFromFile(RPGgame *game, const char *filename)
     if (filename)
     {
         GLFWimage *img;
-        RPG_RESULT result = RPG_Image_LoadRaw(filename, (RPGrawimage **) &img);
+        RPG_RESULT result = RPG_Bitmap_CreateFromFile(filename, (RPGbitmap **) &img);
         if (result == RPG_NO_ERROR)
         {
             glfwSetWindowIcon(game->window, 1, img);

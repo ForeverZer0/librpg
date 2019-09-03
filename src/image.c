@@ -25,6 +25,66 @@ GLuint blitVBO;
 GLuint blitVAO;
 mtx_t vaoMutex;
 
+/****************************************************************************************
+ * Bitmap
+ ****************************************************************************************/
+
+RPG_RESULT RPG_Bitmap_CreateFromFile(const char *filename, RPGbitmap **bitmap)
+{
+    RPG_RETURN_IF_NULL(filename);
+    RPG_RETURN_IF_NULL(bitmap);
+    RPG_ENSURE_FILE(filename);
+    RPGbitmap *bmp = RPG_ALLOC(RPGbitmap);
+
+    bmp->pixels = stbi_load(filename, &bmp->width, &bmp->height, NULL, 4);
+    if (bmp->pixels == NULL)
+    {
+        RPG_FREE(bmp);
+        return RPG_ERR_IMAGE_LOAD;
+    }
+    bmp->format = RPG_PIXEL_FORMAT_RGBA;
+    *bitmap = bmp;
+    return RPG_NO_ERROR;
+}
+
+RPG_RESULT RPG_Bitmap_CreateFromBuffer(void *buffer, RPGsize size, RPGbitmap **bitmap) 
+{
+    RPG_RETURN_IF_NULL(buffer);
+    RPG_RETURN_IF_NULL(bitmap);
+    if (size > 0)
+    {
+        RPGbitmap *bmp = RPG_ALLOC(RPGbitmap);
+        bmp->pixels = stbi_load_from_memory(buffer, (int) size, &bmp->width, &bmp->height, NULL, 4);
+        if (bmp->pixels == NULL)
+        {
+            RPG_FREE(bmp);
+            *bitmap = NULL;
+            return RPG_ERR_IMAGE_LOAD;
+        }
+        bmp->format = RPG_PIXEL_FORMAT_RGBA;
+        *bitmap = bmp;
+        return RPG_NO_ERROR;
+    }
+    *bitmap = NULL;
+    return RPG_NO_ERROR;
+}
+
+RPG_RESULT RPG_Bitmap_Free(RPGbitmap *bitmap) 
+{
+    if (bitmap != NULL) {
+        if (bitmap->pixels != NULL) 
+        {
+            stbi_image_free(bitmap->pixels);
+        }
+        RPG_FREE(bitmap);
+    }
+    return RPG_NO_ERROR;
+}
+
+/****************************************************************************************
+ * Image (OpenGL texture)
+ ****************************************************************************************/
+
 RPG_RESULT RPG_Image_Create(RPGint width, RPGint height, const void *pixels, RPG_PIXEL_FORMAT format, RPGimage **image)
 {
     RPG_CHECK_DIMENSIONS(width, height);
@@ -99,23 +159,6 @@ RPG_RESULT RPG_Image_Free(RPGimage *image)
 
 DEF_GETTER(Image, Texture, RPGimage, RPGuint, texture)
 DEF_GETTER(Image, Framebuffer, RPGimage, RPGuint, fbo)
-
-RPG_RESULT RPG_Image_LoadRaw(const char *filename, RPGrawimage **rawImage)
-{
-    RPG_RETURN_IF_NULL(filename);
-    RPG_ENSURE_FILE(filename);
-    RPGrawimage *img = RPG_ALLOC(RPGrawimage);
-
-    img->pixels = stbi_load(filename, &img->width, &img->height, NULL, 4);
-    if (img->pixels == NULL)
-    {
-        RPG_FREE(img);
-        return RPG_ERR_IMAGE_LOAD;
-    }
-    // FIXME: Require user allocated memory LoadRaw, get rid of raw image struct? Or RPG_Image_FreeRaw
-    *rawImage = img;
-    return RPG_NO_ERROR;
-}
 
 RPG_RESULT RPG_Image_GetSize(RPGimage *image, RPGint *width, RPGint *height)
 {

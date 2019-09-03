@@ -594,6 +594,11 @@ GLenum _op;
 GLenum _srcFactor;
 GLenum _dstFactor;
 
+static inline float RPG_Drawing_GetUV(float t, float dim)
+{
+    return (t + 0.5f) / dim;
+}
+
 static inline void RPG_Drawing_BindTexture(GLuint texture, GLenum unit)
 {
     if (unit != _unit)
