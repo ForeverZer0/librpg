@@ -3,7 +3,7 @@
 static void RPG_Plane_Render(void *plane)
 {
     RPGplane *p = plane;
-    if (!p->base.visible || p->base.alpha < __FLT_EPSILON__ || p->image == NULL)
+    if (!p->base.renderable.visible || p->base.alpha < __FLT_EPSILON__ || p->image == NULL)
     {
         return;
     }
@@ -53,7 +53,7 @@ RPG_RESULT RPG_Plane_Create(RPGviewport *viewport, RPGplane **plane)
 {
     RPG_ALLOC_ZERO(p, RPGplane);
     RPGbatch *batch = viewport ? &viewport->batch : &RPG_GAME->batch;
-    RPG_Renderable_Init(&p->base, RPG_Plane_Render, batch);
+    RPG_BasicSprite_Init(&p->base, RPG_Plane_Render, batch);
 
     // Set initial values
     if (viewport)
@@ -95,10 +95,8 @@ RPG_RESULT RPG_Plane_Create(RPGviewport *viewport, RPGplane **plane)
 RPG_RESULT RPG_Plane_Free(RPGplane *plane)
 {
     RPG_RETURN_IF_NULL(plane);
-    if (plane->base.parent)
-    {
-        RPG_Batch_DeleteItem(plane->base.parent, &plane->base);
-    }
+    RPG_Renderable_Free(&plane->base.renderable);
+
     glDeleteVertexArrays(1, &plane->vao);
     glDeleteBuffers(1, &plane->vbo);
     glDeleteSamplers(1, &plane->sampler);

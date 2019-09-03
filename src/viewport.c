@@ -57,7 +57,7 @@ RPG_RESULT RPG_Viewport_Create(RPGint x, RPGint y, RPGint width, RPGint height, 
 
     // Allocate a new viewport object, and initialize fields
     RPG_ALLOC_ZERO(v, RPGviewport);
-    RPG_Renderable_Init(&v->base, RPG_Viewport_Render, &RPG_GAME->batch);
+    RPG_BasicSprite_Init(&v->base, RPG_Viewport_Render, &RPG_GAME->batch);
     RPG_Batch_Init(&v->batch);
 
     // Set dimensions
@@ -166,10 +166,10 @@ RPG_RESULT RPG_Viewport_SetOrigin(RPGviewport *viewport, RPGint x, RPGint y)
     {
         viewport->base.ox = x;
         viewport->base.oy = y;
-        RPGrenderable *r;
+        RPGbasic *r;
         for (int i = 0; i < viewport->batch.total; i++)
         {
-            r          = viewport->batch.items[0];
+            r = (RPGbasic*) viewport->batch.items[0];
             r->updated = RPG_TRUE;
         }
     }
@@ -179,8 +179,7 @@ RPG_RESULT RPG_Viewport_SetOrigin(RPGviewport *viewport, RPGint x, RPGint y)
 RPG_RESULT RPG_Viewport_Free(RPGviewport *viewport)
 {
     RPG_RETURN_IF_NULL(viewport);
-    // Remove from parent
-    RPG_Batch_DeleteItem(viewport->base.parent, &viewport->base);
+    RPG_Renderable_Free(&viewport->base.renderable);
     // Free batch
     RPG_Batch_Free(&viewport->batch);
     // Delete VAO/VBO

@@ -58,6 +58,7 @@ typedef uint32_t RPGsize;   /** Unsigned 32-bit integer (0 to 4,294,967,295) */
 // Incomplete types
 
 typedef struct RPGrenderable RPGrenderable;
+typedef struct RPGbasic RPGbasic;
 typedef struct RPGsprite RPGsprite;
 typedef struct RPGviewport RPGviewport;
 typedef struct RPGplane RPGplane;
@@ -490,7 +491,7 @@ typedef enum { RPG_CURSOR_MODE_NORMAL, RPG_CURSOR_MODE_HIDDEN, RPG_CURSOR_MODE_D
 
 // Function protoypes
 typedef void (*RPGupdatefunc)(RPGint64 time);
-typedef void (*RPGrenderfunc)(void *renderable);
+typedef void (*RPGrenderfunc)(void *basic);
 typedef void (*RPGkeyfunc)(RPGgame *game, RPG_KEY key, int scancode, RPG_INPUT_STATE state, RPG_MODKEY mods);
 typedef void (*RPGmbuttonfunc)(RPGgame *game, RPG_MBUTTON button, RPG_INPUT_STATE state, RPG_MODKEY mods);
 typedef void (*RPGcursorfunc)(RPGgame *game, RPGdouble x, RPGdouble y);
@@ -571,33 +572,36 @@ RPG_RESULT RPG_Image_SetPixel(RPGimage *image, RPGint x, RPGint y, RPGcolor *col
 RPG_RESULT RPG_Image_GetPixels(RPGimage *image, void *buffer, RPGsize sizeBuffer);
 RPG_RESULT RPG_Image_Save(RPGimage *image, const char *filename, RPG_IMAGE_FORMAT format, RPGfloat quality);
 
-// Renderable (base for Sprite, Viewport, Plane)
-RPG_RESULT RPG_Renderable_Update(RPGrenderable *renderable);
+// Renderable
 RPG_RESULT RPG_Renderable_GetZ(RPGrenderable *renderable, RPGint *z);
 RPG_RESULT RPG_Renderable_SetZ(RPGrenderable *renderable, RPGint z);
 RPG_RESULT RPG_Renderable_GetVisible(RPGrenderable *renderable, RPGbool *visible);
 RPG_RESULT RPG_Renderable_SetVisible(RPGrenderable *renderable, RPGbool visible);
-RPG_RESULT RPG_Renderable_GetAlpha(RPGrenderable *renderable, RPGfloat *alpha);
-RPG_RESULT RPG_Renderable_SetAlpha(RPGrenderable *renderable, RPGfloat alpha);
-RPG_RESULT RPG_Renderable_GetHue(RPGrenderable *renderable, RPGfloat *hue);
-RPG_RESULT RPG_Renderable_SetHue(RPGrenderable *renderable, RPGfloat hue);
-RPG_RESULT RPG_Renderable_GetColor(RPGrenderable *renderable, RPGcolor *color);
-RPG_RESULT RPG_Renderable_SetColor(RPGrenderable *renderable, RPGcolor *color);
-RPG_RESULT RPG_Renderable_GetTone(RPGrenderable *renderable, RPGcolor *tone);
-RPG_RESULT RPG_Renderable_SetTone(RPGrenderable *renderable, RPGcolor *tone);
-RPG_RESULT RPG_Renderable_GetScale(RPGrenderable *renderable, RPGfloat *x, RPGfloat *y);
-RPG_RESULT RPG_Renderable_SetScale(RPGrenderable *renderable, RPGfloat x, RPGfloat y);
-RPG_RESULT RPG_Renderable_GetRotation(RPGrenderable *renderable, RPGfloat *degrees, RPGint *anchorX, RPGint *anchorY);
-RPG_RESULT RPG_Renderable_SetRotation(RPGrenderable *renderable, RPGfloat degrees, RPGint anchorX, RPGint anchorY);
-RPG_RESULT RPG_Renderable_GetUserPointer(RPGrenderable *renderable, void **user);
-RPG_RESULT RPG_Renderable_SetUserPointer(RPGrenderable *renderable, void *user);
-RPG_RESULT RPG_Renderable_GetBlendMode(RPGrenderable *renderable, RPG_BLEND *src, RPG_BLEND *dst, RPG_BLEND_OP *op);
-RPG_RESULT RPG_Renderable_SetBlendMode(RPGrenderable *renderable, RPG_BLEND src, RPG_BLEND dst, RPG_BLEND_OP op);
-RPG_RESULT RPG_Renderable_GetFlash(RPGrenderable *renderable, RPGcolor *color, RPGubyte *duration);
-RPG_RESULT RPG_Renderable_SetFlash(RPGrenderable *renderable, RPGcolor *color, RPGubyte duration);
-RPG_RESULT RPG_Renderable_GetLocation(RPGrenderable *renderable, RPGint *x, RPGint *y);
-RPG_RESULT RPG_Renderable_SetLocation(RPGrenderable *renderable, RPGint x, RPGint y);
 RPG_RESULT RPG_Renderable_SetRenderFunc(RPGrenderable *renderable, RPGrenderfunc func);
+RPG_RESULT RPG_Renderable_Free(RPGrenderable *renderable);
+
+// BasicSprite (base for Sprite, Viewport, Plane)
+RPG_RESULT RPG_BasicSprite_Update(RPGbasic *basic);
+RPG_RESULT RPG_BasicSprite_GetAlpha(RPGbasic *basic, RPGfloat *alpha);
+RPG_RESULT RPG_BasicSprite_SetAlpha(RPGbasic *basic, RPGfloat alpha);
+RPG_RESULT RPG_BasicSprite_GetHue(RPGbasic *basic, RPGfloat *hue);
+RPG_RESULT RPG_BasicSprite_SetHue(RPGbasic *basic, RPGfloat hue);
+RPG_RESULT RPG_BasicSprite_GetColor(RPGbasic *basic, RPGcolor *color);
+RPG_RESULT RPG_BasicSprite_SetColor(RPGbasic *basic, RPGcolor *color);
+RPG_RESULT RPG_BasicSprite_GetTone(RPGbasic *basic, RPGcolor *tone);
+RPG_RESULT RPG_BasicSprite_SetTone(RPGbasic *basic, RPGcolor *tone);
+RPG_RESULT RPG_BasicSprite_GetScale(RPGbasic *basic, RPGfloat *x, RPGfloat *y);
+RPG_RESULT RPG_BasicSprite_SetScale(RPGbasic *basic, RPGfloat x, RPGfloat y);
+RPG_RESULT RPG_BasicSprite_GetRotation(RPGbasic *basic, RPGfloat *degrees, RPGint *anchorX, RPGint *anchorY);
+RPG_RESULT RPG_BasicSprite_SetRotation(RPGbasic *basic, RPGfloat degrees, RPGint anchorX, RPGint anchorY);
+RPG_RESULT RPG_BasicSprite_GetUserPointer(RPGbasic *basic, void **user);
+RPG_RESULT RPG_BasicSprite_SetUserPointer(RPGbasic *basic, void *user);
+RPG_RESULT RPG_BasicSprite_GetBlendMode(RPGbasic *basic, RPG_BLEND *src, RPG_BLEND *dst, RPG_BLEND_OP *op);
+RPG_RESULT RPG_BasicSprite_SetBlendMode(RPGbasic *basic, RPG_BLEND src, RPG_BLEND dst, RPG_BLEND_OP op);
+RPG_RESULT RPG_BasicSprite_GetFlash(RPGbasic *basic, RPGcolor *color, RPGubyte *duration);
+RPG_RESULT RPG_BasicSprite_SetFlash(RPGbasic *basic, RPGcolor *color, RPGubyte duration);
+RPG_RESULT RPG_BasicSprite_GetLocation(RPGbasic *basic, RPGint *x, RPGint *y);
+RPG_RESULT RPG_BasicSprite_SetLocation(RPGbasic *basic, RPGint x, RPGint y);
 
 // Sprite
 RPG_RESULT RPG_Sprite_Create(RPGviewport *viewport, RPGsprite **sprite);

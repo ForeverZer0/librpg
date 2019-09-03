@@ -3,7 +3,7 @@
 static void RPG_Sprite_Render(void *sprite)
 {
     RPGsprite *s = sprite;
-    if (!s->base.visible || s->base.alpha < __FLT_EPSILON__ || s->image == NULL)
+    if (!s->base.renderable.visible || s->base.alpha < __FLT_EPSILON__ || s->image == NULL)
     {
         // No-op if sprite won't be visible
         return;
@@ -33,10 +33,7 @@ static void RPG_Sprite_Render(void *sprite)
 RPG_RESULT RPG_Sprite_Free(RPGsprite *sprite)
 {
     RPG_RETURN_IF_NULL(sprite);
-    if (sprite->base.parent)
-    {
-        RPG_Batch_DeleteItem(sprite->base.parent, &sprite->base);
-    }
+    RPG_Renderable_Free(&sprite->base.renderable);
     glDeleteVertexArrays(1, &sprite->vao);
     glDeleteBuffers(1, &sprite->vbo);
     RPG_FREE(sprite);
@@ -47,7 +44,7 @@ RPG_RESULT RPG_Sprite_Create(RPGviewport *viewport, RPGsprite **sprite)
 {
     RPG_ALLOC_ZERO(s, RPGsprite);
     RPGbatch *batch = viewport ? &viewport->batch : &RPG_GAME->batch;
-    RPG_Renderable_Init(&s->base, RPG_Sprite_Render, batch);
+    RPG_BasicSprite_Init(&s->base, RPG_Sprite_Render, batch);
 
     // Generate VAO/VBO
     glGenVertexArrays(1, &s->vao);

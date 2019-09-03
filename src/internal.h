@@ -410,18 +410,25 @@ typedef struct RPGshader
     void *user;
 } RPGshader;
 
+typedef struct RPGrenderable
+{
+    RPGint z;             /** The position of the sprite on the z-axis. */
+    RPGbatch *parent;     /** Pointer to the rendering batch the object is contained within */
+    RPGrenderfunc render; /** The function to call when the object needs rendered. */
+    RPGbool visible;      /** Flag indicating if object should be rendered. */
+} RPGrenderable;
+
 /**
  * @brief Base structure for objects that can be rendered.
  */
-typedef struct RPGrenderable
+typedef struct RPGbasic
 {
+    RPGrenderable renderable;
     RPGint x;        /** The location of the sprite on the x-axis. */
     RPGint y;        /** The location of the sprite on the y-axis. */
-    RPGint z;        /** The position of the sprite on the z-axis. */
     RPGint ox;       /** The origin point on the x-axis, context-dependent definition. */
     RPGint oy;       /** The origin point on the y-axis, context-dependent definition. */
     RPGbool updated; /** Flag indicating if the model matrix needs updated to reflect changes. */
-    RPGbool visible; /** Flag indicating if object should be rendered. */
     RPGfloat alpha;  /** The opacity level to be rendered at in the range of 0.0 to 1.0. */
     RPGcolor color;  /** The color to blended when rendered. */
     RPGtone tone;    /** The tone to apply when rendered. */
@@ -440,22 +447,20 @@ typedef struct RPGrenderable
     } rotation;
     struct
     {
-        RPG_BLEND_OP op;  /** The equation used for combining the source and destination factors. */
-        RPG_BLEND src;    /** The factor to be used for the source pixel color. */
-        RPG_BLEND dst;    /** The factor ot used for the destination pixel color. */
-    } blend;              /** The blending factors to apply during rendering. */
-    RPGrenderfunc render; /** The function to call when the object needs rendered. */
-    RPGmat4 model;        /** The model matrix for the object. */
-    RPGbatch *parent;     /** Pointer to the rendering batch the object is contained within */
-    void *user;           /** Arbitrary user-defined pointer to store with this instance */
-} RPGrenderable;
+        RPG_BLEND_OP op; /** The equation used for combining the source and destination factors. */
+        RPG_BLEND src;   /** The factor to be used for the source pixel color. */
+        RPG_BLEND dst;   /** The factor ot used for the destination pixel color. */
+    } blend;             /** The blending factors to apply during rendering. */
+    RPGmat4 model;       /** The model matrix for the object. */
+    void *user;          /** Arbitrary user-defined pointer to store with this instance */
+} RPGbasic;
 
 /**
  * @brief Contains the information required to render an arbitrary image on-screen.
  */
 typedef struct RPGsprite
 {
-    RPGrenderable base;    /** The base renderable object, MUST BE FIRST FIELD IN THE STRUCTURE! */
+    RPGbasic base;         /** The base sprite object, MUST BE FIRST FIELD IN THE STRUCTURE! */
     RPGimage *image;       /** A pointer ot the sprite's image, or NULL. */
     RPGviewport *viewport; /** A pointer to the sprite's viewport, or NULL. */
     RPGrect rect;          /** The source rectangle of the sprite's image. */
@@ -468,7 +473,7 @@ typedef struct RPGsprite
  */
 typedef struct RPGviewport
 {
-    RPGrenderable base; /** The base renderable object, MUST BE FIRST FIELD IN THE STRUCTURE! */
+    RPGbasic base;      /** The base sprite object, MUST BE FIRST FIELD IN THE STRUCTURE! */
     RPGint width;       /** The dimension of the viewport, in pixels, on the x-axis. */
     RPGint height;      /** The dimension of the viewport, in pixels, on the y-axis. */
     RPGbatch batch;     /** A collection containing pointers to the sprites within this viewport. */
@@ -484,7 +489,7 @@ typedef struct RPGviewport
  */
 typedef struct RPGplane
 {
-    RPGrenderable base;    /** The base renderable object, MUST BE FIRST FIELD IN THE STRUCTURE! */
+    RPGbasic base;         /** The base sprite object, MUST BE FIRST FIELD IN THE STRUCTURE! */
     RPGimage *image;       /** A pointer ot the sprite's image, or NULL. */
     RPGviewport *viewport; /** A pointer to the sprite's viewport, or NULL. */
     RPGint width;          /** The dimension of the plane, in pixels, on the x-axis. */
@@ -577,7 +582,10 @@ void RPG_Batch_Set(RPGbatch *batch, int index, RPGrenderable *item);
 void RPG_Batch_Delete(RPGbatch *batch, int index);
 void RPG_Batch_DeleteItem(RPGbatch *batch, RPGrenderable *item);
 void RPG_Batch_Sort(RPGbatch *batch, int first, int last);
+
+void RPG_BasicSprite_Init(RPGbasic *basic, RPGrenderfunc renderfunc, RPGbatch *batch);
 void RPG_Renderable_Init(RPGrenderable *renderable, RPGrenderfunc renderfunc, RPGbatch *batch);
+
 RPG_RESULT RPG_ReadFile(const char *filename, char **buffer, size_t *size);
 
 GLuint _texture[32];

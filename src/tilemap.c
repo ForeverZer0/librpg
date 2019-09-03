@@ -7,7 +7,7 @@
 
 static inline float getUV(float t, float dim)
 {
-    return (t + 0.5f) / dim;  // FIXME:
+    return (t + 0.5f) / dim;  // FIXME: Put in internal.h
 }
 
 typedef struct
@@ -24,11 +24,11 @@ typedef struct
 // Tile Layer
 typedef struct
 {
+    GLuint vao;
+    GLuint vbo;
     RPGimage *image;
     RPGuint tileCount;
     RPGtile *tiles;
-    GLuint vao;
-    GLuint vbo;
 } RPGtilelayer;
 
 // Image Layer
@@ -51,6 +51,7 @@ typedef struct
 
 typedef struct
 {
+    RPGrenderable renderable;
     RPGint type;
     union {
         RPGtilelayer *tile;
@@ -59,15 +60,14 @@ typedef struct
         RPGgrouplayer *group;
     } layer;
     tmx_layer *tmx;
-    RPGint z;
+    RPGtilemap *parent;
 } RPGlayer;
 
 typedef struct RPGtilemap
 {
-    RPGrenderable base;
+    RPGbasic base;
+    RPGbatch layers;
     tmx_map *map;
-    RPGuint layerCount;
-    RPGlayer *layers;
     RPGfloat pxWidth;
     RPGfloat pxHeight;
     struct
@@ -151,7 +151,6 @@ static void RPG_Tilemap_CreateShader(RPGtilemap *tilemap)
     RPG_Shader_Create(tempv, RPG_FRAGMENT_SHADER, NULL, &shader);
     RPG_ASSERT(shader);
 
-    // FIXME: Shared shader for all tilemaps?
     tilemap->shader.program    = shader->program;
     tilemap->shader.projection = glGetUniformLocation(shader->program, "projection");
     tilemap->shader.alpha      = glGetUniformLocation(shader->program, "alpha");
@@ -166,21 +165,32 @@ static void RPG_Tilemap_CreateShader(RPGtilemap *tilemap)
         RPG_FREE(tempv);
 }
 
-static void RPG_Tilemap_RenderTileLayer(RPGtilemap *tilemap, RPGtilelayer *layer)
+static void RPG_Tilemap_RenderTileLayer(void *layer)
 {
+    RPGlayer *l = (RPGlayer *) layer;
+
+    glUseProgram(l->parent->shader.program);
+    RPG_Drawing_SetBlending(l->parent->base.blend.op, l->parent->base.blend.src, l->parent->base.blend.dst);
+
     // Bind tileset texture
-    RPG_Drawing_BindTexture(layer->image->texture, GL_TEXTURE0);
-    glBindVertexArray(layer->vao);
-    glDrawArraysInstanced(GL_TRIANGLES, 0, 6, layer->tileCount * 6);
+    RPG_Drawing_BindTexture(l->layer.tile->image->texture, GL_TEXTURE0);
+    glBindVertexArray(l->layer.tile->vao);
+    glDrawArraysInstanced(GL_TRIANGLES, 0, 6, l->layer.tile->tileCount * 6);
+    glUseProgram(RPG_GAME->shader.program);
 }
 
-static void RPG_Tilemap_RenderImageLayer(RPGtilemap *tilemap, RPGimagelayer *layer) {}
+static void RPG_Tilemap_RenderImageLayer(void *layer) {
+    RPGlayer *l = (RPGlayer *) layer;
+    glUseProgram(l->parent->shader.program);
+
+    glUseProgram(RPG_GAME->shader.program);
+}
 
 static void RPG_Tilemap_Render(void *tilemap)
 {
     RPGtilemap *t = tilemap;
     // Skip if tilemap is not visible
-    if (!t->base.visible || t->base.alpha < __FLT_EPSILON__)
+    if (!t->base.renderable.visible || t->base.alpha < __FLT_EPSILON__)
     {
         return;
     }
@@ -208,26 +218,8 @@ static void RPG_Tilemap_Render(void *tilemap)
     glUniform1f(t->shader.alpha, 1.0f);
     glUniform1f(t->shader.hue, 0.0f);
     glUniform4f(t->shader.flash, 0.0f, 0.0f, 0.0f, 0.0f);
-    RPG_Drawing_SetBlending(t->base.blend.op, t->base.blend.src, t->base.blend.dst);
 
-    for (RPGuint i = 0; i < t->layerCount; i++)
-    {
-        RPGlayer *layer = &t->layers[i];
-
-        // Skip if layer is not visible
-        if (!layer->tmx->visible)
-            continue;
-
-        // Branch defpending on the type of layer
-        switch (layer->type)
-        {
-            case L_LAYER: RPG_Tilemap_RenderTileLayer(t, layer->layer.tile); break;
-            case L_IMAGE: break;
-            case L_GROUP: break;
-            case L_OBJGR: break;
-            default: fprintf(stderr, "unknown layer type"); break;
-        }
-    }
+    // No actual rendering, just update shader uniforms and ortho if needed
     glUseProgram(RPG_GAME->shader.program);
 }
 
@@ -333,39 +325,36 @@ static RPGgrouplayer *RPG_Tilemap_CreateGroupLayer(tmx_map *map, tmx_layer *laye
 
 static void RPG_Tilemap_Initialize(tmx_map *map, RPGviewport *viewport, RPGtilemap **tilemap)
 {
-
     RPG_ALLOC_ZERO(tm, RPGtilemap);
     RPGbatch *batch = viewport ? &viewport->batch : &RPG_GAME->batch;
-    RPG_Renderable_Init(&tm->base, RPG_Tilemap_Render, batch);
-    RPG_Tilemap_CreateShader(tm);  // TODO:
+    RPG_BasicSprite_Init(&tm->base, RPG_Tilemap_Render, batch);
+    RPG_Tilemap_CreateShader(tm);
 
     // Store the map, count the layers, and allocate memory for them
     tm->map      = map;
     tm->pxWidth  = map->width * map->tile_width;
     tm->pxHeight = map->height * map->tile_height;
-    for (tmx_layer *layer = map->ly_head; layer != NULL; layer = layer->next, tm->layerCount++)
-    {
-    }
-    tm->layers = RPG_ALLOC_N(RPGlayer, tm->layerCount);
+    RPG_Batch_Init(&tm->layers);
 
     // Enumerate each layer
     int index = 0;
     for (tmx_layer *layer = map->ly_head; layer != NULL; layer = layer->next, index++)
     {
-        RPGlayer *base = &tm->layers[index];
+        RPG_ALLOC_ZERO(base, RPGlayer);   
         base->type     = layer->type;
-        base->tmx      = layer;
-        base->z        = index * 32;
+        base->tmx      = layer;   
         switch (layer->type)
         {
             case L_LAYER:
             {
                 base->layer.tile = RPG_Tilemap_CreateTileLayer(tm, map, layer);
+                RPG_Renderable_Init(&base->renderable, RPG_Tilemap_RenderTileLayer, batch);
                 break;
             }
             case L_IMAGE:
             {
                 base->layer.image = RPG_Tilemap_CreateImageLayer(map, layer);
+                RPG_Renderable_Init(&base->renderable, RPG_Tilemap_RenderImageLayer, batch);
                 break;
             }
             case L_GROUP:
@@ -384,6 +373,9 @@ static void RPG_Tilemap_Initialize(tmx_map *map, RPGviewport *viewport, RPGtilem
                 break;
             }
         }
+        base->parent = tm;
+        base->renderable.visible = (RPGbool) layer->visible;
+        RPG_Batch_Add(&tm->layers, &base->renderable);
     }
 
     *tilemap = tm;
@@ -503,9 +495,9 @@ RPG_RESULT RPG_Tilemap_Update(RPGtilemap *tilemap)
     RPG_RETURN_IF_NULL(tilemap);
 
     RPGlayer *layer;
-    for (RPGuint i = 0; i < tilemap->layerCount; i++)
+    for (RPGuint i = 0; i < tilemap->layers.total; i++)
     {
-        layer = &tilemap->layers[i];
+        layer = (RPGlayer*) tilemap->layers.items[i];
         if (layer->type == L_LAYER)
         {
             RPG_Tilemap_UpdateTileLayer(tilemap, layer->layer.tile, layer->tmx);

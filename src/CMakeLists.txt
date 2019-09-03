@@ -42,7 +42,8 @@ set(RPG_SOURCES
         image.c
         tilemap.c
         uthash.h 
-        renderable.c 
+        basic.c 
+        renderable.c
         sprite.c 
         viewport.c)
 
@@ -51,6 +52,7 @@ add_library(rpg SHARED ${RPG_HEADERS} ${RPG_SOURCES})
 set_target_properties(rpg PROPERTIES VERSION ${PROJECT_VERSION})
 set_target_properties(rpg PROPERTIES SOVERSION 1)
 # TODO: Audd rpgaudio.h to public headers ?
+# GNUInstall, etc
 
 
 set_target_properties(rpg PROPERTIES PUBLIC_HEADER include/RPG/rpg.h)
